@@ -37,6 +37,38 @@ class HoldingCategory(StrEnum):
     ELASTIC = "弹性股"
 
 
+class ListingStatus(StrEnum):
+    """Whether a research coverage ticker is currently tradeable on A-share markets."""
+
+    TRADEABLE = "tradeable"
+    UNLISTED = "unlisted"      # pre-IPO, e.g. 星融元
+    SUSPENDED = "suspended"    # trading suspended
+
+
+class DataConfidence(StrEnum):
+    """Freshness / reliability level for a data point."""
+
+    HIGH = "high"       # fetched within 24h from authoritative source
+    MEDIUM = "medium"   # fetched within 7 days or from secondary source
+    LOW = "low"         # older than 7 days or manually entered
+    STALE = "stale"     # known to be outdated (e.g. target price superseded by rally)
+
+
+class DataProvenance(BaseModel):
+    """Tracks the origin and freshness of a data point.
+
+    Attach to any field whose staleness could corrupt signal scoring — in
+    particular analyst target prices and fundamental estimates.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    source: str = Field(min_length=1, description="broker name, API name, or 'manual'")
+    as_of: date | None = None
+    fetched_at: datetime | None = None
+    confidence: DataConfidence = DataConfidence.MEDIUM
+
+
 class DailyNewsItem(BaseModel):
     """One normalized news item produced by an external data agent."""
 
@@ -113,6 +145,17 @@ class WeeklyReportFile(BaseModel):
         return value
 
 
+class KolDigestFile(BaseModel):
+    """kol_digest_{YYYYMMDD}.json — daily standalone KOL digest file from ADR-002."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    schema_version: SchemaVersion
+    date: date
+    generated_at: datetime
+    items: list[KolDigest] = Field(default_factory=list)
+
+
 class HoldingRow(BaseModel):
     """One row from holdings_{YYYYMMDD}.csv."""
 
@@ -168,6 +211,7 @@ class StockSignal(BaseModel):
         "take_profit_alert",
     ]
     signals: dict[str, object] = Field(default_factory=dict)
+    target_price_provenance: DataProvenance | None = None
 
 
 class SignalsFile(BaseModel):

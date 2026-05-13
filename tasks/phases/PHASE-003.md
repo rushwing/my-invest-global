@@ -13,7 +13,9 @@ priority: P0
 
 - `engine/data/fundamental_loader.py`：
   - 解析 `data_china_aidc.md` Markdown 表格 → 结构化 dict（在模块加载时执行一次，结果缓存在内存）
-  - 提取字段：`code`, `name`, `scarcity_tier` (1–4), `target_price`, `sector_rank`, `q1_revenue_growth`, `q1_profit_growth`, `sector`
+  - 提取字段：`code`, `name`, `scarcity_tier` (1–4), `target_price`, `target_price_stale` (bool), `sector_rank`, `q1_revenue_growth`, `q1_profit_growth`, `sector`, `listing_status`
+  - **目标价陈旧检测**：解析"投研目标股价"列时，若值包含 `[待更新]` 标记 → 提取数字并将 `target_price_stale=True`；解析时使用 `DataProvenance(source=broker, confidence=DataConfidence.STALE)` 附加到返回结构
+  - `listing_status` 来自"股票代码"列：非六位数字（如 "未上市"）→ `ListingStatus.UNLISTED`；六位数字 → `ListingStatus.TRADEABLE`
   - 若文件格式变化导致解析失败，抛出明确异常（不静默返回空）
 - `engine/signals/fundamental.py`：
   - `compute_fundamental_score(code: str, current_price: float, cost_price: float) -> dict`
