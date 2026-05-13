@@ -1,0 +1,89 @@
+[project]
+name = "my-invest-global"
+version = "0.1.0"
+description = "AI infrastructure stock portfolio advisor for A-share and US markets"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.12"
+authors = [
+    { name = "Daniel Wong", email = "ruoxu.wang@gmail.com" }
+]
+keywords = ["investment", "quantitative", "AIDC", "A-share", "portfolio"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Financial and Insurance Industry",
+    "License :: OSI Approved :: GNU Affero General Public License v3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+
+dependencies = [
+    # Core analysis
+    "pandas>=2.2",
+    "numpy>=1.26",
+    "pandas-ta>=0.3.14b",
+    # Data storage
+    "duckdb>=1.0",
+    "pyarrow>=14.0",
+    # Data feeds (optional at runtime, required for data ingestion)
+    "akshare>=1.12",
+    "yfinance>=0.2",
+    # File watching (agent input trigger)
+    "watchdog>=4.0",
+    # LLM synthesis
+    "anthropic>=0.25",
+    # Dashboard
+    "streamlit>=1.32",
+    "plotly>=5.18",
+    # Utilities
+    "pydantic>=2.0",
+    "loguru>=0.7",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.4",
+    "mypy>=1.9",
+]
+tushare = [
+    "tushare>=1.4",
+]
+
+[project.scripts]
+advisor = "app.dashboard:main"
+
+[project.urls]
+Repository = "https://github.com/rushwing/my-invest-global"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["engine", "app", "scripts"]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.4",
+    "mypy>=1.9",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = false
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
