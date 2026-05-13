@@ -1073,7 +1073,6 @@ name = "my-invest-global"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "akshare" },
     { name = "anthropic" },
     { name = "duckdb" },
     { name = "loguru" },
@@ -1086,10 +1085,13 @@ dependencies = [
     { name = "python-dotenv" },
     { name = "streamlit" },
     { name = "watchdog" },
-    { name = "yfinance" },
 ]
 
 [package.optional-dependencies]
+data = [
+    { name = "akshare" },
+    { name = "yfinance" },
+]
 dev = [
     { name = "mypy" },
     { name = "pytest" },
@@ -1110,7 +1112,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "akshare", specifier = ">=1.12" },
+    { name = "akshare", marker = "extra == 'data'", specifier = ">=1.12" },
     { name = "anthropic", specifier = ">=0.25" },
     { name = "duckdb", specifier = ">=1.0" },
     { name = "loguru", specifier = ">=0.7" },
@@ -1128,7 +1130,7 @@ requires-dist = [
     { name = "streamlit", specifier = ">=1.32" },
     { name = "tushare", marker = "extra == 'tushare'", specifier = ">=1.4" },
     { name = "watchdog", specifier = ">=4.0" },
-    { name = "yfinance", specifier = ">=0.2" },
+    { name = "yfinance", marker = "extra == 'data'", specifier = ">=0.2" },
 ]
 
 [package.metadata.requires-dev]
