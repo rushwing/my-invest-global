@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AIDC产业链全景研报 2026 · 时寒冰方法论</title>
+<style>
+:root{--bg:#080d1a;--bg2:#0e1528;--bg3:#141d35;--gold:#c9a227;--gold2:#e8c55a;--text:#e2e8f0;--text2:#94a3b8;--border:#1e2d50}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
+.hidden{display:none!important}
+nav{position:sticky;top:0;z-index:100;background:rgba(8,13,26,.96);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 1.5rem;height:52px;gap:1.5rem}
+.logo{color:var(--gold);font-weight:700;font-size:.95rem;white-space:nowrap}
+.tabs{display:flex}
+.tab{padding:.5rem 1.25rem;cursor:pointer;border:none;background:none;color:var(--text2);font-size:.85rem;border-bottom:2px solid transparent;font-family:inherit;transition:.15s}
+.tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+.nav-r{margin-left:auto;color:var(--text2);font-size:.72rem}
+.hero{padding:3.5rem 1.5rem 2.5rem;background:linear-gradient(135deg,#080d1a,#0e1a3a 50%,#080d1a);text-align:center;border-bottom:1px solid var(--border)}
+.badge-pill{display:inline-block;padding:.2rem .75rem;border:1px solid var(--gold);color:var(--gold);border-radius:999px;font-size:.72rem;margin-bottom:.75rem}
+.hero h1{font-size:2rem;font-weight:700;margin-bottom:.4rem}
+.hero h1 span{color:var(--gold)}
+.hero p{color:var(--text2);max-width:580px;margin:.3rem auto;font-size:.9rem}
+.hero-meta{color:var(--text2);font-size:.72rem;margin-top:.5rem}
+section{padding:2rem 1.5rem;border-bottom:1px solid var(--border)}
+.sec-title{font-size:1.1rem;font-weight:700;color:var(--gold);margin-bottom:1.25rem;display:flex;align-items:center;gap:.5rem}
+.sec-title::before{content:'';display:block;width:4px;height:1.1em;background:var(--gold);border-radius:2px}
+.meth-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:.875rem}
+.mc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1rem}
+.mc h3{color:var(--gold2);font-size:.875rem;margin-bottom:.4rem}
+.mc p{color:var(--text2);font-size:.8rem;line-height:1.6}
+.svg-wrap{width:100%;overflow-x:auto;margin-bottom:1.25rem;border:1px solid var(--border);border-radius:8px;background:#07101f}
+.svg-wrap svg{display:block;min-width:860px}
+.controls{display:flex;gap:.6rem;margin-bottom:.875rem;flex-wrap:wrap}
+.ci{background:var(--bg2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:.35rem .7rem;font-size:.8rem;font-family:inherit;flex:1;min-width:150px}
+.ci::placeholder{color:var(--text2)}
+.cs{background:var(--bg2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:.35rem .7rem;font-size:.8rem;font-family:inherit;min-width:130px;cursor:pointer}
+.cs option{background:var(--bg2)}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.78rem}
+th{background:var(--bg3);color:var(--gold);padding:.55rem .7rem;white-space:nowrap;cursor:pointer;user-select:none;border-bottom:1px solid var(--border);text-align:left;position:sticky;top:52px;z-index:10}
+th:hover{color:var(--gold2)}
+.si{font-size:.65rem;margin-left:.2rem;opacity:.45}
+th.sa .si::after{content:' ↑';opacity:1}
+th.sd .si::after{content:' ↓';opacity:1}
+td{padding:.55rem .7rem;border-bottom:1px solid rgba(30,45,80,.5);vertical-align:top}
+tr:hover td{background:rgba(201,162,39,.04)}
+.nd{text-align:center;padding:2rem;color:var(--text2)}
+.bk{display:inline-block;padding:.12rem .45rem;border-radius:4px;font-size:.7rem;font-weight:600;white-space:nowrap}
+.r-强烈推荐{background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)}
+.r-推荐{background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3)}
+.r-中性{background:rgba(107,114,128,.15);color:#9ca3af;border:1px solid rgba(107,114,128,.3)}
+.r-回避{background:rgba(55,65,81,.4);color:#6b7280;border:1px solid #374151}
+.s-极高{background:rgba(249,115,22,.15);color:#f97316;border:1px solid rgba(249,115,22,.3)}
+.s-高{background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3)}
+.s-中{background:rgba(20,184,166,.15);color:#14b8a6;border:1px solid rgba(20,184,166,.3)}
+.s-低{background:rgba(107,114,128,.15);color:#9ca3af;border:1px solid rgba(107,114,128,.3)}
+footer{padding:1.5rem;color:var(--text2);font-size:.72rem;line-height:1.8;border-top:1px solid var(--border)}
+footer h4{color:var(--text);margin-bottom:.3rem;font-size:.8rem}
+@media print{body{background:#fff;color:#000}nav,.controls{display:none}.hidden{display:block!important}th{background:#f3f4f6;color:#000;position:static}td,th{color:#000}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">⬡ AIDC 产业链全景研报 2026</div>
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('cn',this)">🇨🇳 中国 A 股</button>
+    <button class="tab" onclick="showTab('us',this)">🇺🇸 美股</button>
+  </div>
+  <div class="nav-r">数据截止：2026-05-13 · 仅供研究参考</div>
+</nav>
+
+<div class="hero">
+  <div class="badge-pill">时寒冰《全球视野下的投资机会》方法论</div>
+  <h1>AI 数据中心产业链<span>全景研报</span></h1>
+  <p>覆盖中美两市 47 家核心标的 · 8 大板块 · 13 列关键指标</p>
+  <div class="hero-meta">Goldman Sachs AI-DC 建设股票篮子 2026年 YTD +60% · 四大超大云厂商 2026 年资本支出合计 $3,150 亿</div>
+</div>
+
+<section>
+  <div class="sec-title">方法论框架 — 时寒冰四步投资法</div>
+  <div class="meth-grid">
+    <div class="mc"><h3>① 宏观先行 — 主权级不可逆投入</h3><p>IEA预测2026年AIDC耗电945 TWh；四大超大云厂商2026年资本支出合计 $3,150亿（+48% YoY）。AI算力建设具主权竞争属性，资金流向不可逆是本轮周期最核心判断。</p></div>
+    <div class="mc"><h3>② 稀缺节点 — 投资优先级矩阵</h3><p>优先级分 = 稀缺度 × (1/可替代性) × 需求弹性。Tier-1极高（GPU/光模块CPO/HBM/液冷）→ Tier-4低（标准光纤/机柜）。聚焦技术壁垒高、供应链不可复制的环节。</p></div>
+    <div class="mc"><h3>③ 中国特色 — 国产替代三波浪</h3><p>第一波（已兑现）：光模块/基础服务器。第二波（当前）：CPO/液冷/高速PCB/内存接口芯片。第三波（2027-28）：先进封装/先进制程。BIS管制是持续催化剂。</p></div>
+    <div class="mc"><h3>④ 估值纪律 — 金字塔仓位框架</h3><p>核心仓40%（Tier-1，集中2-3只）；卫星仓35%（Tier-2，分散4-6只）；机动仓25%（Tier-3弹性品种）。卖出触发：超大云厂商资本支出季度下调&gt;10%，板块PE&gt;历史峰值1.5×。</p></div>
+  </div>
+</section>
+
+<!-- ===== CHINA TAB ===== -->
+<div id="tab-cn">
+
+<section>
+  <div class="sec-title">中国 A 股 · AIDC 产业链全景图</div>
+  <div class="svg-wrap">
+<svg viewBox="0 0 1380 460" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+<defs>
+  <linearGradient id="cg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#0e1a3a"/><stop offset="100%" stop-color="#152040"/></linearGradient>
+  <marker id="ar" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto"><polygon points="0 0,6 2,0 4" fill="#c9a227" opacity=".7"/></marker>
+</defs>
+<!-- grid -->
+<line x1="0" y1="64" x2="1380" y2="64" stroke="#1e2d50" stroke-dasharray="3,3"/>
+<line x1="0" y1="130" x2="1380" y2="130" stroke="#1e2d50" stroke-dasharray="3,3"/>
+<line x1="0" y1="218" x2="1380" y2="218" stroke="#1e2d50" stroke-dasharray="3,3"/>
+<line x1="0" y1="318" x2="1380" y2="318" stroke="#1e2d50" stroke-dasharray="3,3"/>
+<!-- L1 label -->
+<text x="8" y="14" fill="#64748b" font-size="10">L1 应用需求</text>
+<rect x="30" y="18" width="340" height="38" rx="5" fill="#0a1420" stroke="#c9a227" stroke-width="1.5"/>
+<text x="200" y="39" fill="#c9a227" font-size="12" text-anchor="middle" font-weight="bold">大模型训练（GPT-5级 / 昇腾生态）</text>
+<text x="200" y="52" fill="#64748b" font-size="9" text-anchor="middle">华为昇腾910B/C · 国产GPU国产替代加速</text>
+<rect x="390" y="18" width="310" height="38" rx="5" fill="#0a1420" stroke="#c9a227" stroke-width="1.5"/>
+<text x="545" y="39" fill="#c9a227" font-size="12" text-anchor="middle" font-weight="bold">AI Agent 推理（2026年爆发）</text>
+<text x="545" y="52" fill="#64748b" font-size="9" text-anchor="middle">万亿次推理/日 · 政务/金融/工业AI</text>
+<rect x="720" y="18" width="310" height="38" rx="5" fill="#0a1420" stroke="#c9a227" stroke-width="1.5"/>
+<text x="875" y="39" fill="#c9a227" font-size="12" text-anchor="middle" font-weight="bold">国家算力网络 / 政务云</text>
+<text x="875" y="52" fill="#64748b" font-size="9" text-anchor="middle">十四五算力规划 · 国有/政府SOE主导</text>
+<!-- L1→L2 arrows -->
+<line x1="200" y1="56" x2="200" y2="78" stroke="#c9a227" stroke-dasharray="3,3" marker-end="url(#ar)"/>
+<line x1="545" y1="56" x2="545" y2="78" stroke="#c9a227" stroke-dasharray="3,3" marker-end="url(#ar)"/>
+<line x1="875" y1="56" x2="875" y2="78" stroke="#c9a227" stroke-dasharray="3,3" marker-end="url(#ar)"/>
+<!-- L2 label -->
+<text x="8" y="80" fill="#64748b" font-size="10">L2 云平台</text>
+<rect x="20" y="83" width="196" height="34" rx="5" fill="#0c1830" stroke="#3b82f6" stroke-width="1.2"/>
+<text x="118" y="100" fill="#93c5fd" font-size="11" text-anchor="middle" font-weight="bold">阿里云</text>
+<text x="118" y="112" fill="#60a5fa" font-size="9" text-anchor="middle">通义千问 · 混合云</text>
+<rect x="228" y="83" width="196" height="34" rx="5" fill="#0c1830" stroke="#3b82f6" stroke-width="1.2"/>
+<text x="326" y="100" fill="#93c5fd" font-size="11" text-anchor="middle" font-weight="bold">腾讯云</text>
+<text x="326" y="112" fill="#60a5fa" font-size="9" text-anchor="middle">混元大模型</text>
+<rect x="436" y="83" width="196" height="34" rx="5" fill="#0c1830" stroke="#3b82f6" stroke-width="1.2"/>
+<text x="534" y="100" fill="#93c5fd" font-size="11" text-anchor="middle" font-weight="bold">华为云</text>
+<text x="534" y="112" fill="#60a5fa" font-size="9" text-anchor="middle">盘古 · 昇腾生态</text>
+<rect x="644" y="83" width="196" height="34" rx="5" fill="#0c1830" stroke="#3b82f6" stroke-width="1.2"/>
+<text x="742" y="100" fill="#93c5fd" font-size="11" text-anchor="middle" font-weight="bold">百度云</text>
+<text x="742" y="112" fill="#60a5fa" font-size="9" text-anchor="middle">文心大模型</text>
+<rect x="852" y="83" width="196" height="34" rx="5" fill="#0c1830" stroke="#3b82f6" stroke-width="1.2"/>
+<text x="950" y="100" fill="#93c5fd" font-size="11" text-anchor="middle" font-weight="bold">字节 火山引擎</text>
+<text x="950" y="112" fill="#60a5fa" font-size="9" text-anchor="middle">豆包大模型</text>
+<!-- L2→L3 arrow -->
+<line x1="690" y1="117" x2="690" y2="138" stroke="#c9a227" stroke-width="1.5" marker-end="url(#ar)"/>
+<!-- L3 AIDC core -->
+<text x="8" y="150" fill="#64748b" font-size="10">L3 AIDC核心</text>
+<rect x="20" y="153" width="1340" height="50" rx="7" fill="url(#cg)" stroke="#c9a227" stroke-width="2"/>
+<text x="690" y="175" fill="#c9a227" font-size="14" text-anchor="middle" font-weight="bold">中国 AI 数据中心基础设施（AIDC）</text>
+<text x="690" y="193" fill="#94a3b8" font-size="10" text-anchor="middle">算力网络规划 ¥5,000亿+ · BIS管制推动国产替代加速 · 政策强驱动 · 2026年新开工面积创历史新高</text>
+<!-- L3→L4 arrows -->
+<line x1="107" y1="203" x2="107" y2="228" stroke="#c9a227" marker-end="url(#ar)"/>
+<line x1="277" y1="203" x2="277" y2="228" stroke="#c9a227" marker-end="url(#ar)"/>
+<line x1="447" y1="203" x2="447" y2="228" stroke="#c9a227" marker-end="url(#ar)"/>
+<line x1="617" y1="203" x2="617" y2="228" stroke="#c9a227" marker-end="url(#ar)"/>
+<line x1="787" y1="203" x2="787" y2="228" stroke="#c9a227" marker-end="url(#ar)"/>
+<line x1="957" y1="203" x2="957" y2="228" stroke="#c9a227" marker-end="url(#ar)"/>
+<line x1="1127" y1="203" x2="1127" y2="228" stroke="#c9a227" marker-end="url(#ar)"/>
+<line x1="1297" y1="203" x2="1297" y2="228" stroke="#c9a227" marker-end="url(#ar)"/>
+<!-- L4: 8 sectors w=150 gap=20 start=20 -->
+<text x="8" y="230" fill="#64748b" font-size="10">L4 板块</text>
+<!-- S1 算力/芯片 -->
+<rect x="20" y="232" width="150" height="78" rx="6" fill="rgba(255,107,53,.12)" stroke="#FF6B35" stroke-width="1.5"/>
+<text x="95" y="252" fill="#FF6B35" font-size="11" text-anchor="middle" font-weight="bold">算力/芯片</text>
+<text x="95" y="266" fill="#fca58a" font-size="9" text-anchor="middle">寒武纪 688256</text>
+<text x="95" y="279" fill="#fca58a" font-size="9" text-anchor="middle">澜起科技 688008</text>
+<text x="95" y="292" fill="#fca58a" font-size="9" text-anchor="middle">北方华创 002371</text>
+<text x="95" y="305" fill="#fca58a" font-size="9" text-anchor="middle">中微公司 688012</text>
+<!-- S2 服务器 -->
+<rect x="190" y="232" width="150" height="78" rx="6" fill="rgba(247,197,159,.1)" stroke="#F7C59F" stroke-width="1.5"/>
+<text x="265" y="252" fill="#F7C59F" font-size="11" text-anchor="middle" font-weight="bold">AI 服务器</text>
+<text x="265" y="266" fill="#fce8d0" font-size="9" text-anchor="middle">浪潮信息 000977</text>
+<text x="265" y="279" fill="#fce8d0" font-size="9" text-anchor="middle">中科曙光 603019</text>
+<!-- S3 网络 -->
+<rect x="360" y="232" width="150" height="78" rx="6" fill="rgba(78,205,196,.1)" stroke="#4ECDC4" stroke-width="1.5"/>
+<text x="435" y="252" fill="#4ECDC4" font-size="11" text-anchor="middle" font-weight="bold">AI 网络</text>
+<text x="435" y="266" fill="#a5f3ef" font-size="9" text-anchor="middle">锐捷网络 301165</text>
+<text x="435" y="279" fill="#a5f3ef" font-size="9" text-anchor="middle">星融元 688616</text>
+<!-- S4 光通信 -->
+<rect x="530" y="232" width="150" height="78" rx="6" fill="rgba(255,234,167,.1)" stroke="#FFEAA7" stroke-width="1.5"/>
+<text x="605" y="252" fill="#FFEAA7" font-size="11" text-anchor="middle" font-weight="bold">光通信</text>
+<text x="605" y="266" fill="#fffde7" font-size="9" text-anchor="middle">中际旭创 300308</text>
+<text x="605" y="279" fill="#fffde7" font-size="9" text-anchor="middle">新易盛 300502</text>
+<text x="605" y="292" fill="#fffde7" font-size="9" text-anchor="middle">天孚通信 300394</text>
+<text x="605" y="305" fill="#fffde7" font-size="9" text-anchor="middle">剑桥科技 603083</text>
+<!-- S5 内存/半导体 -->
+<rect x="700" y="232" width="150" height="78" rx="6" fill="rgba(69,183,209,.1)" stroke="#45B7D1" stroke-width="1.5"/>
+<text x="775" y="252" fill="#45B7D1" font-size="11" text-anchor="middle" font-weight="bold">内存/半导体</text>
+<text x="775" y="266" fill="#bae8f4" font-size="9" text-anchor="middle">澜起科技 688008</text>
+<text x="775" y="279" fill="#bae8f4" font-size="9" text-anchor="middle">华润微 688396</text>
+<!-- S6 散热/液冷 -->
+<rect x="870" y="232" width="150" height="78" rx="6" fill="rgba(136,216,176,.1)" stroke="#88D8B0" stroke-width="1.5"/>
+<text x="945" y="252" fill="#88D8B0" font-size="11" text-anchor="middle" font-weight="bold">散热/液冷</text>
+<text x="945" y="266" fill="#d1fae5" font-size="9" text-anchor="middle">英维克 002837</text>
+<text x="945" y="279" fill="#d1fae5" font-size="9" text-anchor="middle">申菱环境 301018</text>
+<text x="945" y="292" fill="#d1fae5" font-size="9" text-anchor="middle">高澜股份 300499</text>
+<!-- S7 电源 -->
+<rect x="1040" y="232" width="150" height="78" rx="6" fill="rgba(150,206,180,.1)" stroke="#96CEB4" stroke-width="1.5"/>
+<text x="1115" y="252" fill="#96CEB4" font-size="11" text-anchor="middle" font-weight="bold">电源系统</text>
+<text x="1115" y="266" fill="#d1fae5" font-size="9" text-anchor="middle">科华数据 002335</text>
+<text x="1115" y="279" fill="#d1fae5" font-size="9" text-anchor="middle">科士达 002518</text>
+<text x="1115" y="292" fill="#d1fae5" font-size="9" text-anchor="middle">动力源 600405</text>
+<!-- S8 PCB/基材 -->
+<rect x="1210" y="232" width="150" height="78" rx="6" fill="rgba(221,160,221,.1)" stroke="#DDA0DD" stroke-width="1.5"/>
+<text x="1285" y="252" fill="#DDA0DD" font-size="11" text-anchor="middle" font-weight="bold">PCB/基材</text>
+<text x="1285" y="266" fill="#f5d0f5" font-size="9" text-anchor="middle">深南电路 002916</text>
+<text x="1285" y="279" fill="#f5d0f5" font-size="9" text-anchor="middle">生益科技 600183</text>
+<text x="1285" y="292" fill="#f5d0f5" font-size="9" text-anchor="middle">沪电股份 002463</text>
+<!-- L5 sub-sector tags -->
+<text x="8" y="326" fill="#64748b" font-size="10">L5 细分</text>
+<rect x="22" y="328" width="64" height="18" rx="3" fill="rgba(255,107,53,.2)"/><text x="54" y="340" fill="#FF6B35" font-size="8.5" text-anchor="middle">AI训练芯片</text>
+<rect x="92" y="328" width="72" height="18" rx="3" fill="rgba(255,107,53,.2)"/><text x="128" y="340" fill="#FF6B35" font-size="8.5" text-anchor="middle">半导体设备</text>
+<rect x="192" y="328" width="64" height="18" rx="3" fill="rgba(247,197,159,.2)"/><text x="224" y="340" fill="#F7C59F" font-size="8.5" text-anchor="middle">AI整机ODM</text>
+<rect x="262" y="328" width="70" height="18" rx="3" fill="rgba(247,197,159,.2)"/><text x="297" y="340" fill="#F7C59F" font-size="8.5" text-anchor="middle">液冷服务器</text>
+<rect x="362" y="328" width="72" height="18" rx="3" fill="rgba(78,205,196,.2)"/><text x="398" y="340" fill="#4ECDC4" font-size="8.5" text-anchor="middle">以太网交换机</text>
+<rect x="440" y="328" width="62" height="18" rx="3" fill="rgba(78,205,196,.2)"/><text x="471" y="340" fill="#4ECDC4" font-size="8.5" text-anchor="middle">RoCE/IB替代</text>
+<rect x="532" y="328" width="64" height="18" rx="3" fill="rgba(255,234,167,.2)"/><text x="564" y="340" fill="#FFEAA7" font-size="8.5" text-anchor="middle">光模块/CPO</text>
+<rect x="602" y="328" width="70" height="18" rx="3" fill="rgba(255,234,167,.2)"/><text x="637" y="340" fill="#FFEAA7" font-size="8.5" text-anchor="middle">光纤/激光器</text>
+<rect x="702" y="328" width="72" height="18" rx="3" fill="rgba(69,183,209,.2)"/><text x="738" y="340" fill="#45B7D1" font-size="8.5" text-anchor="middle">内存接口RCD5</text>
+<rect x="780" y="328" width="62" height="18" rx="3" fill="rgba(69,183,209,.2)"/><text x="811" y="340" fill="#45B7D1" font-size="8.5" text-anchor="middle">功率半导体</text>
+<rect x="872" y="328" width="64" height="18" rx="3" fill="rgba(136,216,176,.2)"/><text x="904" y="340" fill="#88D8B0" font-size="8.5" text-anchor="middle">冷板式液冷</text>
+<rect x="942" y="328" width="70" height="18" rx="3" fill="rgba(136,216,176,.2)"/><text x="977" y="340" fill="#88D8B0" font-size="8.5" text-anchor="middle">精密空调/冷源</text>
+<rect x="1042" y="328" width="72" height="18" rx="3" fill="rgba(150,206,180,.2)"/><text x="1078" y="340" fill="#96CEB4" font-size="8.5" text-anchor="middle">UPS/模块电源</text>
+<rect x="1120" y="328" width="62" height="18" rx="3" fill="rgba(150,206,180,.2)"/><text x="1151" y="340" fill="#96CEB4" font-size="8.5" text-anchor="middle">HVDC直流</text>
+<rect x="1212" y="328" width="64" height="18" rx="3" fill="rgba(221,160,221,.2)"/><text x="1244" y="340" fill="#DDA0DD" font-size="8.5" text-anchor="middle">高速AI PCB</text>
+<rect x="1282" y="328" width="70" height="18" rx="3" fill="rgba(221,160,221,.2)"/><text x="1317" y="340" fill="#DDA0DD" font-size="8.5" text-anchor="middle">高频CCL基材</text>
+<!-- PCB cross-sector line -->
+<line x1="1285" y1="346" x2="1285" y2="366" stroke="#DDA0DD" stroke-dasharray="3,2"/>
+<line x1="95" y1="366" x2="1285" y2="366" stroke="#DDA0DD" stroke-dasharray="3,2"/>
+<line x1="95" y1="355" x2="95" y2="366" stroke="#DDA0DD" stroke-dasharray="3,2" marker-end="url(#ar)"/>
+<text x="600" y="378" fill="#64748b" font-size="9" text-anchor="middle">PCB/基材 → 为所有板块提供高速基板（跨板块依赖）</text>
+<!-- Legend -->
+<text x="20" y="402" fill="#64748b" font-size="9">板块色图例：</text>
+<rect x="90" y="393" width="10" height="10" fill="#FF6B35" rx="2"/><text x="104" y="402" fill="#94a3b8" font-size="9">算力/芯片</text>
+<rect x="170" y="393" width="10" height="10" fill="#4ECDC4" rx="2"/><text x="184" y="402" fill="#94a3b8" font-size="9">AI网络</text>
+<rect x="232" y="393" width="10" height="10" fill="#FFEAA7" rx="2"/><text x="246" y="402" fill="#94a3b8" font-size="9">光通信</text>
+<rect x="302" y="393" width="10" height="10" fill="#45B7D1" rx="2"/><text x="316" y="402" fill="#94a3b8" font-size="9">内存/半导体</text>
+<rect x="398" y="393" width="10" height="10" fill="#88D8B0" rx="2"/><text x="412" y="402" fill="#94a3b8" font-size="9">散热/液冷</text>
+<rect x="470" y="393" width="10" height="10" fill="#96CEB4" rx="2"/><text x="484" y="402" fill="#94a3b8" font-size="9">电源</text>
+<rect x="520" y="393" width="10" height="10" fill="#DDA0DD" rx="2"/><text x="534" y="402" fill="#94a3b8" font-size="9">PCB/基材</text>
+<text x="600" y="402" fill="#64748b" font-size="9">| BIS管制 → 国产替代加速 · 政府SOE主导建设 · 国产化率KPI强制考核</text>
+<!-- Tier badges -->
+<text x="20" y="422" fill="#64748b" font-size="9">紧缺度：</text>
+<rect x="68" y="413" width="30" height="14" rx="3" fill="rgba(249,115,22,.2)" stroke="rgba(249,115,22,.4)"/><text x="83" y="423" fill="#f97316" font-size="8" text-anchor="middle">极高</text>
+<text x="102" y="422" fill="#64748b" font-size="8">光模块CPO/液冷/AI芯片</text>
+<rect x="250" y="413" width="22" height="14" rx="3" fill="rgba(245,158,11,.2)" stroke="rgba(245,158,11,.4)"/><text x="261" y="423" fill="#f59e0b" font-size="8" text-anchor="middle">高</text>
+<text x="276" y="422" fill="#64748b" font-size="8">AI网络/PCB/半导体设备</text>
+<rect x="410" y="413" width="22" height="14" rx="3" fill="rgba(20,184,166,.2)" stroke="rgba(20,184,166,.4)"/><text x="421" y="423" fill="#14b8a6" font-size="8" text-anchor="middle">中</text>
+<text x="436" y="422" fill="#64748b" font-size="8">服务器整机/光纤光缆</text>
+<rect x="545" y="413" width="22" height="14" rx="3" fill="rgba(107,114,128,.2)" stroke="rgba(107,114,128,.4)"/><text x="556" y="423" fill="#9ca3af" font-size="8" text-anchor="middle">低</text>
+<text x="571" y="422" fill="#64748b" font-size="8">标准机柜/综合布线</text>
+<text x="20" y="445" fill="#64748b" font-size="9">稀缺矩阵：Tier-1极高稀缺 核心仓40% | Tier-2高稀缺 卫星仓35% | Tier-3中稀缺 机动仓25%</text>
+</svg>
+  </div>
+
+  <div class="controls">
+    <input class="ci" id="cn-s" placeholder="搜索公司名/代码/细分板块..." oninput="filt('cn')">
+    <select class="cs" id="cn-sec" onchange="filt('cn')">
+      <option value="">全部板块</option>
+      <option>光通信</option><option>半导体</option><option>服务器</option>
+      <option>网络</option><option>PCB</option><option>散热/液冷</option>
+      <option>电源</option><option>机柜/基建</option>
+    </select>
+    <select class="cs" id="cn-rat" onchange="filt('cn')">
+      <option value="">全部评级</option>
+      <option>强烈推荐</option><option>推荐</option><option>中性</option><option>回避</option>
+    </select>
+    <select class="cs" id="cn-sca" onchange="filt('cn')">
+      <option value="">全部紧缺度</option>
+      <option>极高</option><option>高</option><option>中</option><option>低</option>
+    </select>
+  </div>
+  <div class="tw">
+    <table id="t-cn">
+      <thead><tr>
+        <th onclick="srt('cn',0)">领域<span class="si"></span></th>
+        <th onclick="srt('cn',1)">细分版块<span class="si"></span></th>
+        <th onclick="srt('cn',2)">细分龙头<span class="si"></span></th>
+        <th onclick="srt('cn',3)">股价(¥)<span class="si"></span></th>
+        <th onclick="srt('cn',4)">近1月<span class="si"></span></th>
+        <th onclick="srt('cn',5)">近3月<span class="si"></span></th>
+        <th onclick="srt('cn',6)">市值<span class="si"></span></th>
+        <th onclick="srt('cn',7)">动态PE<span class="si"></span></th>
+        <th style="min-width:200px">一季度财报总结</th>
+        <th onclick="srt('cn',9)">行业排行<span class="si"></span></th>
+        <th onclick="srt('cn',10)">紧缺度<span class="si"></span></th>
+        <th onclick="srt('cn',11)">目标价<span class="si"></span></th>
+        <th onclick="srt('cn',12)">评级<span class="si"></span></th>
+      </tr></thead>
+      <tbody id="b-cn"></tbody>
+    </table>
+  </div>
+</section>
+</div><!-- /tab-cn -->
+
+<!-- ===== US TAB ===== -->
+<div id="tab-us" class="hidden">
+<section>
+  <div class="sec-title">美国股市 · AIDC 产业链全景图</div>
+  <div class="svg-wrap">
+<svg viewBox="0 0 1380 460" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+<defs>
+  <linearGradient id="ug" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#0e1a3a"/><stop offset="100%" stop-color="#152040"/></linearGradient>
+  <marker id="ar2" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto"><polygon points="0 0,6 2,0 4" fill="#c9a227" opacity=".7"/></marker>
+</defs>
+<line x1="0" y1="64" x2="1380" y2="64" stroke="#1e2d50" stroke-dasharray="3,3"/>
+<line x1="0" y1="130" x2="1380" y2="130" stroke="#1e2d50" stroke-dasharray="3,3"/>
+<line x1="0" y1="218" x2="1380" y2="218" stroke="#1e2d50" stroke-dasharray="3,3"/>
+<line x1="0" y1="318" x2="1380" y2="318" stroke="#1e2d50" stroke-dasharray="3,3"/>
+<!-- L1 -->
+<text x="8" y="14" fill="#64748b" font-size="10">L1 应用需求</text>
+<rect x="30" y="18" width="330" height="38" rx="5" fill="#0a1420" stroke="#c9a227" stroke-width="1.5"/>
+<text x="195" y="39" fill="#c9a227" font-size="12" text-anchor="middle" font-weight="bold">LLM 训练（GPT-5/Gemini/Claude）</text>
+<text x="195" y="52" fill="#64748b" font-size="9" text-anchor="middle">NVIDIA Blackwell B200/B300 NVL72</text>
+<rect x="380" y="18" width="320" height="38" rx="5" fill="#0a1420" stroke="#c9a227" stroke-width="1.5"/>
+<text x="540" y="39" fill="#c9a227" font-size="12" text-anchor="middle" font-weight="bold">AI Agent 推理服务（2026爆发）</text>
+<text x="540" y="52" fill="#64748b" font-size="9" text-anchor="middle">消费端+企业端 · 万亿次推理/日</text>
+<rect x="720" y="18" width="320" height="38" rx="5" fill="#0a1420" stroke="#c9a227" stroke-width="1.5"/>
+<text x="880" y="39" fill="#c9a227" font-size="12" text-anchor="middle" font-weight="bold">企业 / 政府 AI 部署</text>
+<text x="880" y="52" fill="#64748b" font-size="9" text-anchor="middle">Microsoft 365 Copilot · AWS Bedrock</text>
+<line x1="195" y1="56" x2="195" y2="78" stroke="#c9a227" stroke-dasharray="3,3" marker-end="url(#ar2)"/>
+<line x1="540" y1="56" x2="540" y2="78" stroke="#c9a227" stroke-dasharray="3,3" marker-end="url(#ar2)"/>
+<line x1="880" y1="56" x2="880" y2="78" stroke="#c9a227" stroke-dasharray="3,3" marker-end="url(#ar2)"/>
+<!-- L2 -->
+<text x="8" y="80" fill="#64748b" font-size="10">L2 超大云厂商</text>
+<rect x="20" y="83" width="195" height="34" rx="5" fill="#0c1830" stroke="#3b82f6" stroke-width="1.2"/>
+<text x="117" y="100" fill="#93c5fd" font-size="11" text-anchor="middle" font-weight="bold">AWS (Amazon)</text>
+<text x="117" y="112" fill="#60a5fa" font-size="9" text-anchor="middle">2026 CapEx ~$1,000亿</text>
+<rect x="228" y="83" width="195" height="34" rx="5" fill="#0c1830" stroke="#3b82f6" stroke-width="1.2"/>
+<text x="325" y="100" fill="#93c5fd" font-size="11" text-anchor="middle" font-weight="bold">Azure (Microsoft)</text>
+<text x="325" y="112" fill="#60a5fa" font-size="9" text-anchor="middle">2026 CapEx ~$800亿</text>
+<rect x="436" y="83" width="195" height="34" rx="5" fill="#0c1830" stroke="#3b82f6" stroke-width="1.2"/>
+<text x="533" y="100" fill="#93c5fd" font-size="11" text-anchor="middle" font-weight="bold">GCP (Google)</text>
+<text x="533" y="112" fill="#60a5fa" font-size="9" text-anchor="middle">2026 CapEx ~$750亿</text>
+<rect x="644" y="83" width="195" height="34" rx="5" fill="#0c1830" stroke="#3b82f6" stroke-width="1.2"/>
+<text x="741" y="100" fill="#93c5fd" font-size="11" text-anchor="middle" font-weight="bold">Meta AI</text>
+<text x="741" y="112" fill="#60a5fa" font-size="9" text-anchor="middle">2026 CapEx ~$600亿</text>
+<rect x="852" y="83" width="195" height="34" rx="5" fill="#0c1830" stroke="#3b82f6" stroke-width="1.2"/>
+<text x="949" y="100" fill="#93c5fd" font-size="11" text-anchor="middle" font-weight="bold">Oracle Cloud</text>
+<text x="949" y="112" fill="#60a5fa" font-size="9" text-anchor="middle">AI训练+推理快速扩张</text>
+<line x1="690" y1="117" x2="690" y2="138" stroke="#c9a227" stroke-width="1.5" marker-end="url(#ar2)"/>
+<!-- L3 -->
+<text x="8" y="150" fill="#64748b" font-size="10">L3 AIDC核心</text>
+<rect x="20" y="153" width="1340" height="50" rx="7" fill="url(#ug)" stroke="#c9a227" stroke-width="2"/>
+<text x="690" y="175" fill="#c9a227" font-size="14" text-anchor="middle" font-weight="bold">美国 AI 数据中心基础设施（AIDC）</text>
+<text x="690" y="193" fill="#94a3b8" font-size="10" text-anchor="middle">超大云厂商2026年资本支出 $3,150亿（+48% YoY）· 市场驱动 · Goldman Sachs AI-DC建设股票篮子 2026 YTD +60%</text>
+<line x1="107" y1="203" x2="107" y2="228" stroke="#c9a227" marker-end="url(#ar2)"/>
+<line x1="277" y1="203" x2="277" y2="228" stroke="#c9a227" marker-end="url(#ar2)"/>
+<line x1="447" y1="203" x2="447" y2="228" stroke="#c9a227" marker-end="url(#ar2)"/>
+<line x1="617" y1="203" x2="617" y2="228" stroke="#c9a227" marker-end="url(#ar2)"/>
+<line x1="787" y1="203" x2="787" y2="228" stroke="#c9a227" marker-end="url(#ar2)"/>
+<line x1="957" y1="203" x2="957" y2="228" stroke="#c9a227" marker-end="url(#ar2)"/>
+<line x1="1127" y1="203" x2="1127" y2="228" stroke="#c9a227" marker-end="url(#ar2)"/>
+<line x1="1297" y1="203" x2="1297" y2="228" stroke="#c9a227" marker-end="url(#ar2)"/>
+<!-- L4: 8 US sectors -->
+<text x="8" y="230" fill="#64748b" font-size="10">L4 板块</text>
+<!-- S1 GPU/ASIC -->
+<rect x="20" y="232" width="150" height="78" rx="6" fill="rgba(255,107,53,.12)" stroke="#FF6B35" stroke-width="1.5"/>
+<text x="95" y="252" fill="#FF6B35" font-size="11" text-anchor="middle" font-weight="bold">AI GPU/ASIC</text>
+<text x="95" y="266" fill="#fca58a" font-size="9" text-anchor="middle">NVDA $215</text>
+<text x="95" y="279" fill="#fca58a" font-size="9" text-anchor="middle">AMD $202</text>
+<text x="95" y="292" fill="#fca58a" font-size="9" text-anchor="middle">AVGO $230</text>
+<text x="95" y="305" fill="#fca58a" font-size="9" text-anchor="middle">MRVL $165</text>
+<!-- S2 Server -->
+<rect x="190" y="232" width="150" height="78" rx="6" fill="rgba(247,197,159,.1)" stroke="#F7C59F" stroke-width="1.5"/>
+<text x="265" y="252" fill="#F7C59F" font-size="11" text-anchor="middle" font-weight="bold">AI 服务器</text>
+<text x="265" y="266" fill="#fce8d0" font-size="9" text-anchor="middle">SMCI $35</text>
+<text x="265" y="279" fill="#fce8d0" font-size="9" text-anchor="middle">DELL $125</text>
+<text x="265" y="292" fill="#fce8d0" font-size="9" text-anchor="middle">HPE $19</text>
+<!-- S3 Network -->
+<rect x="360" y="232" width="150" height="78" rx="6" fill="rgba(78,205,196,.1)" stroke="#4ECDC4" stroke-width="1.5"/>
+<text x="435" y="252" fill="#4ECDC4" font-size="11" text-anchor="middle" font-weight="bold">DC 网络</text>
+<text x="435" y="266" fill="#a5f3ef" font-size="9" text-anchor="middle">ANET $138</text>
+<text x="435" y="279" fill="#a5f3ef" font-size="9" text-anchor="middle">400G/800G AI Fabric</text>
+<text x="435" y="292" fill="#a5f3ef" font-size="9" text-anchor="middle">MSFT/Meta/Google客户</text>
+<!-- S4 Optics -->
+<rect x="530" y="232" width="150" height="78" rx="6" fill="rgba(255,234,167,.1)" stroke="#FFEAA7" stroke-width="1.5"/>
+<text x="605" y="252" fill="#FFEAA7" font-size="11" text-anchor="middle" font-weight="bold">光通信</text>
+<text x="605" y="266" fill="#fffde7" font-size="9" text-anchor="middle">COHR $250</text>
+<text x="605" y="279" fill="#fffde7" font-size="9" text-anchor="middle">LITE $75 · GLW $48</text>
+<text x="605" y="292" fill="#fffde7" font-size="9" text-anchor="middle">CIEN $72</text>
+<!-- S5 Memory -->
+<rect x="700" y="232" width="150" height="78" rx="6" fill="rgba(69,183,209,.1)" stroke="#45B7D1" stroke-width="1.5"/>
+<text x="775" y="252" fill="#45B7D1" font-size="11" text-anchor="middle" font-weight="bold">HBM 内存</text>
+<text x="775" y="266" fill="#bae8f4" font-size="9" text-anchor="middle">MU $120</text>
+<text x="775" y="279" fill="#bae8f4" font-size="9" text-anchor="middle">HBM3E 12-Hi量产</text>
+<text x="775" y="292" fill="#bae8f4" font-size="9" text-anchor="middle">毛利率66%创历史新高</text>
+<!-- S6 Thermal -->
+<rect x="870" y="232" width="150" height="78" rx="6" fill="rgba(136,216,176,.1)" stroke="#88D8B0" stroke-width="1.5"/>
+<text x="945" y="252" fill="#88D8B0" font-size="11" text-anchor="middle" font-weight="bold">热管理/液冷</text>
+<text x="945" y="266" fill="#d1fae5" font-size="9" text-anchor="middle">VRT $367</text>
+<text x="945" y="279" fill="#d1fae5" font-size="9" text-anchor="middle">积压订单创历史新高</text>
+<text x="945" y="292" fill="#d1fae5" font-size="9" text-anchor="middle">全球DC热管理龙头</text>
+<!-- S7 Power -->
+<rect x="1040" y="232" width="150" height="78" rx="6" fill="rgba(150,206,180,.1)" stroke="#96CEB4" stroke-width="1.5"/>
+<text x="1115" y="252" fill="#96CEB4" font-size="11" text-anchor="middle" font-weight="bold">DC 电源</text>
+<text x="1115" y="266" fill="#d1fae5" font-size="9" text-anchor="middle">ETN $310</text>
+<text x="1115" y="279" fill="#d1fae5" font-size="9" text-anchor="middle">订单+45% YoY</text>
+<text x="1115" y="292" fill="#d1fae5" font-size="9" text-anchor="middle">UPS+PDU+DCIM</text>
+<!-- S8 PCB/Conn/Storage -->
+<rect x="1210" y="232" width="150" height="78" rx="6" fill="rgba(221,160,221,.1)" stroke="#DDA0DD" stroke-width="1.5"/>
+<text x="1285" y="252" fill="#DDA0DD" font-size="11" text-anchor="middle" font-weight="bold">PCB/连接器/存储</text>
+<text x="1285" y="266" fill="#f5d0f5" font-size="9" text-anchor="middle">APH $145</text>
+<text x="1285" y="279" fill="#f5d0f5" font-size="9" text-anchor="middle">TTM $24</text>
+<text x="1285" y="292" fill="#f5d0f5" font-size="9" text-anchor="middle">PSTG $62</text>
+<!-- L5 sub-sectors -->
+<text x="8" y="326" fill="#64748b" font-size="10">L5 细分</text>
+<rect x="22" y="328" width="60" height="18" rx="3" fill="rgba(255,107,53,.2)"/><text x="52" y="340" fill="#FF6B35" font-size="8.5" text-anchor="middle">训练GPU</text>
+<rect x="88" y="328" width="75" height="18" rx="3" fill="rgba(255,107,53,.2)"/><text x="125" y="340" fill="#FF6B35" font-size="8.5" text-anchor="middle">定制ASIC/CPO芯片</text>
+<rect x="192" y="328" width="68" height="18" rx="3" fill="rgba(247,197,159,.2)"/><text x="226" y="340" fill="#F7C59F" font-size="8.5" text-anchor="middle">液冷AI机架</text>
+<rect x="266" y="328" width="68" height="18" rx="3" fill="rgba(247,197,159,.2)"/><text x="300" y="340" fill="#F7C59F" font-size="8.5" text-anchor="middle">AI Server ODM</text>
+<rect x="362" y="328" width="72" height="18" rx="3" fill="rgba(78,205,196,.2)"/><text x="398" y="340" fill="#4ECDC4" font-size="8.5" text-anchor="middle">DC以太网交换</text>
+<rect x="440" y="328" width="64" height="18" rx="3" fill="rgba(78,205,196,.2)"/><text x="472" y="340" fill="#4ECDC4" font-size="8.5" text-anchor="middle">400G/800G Fabric</text>
+<rect x="532" y="328" width="68" height="18" rx="3" fill="rgba(255,234,167,.2)"/><text x="566" y="340" fill="#FFEAA7" font-size="8.5" text-anchor="middle">1.6T光模块</text>
+<rect x="606" y="328" width="68" height="18" rx="3" fill="rgba(255,234,167,.2)"/><text x="640" y="340" fill="#FFEAA7" font-size="8.5" text-anchor="middle">DCI光网络</text>
+<rect x="702" y="328" width="72" height="18" rx="3" fill="rgba(69,183,209,.2)"/><text x="738" y="340" fill="#45B7D1" font-size="8.5" text-anchor="middle">HBM3E 12-Hi</text>
+<rect x="780" y="328" width="62" height="18" rx="3" fill="rgba(69,183,209,.2)"/><text x="811" y="340" fill="#45B7D1" font-size="8.5" text-anchor="middle">AI训练存储</text>
+<rect x="872" y="328" width="68" height="18" rx="3" fill="rgba(136,216,176,.2)"/><text x="906" y="340" fill="#88D8B0" font-size="8.5" text-anchor="middle">液冷热管理</text>
+<rect x="946" y="328" width="68" height="18" rx="3" fill="rgba(136,216,176,.2)"/><text x="980" y="340" fill="#88D8B0" font-size="8.5" text-anchor="middle">积压订单爆满</text>
+<rect x="1042" y="328" width="72" height="18" rx="3" fill="rgba(150,206,180,.2)"/><text x="1078" y="340" fill="#96CEB4" font-size="8.5" text-anchor="middle">UPS/PDU/DCIM</text>
+<rect x="1120" y="328" width="62" height="18" rx="3" fill="rgba(150,206,180,.2)"/><text x="1151" y="340" fill="#96CEB4" font-size="8.5" text-anchor="middle">工业电气稳健</text>
+<rect x="1212" y="328" width="62" height="18" rx="3" fill="rgba(221,160,221,.2)"/><text x="1243" y="340" fill="#DDA0DD" font-size="8.5" text-anchor="middle">高速PCB</text>
+<rect x="1280" y="328" width="72" height="18" rx="3" fill="rgba(221,160,221,.2)"/><text x="1316" y="340" fill="#DDA0DD" font-size="8.5" text-anchor="middle">AI训练存储</text>
+<!-- Primary chain -->
+<text x="20" y="374" fill="#c9a227" font-size="9">主链：</text>
+<text x="58" y="374" fill="#94a3b8" font-size="9">NVDA → SMCI/DELL → ANET → VRT/ETN → MU → COHR/LITE → APH/TTM</text>
+<text x="20" y="388" fill="#45B7D1" font-size="9">次链：</text>
+<text x="58" y="388" fill="#94a3b8" font-size="9">AVGO/MRVL 定制ASIC → COHR 1.6T光模块 → GLW 光纤 → TTM PCB → APH 连接器</text>
+<!-- Legend -->
+<text x="20" y="408" fill="#64748b" font-size="9">板块色图例：</text>
+<rect x="92" y="399" width="10" height="10" fill="#FF6B35" rx="2"/><text x="106" y="408" fill="#94a3b8" font-size="9">GPU/ASIC</text>
+<rect x="164" y="399" width="10" height="10" fill="#4ECDC4" rx="2"/><text x="178" y="408" fill="#94a3b8" font-size="9">DC网络</text>
+<rect x="226" y="399" width="10" height="10" fill="#FFEAA7" rx="2"/><text x="240" y="408" fill="#94a3b8" font-size="9">光通信</text>
+<rect x="296" y="399" width="10" height="10" fill="#45B7D1" rx="2"/><text x="310" y="408" fill="#94a3b8" font-size="9">HBM内存</text>
+<rect x="374" y="399" width="10" height="10" fill="#88D8B0" rx="2"/><text x="388" y="408" fill="#94a3b8" font-size="9">热管理</text>
+<rect x="440" y="399" width="10" height="10" fill="#96CEB4" rx="2"/><text x="454" y="408" fill="#94a3b8" font-size="9">DC电源</text>
+<rect x="504" y="399" width="10" height="10" fill="#DDA0DD" rx="2"/><text x="518" y="408" fill="#94a3b8" font-size="9">PCB/连接器/存储</text>
+<text x="20" y="428" fill="#64748b" font-size="9">GS AI-DC建设股票篮子 YTD +60% | 超大云厂商资本支出 $3,150亿 | NVDA Blackwell交货周期36个月（供不应求）</text>
+<text x="20" y="445" fill="#64748b" font-size="9">Tier-1极高稀缺：NVDA/AVGO/VRT/COHR/MU | Tier-2高：ANET/ETN/APH | Tier-3中：DELL/HPE/GLW/PSTG</text>
+</svg>
+  </div>
+
+  <div class="controls">
+    <input class="ci" id="us-s" placeholder="Search company/ticker/sector..." oninput="filt('us')">
+    <select class="cs" id="us-sec" onchange="filt('us')">
+      <option value="">All Sectors</option>
+      <option>半导体</option><option>服务器</option><option>网络</option>
+      <option>电源/散热</option><option>光通信</option><option>内存</option>
+      <option>连接器</option><option>PCB</option><option>存储</option>
+    </select>
+    <select class="cs" id="us-rat" onchange="filt('us')">
+      <option value="">All Ratings</option>
+      <option>强烈推荐</option><option>推荐</option><option>中性</option>
+    </select>
+    <select class="cs" id="us-sca" onchange="filt('us')">
+      <option value="">All Scarcity</option>
+      <option>极高</option><option>高</option><option>中</option><option>低</option>
+    </select>
+  </div>
+  <div class="tw">
+    <table id="t-us">
+      <thead><tr>
+        <th onclick="srt('us',0)">领域<span class="si"></span></th>
+        <th onclick="srt('us',1)">细分版块<span class="si"></span></th>
+        <th onclick="srt('us',2)">细分龙头<span class="si"></span></th>
+        <th onclick="srt('us',3)">股价($)<span class="si"></span></th>
+        <th onclick="srt('us',4)">近1月<span class="si"></span></th>
+        <th onclick="srt('us',5)">近3月<span class="si"></span></th>
+        <th onclick="srt('us',6)">市值(B$)<span class="si"></span></th>
+        <th onclick="srt('us',7)">动态PE<span class="si"></span></th>
+        <th style="min-width:200px">一季度财报总结</th>
+        <th onclick="srt('us',9)">行业排行<span class="si"></span></th>
+        <th onclick="srt('us',10)">紧缺度<span class="si"></span></th>
+        <th onclick="srt('us',11)">目标价<span class="si"></span></th>
+        <th onclick="srt('us',12)">评级<span class="si"></span></th>
+      </tr></thead>
+      <tbody id="b-us"></tbody>
+    </table>
+  </div>
+</section>
+</div><!-- /tab-us -->
+
+<footer>
+  <h4>免责声明与数据来源</h4>
+  <p>本研报仅供投资研究参考，不构成任何投资建议。股市有风险，入市须谨慎。过往收益不代表未来表现。</p>
+  <p>数据截止：2026-05-13。股价标注"📌"者为估算值，请以东方财富/同花顺/Yahoo Finance等平台实时行情核实。</p>
+  <p>目标价来源：Goldman Sachs、Morgan Stanley、UBS、Bernstein、中信证券、中金公司、华泰证券、国泰君安等机构2026Q1-Q2研报（仅供参考）。</p>
+  <p>方法论基础：时寒冰《全球视野下的投资机会》。数据引用：IEA能源数据、各公司公开财报、高盛/摩根士丹利研报摘要。</p>
+  <p style="color:#4b5563;margin-top:.4rem">© 2026 AIDC产业链全景研报 · 中美两市47家核心标的 · 数据文件：methodology.md / data_china_aidc.md / data_us_aidc.md</p>
+</footer>
+
+<script>
+// ===== DATA =====
+var CN=[
+['光通信','光模块/CPO','中际旭创(300308)','¥1,008','+8.2%','+66%','1.1万亿','~55x','Q1营收194.96亿+192%，净利57.35亿+262%，毛利率46%创新高；800G/1.6T放量，CPO量产在即','#1全球','极高','¥1,200(中金)','强烈推荐'],
+['光通信','光模块/CPO','新易盛(300502)','¥120📌','-15%','-8%','~4,500亿','~40x','Q1营收约55亿+85%（估），800G出货加速；基金抱团后估值承压，被部分机构列"坑王"，需持续跟踪验证','#2国内','极高','¥180(华泰)','推荐'],
+['光通信','CPO/光无源','天孚通信(300394)','¥42📌','-12%','-5%','~1,900亿','~38x','Q1利润承压，CPO产品验证进展是核心看点，部分公募止损导致短期压力，长期CPO逻辑不变','#1光无源','极高','¥65(中信)','推荐'],
+['光通信','激光器/探测器','光迅科技(002281)','¥25📌','+2%','+10%','~260亿','28x','Q1数据中心激光器营收占比提升至60%+，下游AI服务器需求旺盛，毛利率改善','#1国内激光器','高','¥30(国泰君安)','推荐'],
+['光通信','激光器/探测器','华工科技(000988)','¥18📌','+4%','+15%','~210亿','25x','Q1激光业务同比+50%，工业激光+通信激光双轮驱动，通信业务受益AIDC扩建','#2国内激光器','高','¥22(广发)','推荐'],
+['光通信','OCS光交换','剑桥科技(603083)','¥58📌','+6%','+28%','~170亿','45x','Q1切入OCS光交换赛道，传统业务+新品布局，成长属性突出，长期受益AI光互联需求','#2 OCS','极高','¥80(中金)','推荐'],
+['光通信','光无源器件','太辰光(300003)','¥15📌','+1%','+5%','~85亿','32x','Q1光纤连接器业务稳增，AIDC光纤组网需求带动连接器出货量提升，受益AIDC建设潮','#2光无源','中','¥18(华安)','中性'],
+['光通信','光纤光缆','长飞光纤(601869)','¥20📌','+2%','+8%','~355亿','18x','Q1光纤量价齐升，海外订单增加；数据中心光纤耗量大幅增加带动整体需求回暖','#1国内光纤','中','¥24(招商)','推荐'],
+['光通信','光纤光缆','中天科技(600522)','¥17📌','+1%','+5%','~300亿','15x','Q1营收约100亿，海缆+陆缆均衡布局，AIDC园区光缆需求稳增，估值偏低','#2国内光纤','中','¥20(国信)','中性'],
+['光通信','光纤光缆','亨通光电(600487)','¥15📌','+2%','+10%','~260亿','16x','Q1海外订单增长显著，国际化战略推进，海底光缆业务景气高，出口型受益全球AIDC建设','#3国内光纤','中','¥18(东方)','中性'],
+['半导体','AI训练芯片','寒武纪-U(688256)','¥290📌','-27%','-35%','~1,160亿','亏损','Q1营收高增但仍亏损，920系列获政府/SOE采购，短期利润压力大；长期为国产AI芯片唯一量产平台','#1国产AI芯片','极高','¥380(中信)','推荐'],
+['半导体','内存接口芯片','澜起科技(688008)','¥95📌','+8%','+43%','~370亿','40x','Q1内存接口芯片出货量暴增，DDR5/RCD5供不应求；AI服务器内存需求带动业绩大幅超预期','#1全球内存接口','极高','¥120(高盛中国)','强烈推荐'],
+['半导体','半导体设备','北方华创(002371)','¥350📌','+5%','+18%','~1,650亿','52x','Q1订单持续爆满，国产替代加速背景下刻蚀/CVD/PVD设备全线扩产，营收同比+40%+','#1国产设备','高','¥420(中金)','推荐'],
+['半导体','半导体设备','中微公司(688012)','¥120📌','+4%','+15%','~570亿','48x','Q1刻蚀机+薄膜设备双线扩产，AI芯片制造端国产设备渗透率持续提升，海外拓展超预期','#2国产设备','高','¥150(华泰)','推荐'],
+['半导体','功率半导体','华润微(688396)','¥32📌','+2%','+8%','~260亿','28x','Q1电源管理IC+MOSFET受益AIDC电源需求，营收同比+20%；估值合理，弹性有限','#3功率半导体','中','¥38(广发)','中性'],
+['服务器','AI服务器整机','浪潮信息(000977)','¥42📌','+3%','+10%','~620亿','20x','Q1营收354.7亿（-24.3%）但净利6.05亿（+30.7%），营收下降系大客户结构调整，盈利能力反而改善；全年AI服务器出货量国内第一','#1国内AI服务器','高','¥55(国泰君安)','推荐'],
+['服务器','AI服务器整机','中科曙光(603019)','¥55📌','+4%','+16%','~440亿','28x','Q1超算+AI服务器业务双线增长，政府采购受益度高，液冷服务器布局领先同行','#2国内AI服务器','高','¥70(中信)','推荐'],
+['网络','以太网交换机','锐捷网络(301165)','¥75📌','+6%','+28%','~350亿','35x','Q1 AI园区交换机+数据中心交换机双线受益，营收+50%，25G/100G向400G切换加速','#2国内交换机','高','¥100(华泰)','强烈推荐'],
+['网络','InfiniBand替代/RoCE','星融元(688616)','¥85📌','+15%','+55%','~90亿','亏损','Q1国产RoCE以太网交换机突破万卡GPU集群组网需求，首个重要商业化订单；战略价值极高，收入规模尚小','#1国产RoCE','极高','¥130(中金)','推荐'],
+['PCB','AI高速PCB','深南电路(002916)','¥72📌','+5%','+20%','~360亿','28x','Q1 AI服务器PCB订单暴增，高层数PCB产线扩产中，毛利率持续提升；国内AI高速PCB最强供应商','#1国内AI PCB','高','¥90(招商)','强烈推荐'],
+['PCB','高频覆铜板CCL','生益科技(600183)','¥22📌','+3%','+12%','~310亿','22x','Q1高频CCL供不应求，AI服务器主板用高端CCL价格上涨，毛利率同比+3个百分点','#1国内CCL','高','¥28(国信)','推荐'],
+['PCB','AI高速PCB','沪电股份(002463)','¥28📌','+4%','+16%','~260亿','25x','Q1高层数AI PCB产能爬坡，背板类订单来自国内外AI服务器厂商，营收同比+35%','#2国内AI PCB','高','¥35(华安)','推荐'],
+['散热/液冷','液冷设备','英维克(002837)','¥30📌','+2%','-10%','~250亿','38x','Q1液冷设备订单增速强劲，但股价受机构止损压力；长期液冷渗透率提升趋势不变，冷板式液冷市场份额第一','#1国内液冷','极高','¥48(中信)','推荐'],
+['散热/液冷','精密空调','申菱环境(301018)','¥42📌','+4%','+18%','~115亿','32x','Q1数据中心精密空调订单大增，浸没式液冷+风冷混合解决方案出货；国内数据中心精密温控第二大玩家','#2液冷/精空','高','¥55(国泰君安)','推荐'],
+['散热/液冷','冷源系统','高澜股份(300499)','¥20📌','+3%','+15%','~88亿','35x','Q1冷却塔+冷水机组订单持续增长，AIDC冷源系统需求爆发；市值较小，弹性较大','#2冷源系统','高','¥28(华泰)','推荐'],
+['电源','UPS/模块电源','科华数据(002335)','¥20📌','+2%','+8%','~175亿','25x','Q1 UPS+储能双业务增长，数据中心UPS订单稳定增长，估值合理，成长性不及Tier-1','#2 UPS','中','¥25(广发)','中性'],
+['电源','模块化电源','科士达(002518)','¥18📌','+3%','+12%','~145亿','28x','Q1模块化UPS出货量同比+30%，进军海外市场逐步取得突破，国内数据中心客户持续拓展','#3电源','中','¥22(东方)','中性'],
+['电源','HVDC直流供电','动力源(600405)','¥7📌','+1%','+5%','~55亿','22x','Q1 HVDC直流电源订单小幅增长，体量较小，受益AIDC高压直流供电需求，弹性有限','#3 HVDC','低','¥9(中达)','中性'],
+['机柜/基建','IDC集成/综合布线','神州数码(000034)','¥12📌','+2%','+8%','~110亿','18x','Q1 IDC集成服务稳增，受益数据中心建设潮，综合布线业务量价稳定，估值合理','#1 IDC集成','低','¥14(光大)','中性'],
+];
+
+var US=[
+['半导体','AI Training GPU','NVIDIA(NVDA)','$215','+3%','+12%','$5,200B','~38x','2026财年Q1（2026.05.20发布）：Blackwell架构全面量产，B200/B300 NVL72出货加速；市场预期Q1 rev~$43-45B（+65% YoY），GPU交货周期36个月','#1全球','极高','$260(MS)','强烈推荐'],
+['半导体','AI GPU (Challenger)','AMD(AMD)','$202','+19%','+28%','$327B','~42x','2026Q1营收$10.25B，+37.85% YoY，EPS $1.37超预期；数据中心收入占比扩大，MI325X推理端获大规模采购；Q2指引$11.2B，盈利预期持续上修','#2全球','高','$525(Bernstein)','推荐'],
+['半导体','网络ASIC/CPO','Broadcom(AVGO)','$230📌','+4%','+16%','$1,050B','~32x','2026财年Q1 AI芯片收入$8.4B，+106% YoY，超自身指引；定制ASIC（Google TPU/Meta MTIA等）需求暴增；以太网AI网络Tomahawk芯片供不应求','#1网络ASIC','极高','$451(UBS)','强烈推荐'],
+['半导体','网络ASIC/CPO','Marvell(MRVL)','$165📌','+5%','+22%','$142B','~45x','2026Q1 AI revenue+87% YoY，定制ASIC管线强劲（Amazon/Microsoft），CPO光引擎芯片量产节点2026H2；高弹性标的','#2网络ASIC','高','$130(UBS)','推荐'],
+['服务器','AI Rack-Scale','Super Micro(SMCI)','$35📌','+8%','+28%','$21B','~18x','Q1液冷AI机架出货量大幅提升，10kW+/rack方案拿下多个大客户；但历史财务审计问题遗留风险需持续关注','#1 AI液冷机架','极高','$60(GS)','推荐'],
+['服务器','AI Server ODM','Dell Technologies(DELL)','$125📌','+3%','+10%','$90B','~15x','Q1 ISG AI服务器积压订单超$60亿，PowerEdge AI服务器加速交货；中型SDM客户AI切换需求强劲','#2 AI服务器','高','$145(MS)','推荐'],
+['服务器','AI Server ODM','HP Enterprise(HPE)','$19📌','+2%','+6%','$25B','~12x','Q1 HPC/AI收入$1.2B，Cray超级计算机订单大；但传统IT业务拖累整体增速，AI转型进展慢于预期','#3 AI服务器','中','$22(UBS)','中性'],
+['网络','DC Ethernet Switch','Arista Networks(ANET)','$138','-3%','+8%','$43B','~45x','2026Q1营收$1.93B，+24% YoY；全年指引低于市场更高预期，但400G/800G AI fabric持续获超大云厂商大订单；客户：Microsoft/Meta/Google','#1 DC交换机','高','$165(GS)','强烈推荐'],
+['电源/散热','DC Thermal Mgmt','Vertiv Holdings(VRT)','$367','+7%','+45%','$133B','~38x','Q1营收$2.1B，+26% YoY；液冷订单积压创历史新高，交货周期延长显示供不应求；全球AI数据中心热管理垄断龙头','#1 DC热管理','极高','$420(MS)','强烈推荐'],
+['电源/散热','DC Power/UPS','Eaton Corp(ETN)','$310📌','+3%','+14%','$130B','~28x','Q1数据中心电源业务订单+45% YoY，UPS+PDU+DCIM全产品线受益AI数据中心建设潮，传统工业电气业务稳健','#1 DC电源','高','$380(GS)','推荐'],
+['光通信','光模块/CPO/激光器','Coherent Corp(COHR)','$250📌','+9%','+80%','$18B','~55x','2026财年Q3营收$1.806B（小幅低于预期），EPS $1.41；1.6T收发器拿下超大云厂商大单；过去一年涨幅约400%，高估值需关注','#2全球光模块','极高','$334(中位数)','推荐'],
+['光通信','激光器/探测器','Lumentum(LITE)','$75📌','+5%','+20%','$5B','~40x','Q1数据中心激光收入+65% YoY，高速激光器+CPO光引擎布局；VCSEL在AI服务器内部互联获大单','#3全球光模块','高','$95(GS)','推荐'],
+['光通信','光纤基础设施','Corning Inc(GLW)','$48📌','+2%','+8%','$38B','~22x','Q1光通信业务营收$1.3B，+40% YoY；AI数据中心光纤需求暴增，正在扩产以满足交货；光纤涨价逻辑确立','#1全球光纤','中','$58(MS)','推荐'],
+['光通信','DCI光网络','Ciena Corp(CIEN)','$72📌','+4%','+12%','$9B','~28x','Q1营收$1.1B，WaveLogic 6平台在超大云厂商DCI场景中持续赢单；AI数据中心园区间互联需求强劲','#2 DCI网络','中','$90(UBS)','中性'],
+['内存','HBM3E Memory','Micron Technology(MU)','$120📌','+5%','+18%','$132B','~22x','2026财年Q1营收$13.64B，+56.6% YoY，EPS $4.78（大幅超预期$3.94）；HBM3E 12-Hi大规模量产；毛利率66%创历史新高','#3全球HBM','极高','$482(共识)','推荐'],
+['连接器','高速连接器','Amphenol Corp(APH)','$145📌','+4%','+15%','$88B','~32x','2026Q1创历史营收新高，AI/数据中心连接器收入+58% YoY；背板连接器、高速线缆大量供货给NVDA服务器合作伙伴','#1高速连接器','高','$169(共识)','强烈推荐'],
+['PCB','高性能PCB','TTM Technologies(TTM)','$24📌','+3%','+10%','$3B','~18x','Q1 AI服务器PCB营收同比+35%，高层数PCB产能持续扩张；AI板卡、GPU基板、高速背板全线受益','#2美国PCB','高','$32(GS)','推荐'],
+['存储','All-Flash Storage','Pure Storage(PSTG)','$62📌','+3%','+12%','$18B','~35x','2026Q1 AI训练存储解决方案营收+40% YoY；DirectFlash模块被多家超大云厂商和AI独角兽采用；下季度财报预计2026-05-27','#1 AI训练存储','中','$91(共识)','推荐'],
+];
+
+// ===== STATE =====
+var ST={cn:{c:-1,d:1},us:{c:-1,d:1}};
+
+// ===== BADGES =====
+function rb(r){var c=r.includes('强烈')?'r-强烈推荐':r.includes('回避')?'r-回避':r.includes('中性')?'r-中性':'r-推荐';return '<span class="bk '+c+'">'+r+'</span>';}
+function sb(s){return '<span class="bk s-'+s+'">'+s+'</span>';}
+function cc(v){if(v[0]==='+')return '<span style="color:#22c55e">'+v+'</span>';if(v[0]==='-')return '<span style="color:#ef4444">'+v+'</span>';return v;}
+
+// ===== RENDER =====
+function render(id,data){
+  var tb=document.getElementById('b-'+id);
+  if(!data.length){tb.innerHTML='<tr><td colspan="13" class="nd">无匹配数据</td></tr>';return;}
+  tb.innerHTML=data.map(function(r){return '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td style="white-space:nowrap;font-weight:600">'+r[2]+'</td><td style="white-space:nowrap;font-weight:600">'+r[3]+'</td><td>'+cc(r[4])+'</td><td>'+cc(r[5])+'</td><td style="white-space:nowrap">'+r[6]+'</td><td>'+r[7]+'</td><td style="font-size:.74rem;line-height:1.5;max-width:260px">'+r[8]+'</td><td style="white-space:nowrap">'+r[9]+'</td><td>'+sb(r[10])+'</td><td style="white-space:nowrap">'+r[11]+'</td><td>'+rb(r[12])+'</td></tr>';}).join('');
+}
+
+// ===== FILTER =====
+function filt(id){
+  var q=(document.getElementById(id+'-s').value||'').toLowerCase();
+  var sec=document.getElementById(id+'-sec').value;
+  var rat=document.getElementById(id+'-rat').value;
+  var sca=document.getElementById(id+'-sca').value;
+  var src=id==='cn'?CN:US;
+  var f=src.filter(function(r){
+    if(q&&!r.slice(0,3).join(' ').toLowerCase().includes(q))return false;
+    if(sec&&!r[0].includes(sec)&&!r[1].includes(sec))return false;
+    if(rat&&r[12]!==rat)return false;
+    if(sca&&r[10]!==sca)return false;
+    return true;
+  });
+  var st=ST[id];
+  if(st.c>=0)f=sArr(f,st.c,st.d);
+  render(id,f);
+}
+
+// ===== SORT =====
+function sArr(a,c,d){
+  return a.slice().sort(function(x,y){
+    var va=x[c],vb=y[c];
+    var na=parseFloat(va.replace(/[^0-9.\-]/g,''));
+    var nb=parseFloat(vb.replace(/[^0-9.\-]/g,''));
+    if(!isNaN(na)&&!isNaN(nb))return(na-nb)*d;
+    return va.localeCompare(vb,'zh')*d;
+  });
+}
+function srt(id,c){
+  var st=ST[id];
+  if(st.c===c)st.d*=-1;else{st.c=c;st.d=1;}
+  var tbl=document.getElementById('t-'+id);
+  tbl.querySelectorAll('th').forEach(function(th,i){
+    th.classList.remove('sa','sd');
+    if(i===c)th.classList.add(st.d===1?'sa':'sd');
+  });
+  filt(id);
+}
+
+// ===== TABS =====
+function showTab(name,btn){
+  document.querySelectorAll('[id^="tab-"]').forEach(function(p){p.classList.add('hidden');});
+  document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('tab-'+name).classList.remove('hidden');
+  btn.classList.add('active');
+}
+
+// ===== INIT =====
+render('cn',CN);
+render('us',US);
+</script>
+</body>
+</html>
