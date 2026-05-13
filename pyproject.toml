@@ -55,6 +55,7 @@ data = [
 
 [project.scripts]
 advisor = "app.dashboard:main"
+refresh-aidc-data = "scripts.refresh_aidc_data:main"
 
 [project.urls]
 Repository = "https://github.com/rushwing/my-invest-global"
