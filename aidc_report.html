@@ -35,14 +35,15 @@ section{padding:2rem 1.5rem;border-bottom:1px solid var(--border)}
 .ci::placeholder{color:var(--text2)}
 .cs{background:var(--bg2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:.35rem .7rem;font-size:.8rem;font-family:inherit;min-width:130px;cursor:pointer}
 .cs option{background:var(--bg2)}
-.tw{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:.78rem}
-th{background:var(--bg3);color:var(--gold);padding:.55rem .7rem;white-space:nowrap;cursor:pointer;user-select:none;border-bottom:1px solid var(--border);text-align:left;position:sticky;top:52px;z-index:10}
+.tw{overflow:auto;max-height:72vh;border:1px solid var(--border);border-radius:8px;background:var(--bg);position:relative}
+table{width:100%;min-width:1320px;border-collapse:separate;border-spacing:0;font-size:.78rem}
+thead{position:relative;z-index:20}
+th{background:var(--bg3);color:var(--gold);padding:.55rem .7rem;white-space:nowrap;cursor:pointer;user-select:none;border-bottom:1px solid var(--border);text-align:left;position:sticky;top:0;z-index:20;box-shadow:0 1px 0 var(--border)}
 th:hover{color:var(--gold2)}
 .si{font-size:.65rem;margin-left:.2rem;opacity:.45}
 th.sa .si::after{content:' ↑';opacity:1}
 th.sd .si::after{content:' ↓';opacity:1}
-td{padding:.55rem .7rem;border-bottom:1px solid rgba(30,45,80,.5);vertical-align:top}
+td{padding:.55rem .7rem;border-bottom:1px solid rgba(30,45,80,.5);vertical-align:top;background:var(--bg)}
 tr:hover td{background:rgba(201,162,39,.04)}
 .nd{text-align:center;padding:2rem;color:var(--text2)}
 .bk{display:inline-block;padding:.12rem .45rem;border-radius:4px;font-size:.7rem;font-weight:600;white-space:nowrap}
