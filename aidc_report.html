@@ -198,19 +198,38 @@ footer h4{color:var(--text);margin-bottom:.3rem;font-size:.8rem}
 <text x="1336" y="273" fill="#d1fae5" font-size="8.5" text-anchor="middle">金盘 / 科华</text>
 <text x="1336" y="286" fill="#d1fae5" font-size="8.5" text-anchor="middle">科士达 / 动力源</text>
 <text x="1336" y="299" fill="#d1fae5" font-size="8.5" text-anchor="middle">SST / HVDC / UPS</text>
-<text x="8" y="346" fill="#64748b" font-size="10">L5 细分 / 传导</text>
-<rect x="28" y="356" width="96" height="18" rx="3" fill="rgba(255,234,167,.18)"/><text x="76" y="368" fill="#FFEAA7" font-size="8.5" text-anchor="middle">光模块/CPO</text>
-<rect x="132" y="356" width="92" height="18" rx="3" fill="rgba(69,183,209,.18)"/><text x="178" y="368" fill="#45B7D1" font-size="8.5" text-anchor="middle">内存接口RCD</text>
-<rect x="232" y="356" width="80" height="18" rx="3" fill="rgba(255,107,53,.2)"/><text x="272" y="368" fill="#FF6B35" font-size="8.5" text-anchor="middle">AI训练芯片</text>
-<rect x="320" y="356" width="80" height="18" rx="3" fill="rgba(221,160,221,.18)"/><text x="360" y="368" fill="#DDA0DD" font-size="8.5" text-anchor="middle">高速PCB</text>
-<rect x="408" y="356" width="82" height="18" rx="3" fill="rgba(192,132,252,.18)"/><text x="449" y="368" fill="#C084FC" font-size="8.5" text-anchor="middle">电子树脂</text>
-<rect x="498" y="356" width="84" height="18" rx="3" fill="rgba(247,197,159,.18)"/><text x="540" y="368" fill="#F7C59F" font-size="8.5" text-anchor="middle">算力租赁</text>
-<rect x="590" y="356" width="84" height="18" rx="3" fill="rgba(167,139,250,.18)"/><text x="632" y="368" fill="#A78BFA" font-size="8.5" text-anchor="middle">先进封装</text>
-<rect x="682" y="356" width="84" height="18" rx="3" fill="rgba(136,216,176,.18)"/><text x="724" y="368" fill="#88D8B0" font-size="8.5" text-anchor="middle">金刚石散热</text>
-<rect x="774" y="356" width="84" height="18" rx="3" fill="rgba(150,206,180,.18)"/><text x="816" y="368" fill="#96CEB4" font-size="8.5" text-anchor="middle">SST/HVDC</text>
-<line x1="556" y1="322" x2="556" y2="392" stroke="#DDA0DD" stroke-dasharray="3,2"/>
-<line x1="556" y1="392" x2="712" y2="392" stroke="#DDA0DD" stroke-dasharray="3,2" marker-end="url(#cn2ar)"/>
-<text x="636" y="386" fill="#94a3b8" font-size="9" text-anchor="middle">PCB ↔ 上游材料耦合</text>
+<text x="8" y="354" fill="#64748b" font-size="10">L5 细分 / 传导</text>
+<!-- 1 光通信: card x=20-156 -->
+<rect x="22" y="356" width="64" height="18" rx="3" fill="rgba(255,234,167,.2)"/><text x="54" y="368" fill="#FFEAA7" font-size="8.5" text-anchor="middle">光模块/CPO</text>
+<rect x="90" y="356" width="64" height="18" rx="3" fill="rgba(255,234,167,.2)"/><text x="122" y="368" fill="#FFEAA7" font-size="8.5" text-anchor="middle">光纤/激光器</text>
+<!-- 2 内存/半导体: card x=176-312 -->
+<rect x="178" y="356" width="64" height="18" rx="3" fill="rgba(69,183,209,.2)"/><text x="210" y="368" fill="#45B7D1" font-size="8.5" text-anchor="middle">内存接口RCD</text>
+<rect x="246" y="356" width="64" height="18" rx="3" fill="rgba(69,183,209,.2)"/><text x="278" y="368" fill="#45B7D1" font-size="8.5" text-anchor="middle">企业级SSD</text>
+<!-- 3 算力/芯片: card x=332-468 -->
+<rect x="334" y="356" width="64" height="18" rx="3" fill="rgba(255,107,53,.2)"/><text x="366" y="368" fill="#FF6B35" font-size="8.5" text-anchor="middle">AI训练芯片</text>
+<rect x="402" y="356" width="64" height="18" rx="3" fill="rgba(255,107,53,.2)"/><text x="434" y="368" fill="#FF6B35" font-size="8.5" text-anchor="middle">国产GPU</text>
+<!-- 4 PCB: card x=488-624 -->
+<rect x="490" y="356" width="64" height="18" rx="3" fill="rgba(221,160,221,.2)"/><text x="522" y="368" fill="#DDA0DD" font-size="8.5" text-anchor="middle">高速AI PCB</text>
+<rect x="558" y="356" width="64" height="18" rx="3" fill="rgba(221,160,221,.2)"/><text x="590" y="368" fill="#DDA0DD" font-size="8.5" text-anchor="middle">高频背板</text>
+<!-- 5 上游材料: card x=644-780 -->
+<rect x="646" y="356" width="64" height="18" rx="3" fill="rgba(192,132,252,.2)"/><text x="678" y="368" fill="#C084FC" font-size="8.5" text-anchor="middle">高频CCL</text>
+<rect x="714" y="356" width="64" height="18" rx="3" fill="rgba(192,132,252,.2)"/><text x="746" y="368" fill="#C084FC" font-size="8.5" text-anchor="middle">电子树脂</text>
+<!-- 6 AI服务器: card x=800-936 -->
+<rect x="802" y="356" width="64" height="18" rx="3" fill="rgba(247,197,159,.2)"/><text x="834" y="368" fill="#F7C59F" font-size="8.5" text-anchor="middle">整机ODM</text>
+<rect x="870" y="356" width="64" height="18" rx="3" fill="rgba(247,197,159,.2)"/><text x="902" y="368" fill="#F7C59F" font-size="8.5" text-anchor="middle">算力租赁</text>
+<!-- 7 设备/封测: card x=956-1092 -->
+<rect x="958" y="356" width="64" height="18" rx="3" fill="rgba(167,139,250,.2)"/><text x="990" y="368" fill="#A78BFA" font-size="8.5" text-anchor="middle">先进封装</text>
+<rect x="1026" y="356" width="64" height="18" rx="3" fill="rgba(167,139,250,.2)"/><text x="1058" y="368" fill="#A78BFA" font-size="8.5" text-anchor="middle">刻蚀/CVD</text>
+<!-- 8 散热/液冷: card x=1112-1248 -->
+<rect x="1114" y="356" width="64" height="18" rx="3" fill="rgba(136,216,176,.2)"/><text x="1146" y="368" fill="#88D8B0" font-size="8.5" text-anchor="middle">冷板式液冷</text>
+<rect x="1182" y="356" width="64" height="18" rx="3" fill="rgba(136,216,176,.2)"/><text x="1214" y="368" fill="#88D8B0" font-size="8.5" text-anchor="middle">精密空调</text>
+<!-- 9 电源系统: card x=1268-1404 -->
+<rect x="1270" y="356" width="64" height="18" rx="3" fill="rgba(150,206,180,.2)"/><text x="1302" y="368" fill="#96CEB4" font-size="8.5" text-anchor="middle">UPS/模块</text>
+<rect x="1338" y="356" width="64" height="18" rx="3" fill="rgba(150,206,180,.2)"/><text x="1370" y="368" fill="#96CEB4" font-size="8.5" text-anchor="middle">SST/HVDC</text>
+<line x1="556" y1="322" x2="556" y2="334" stroke="#DDA0DD" stroke-dasharray="3,2" opacity=".8"/>
+<line x1="712" y1="322" x2="712" y2="334" stroke="#DDA0DD" stroke-dasharray="3,2" opacity=".8"/>
+<line x1="556" y1="334" x2="712" y2="334" stroke="#DDA0DD" stroke-dasharray="3,2" opacity=".8"/>
+<text x="634" y="346" fill="#94a3b8" font-size="9" text-anchor="middle">PCB ↔ 上游材料耦合</text>
 <text x="28" y="420" fill="#c9a227" font-size="9">主线：</text>
 <text x="66" y="420" fill="#94a3b8" font-size="9">光通信 → 内存/半导体 → 算力/芯片 → PCB → 上游材料 → AI服务器 → 设备/封测 → 散热/液冷 → 电源系统</text>
 <text x="28" y="438" fill="#64748b" font-size="9">Deprecated：AI网络暂不进入研报主表，但脚本保留锐捷网络与星融元观察数据，可在网络交换机重新成为主线时恢复。</text>

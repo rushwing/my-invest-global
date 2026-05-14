@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>相干可插拔光学 · 技术前瞻</title>
+<style>
+  :root{--bg:#07101f;--bg2:#0c1830;--bg3:#111e38;--border:#1e2d50;--gold:#c9a227;--text:#e2e8f0;--text2:#94a3b8;--accent:#FFEAA7;--ok:#63e6be}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'SF Pro Text','PingFang SC','Helvetica Neue',sans-serif;padding:2rem;max-width:1120px;margin:0 auto}
+  .nav{color:var(--text2);font-size:.8rem;margin-bottom:1.5rem}.nav a{color:var(--text2);text-decoration:none}.nav a:hover{color:var(--gold)}
+  h1{color:var(--gold);font-size:1.5rem;margin-bottom:.25rem}.en{color:var(--text2);font-size:.9rem;margin-bottom:.2rem;font-style:italic}
+  .meta{color:var(--text2);font-size:.78rem;margin-bottom:2rem;border-bottom:1px solid var(--border);padding-bottom:.8rem}
+  h2{color:var(--accent);font-size:1rem;margin:1.8rem 0 .7rem;padding-left:.6rem;border-left:3px solid var(--gold)}
+  h3{color:var(--text);font-size:.9rem;margin:1.2rem 0 .45rem}p,li{color:var(--text2);font-size:.88rem;line-height:1.8;margin-bottom:.65rem}
+  ul{padding-left:1.1rem}.status{display:inline-block;font-size:.72rem;padding:.2rem .6rem;border-radius:3px;background:rgba(148,163,184,.12);color:var(--text2);border:1px solid rgba(148,163,184,.25);margin-right:.5rem}.status.watch{background:rgba(201,162,39,.1);color:var(--gold);border-color:rgba(201,162,39,.3)}
+  .callout{background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.22);border-left:3px solid var(--gold);border-radius:8px;padding:1rem 1.1rem;margin:1rem 0}
+  .svg-wrap,.image-wrap{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:1.2rem;margin:1.2rem 0;overflow-x:auto}.image-wrap{padding:.6rem}.image-wrap img{display:block;width:100%;height:auto;border-radius:6px}.caption{color:#64748b;font-size:.78rem;line-height:1.6;margin-top:.55rem;margin-bottom:0}
+  table{width:100%;border-collapse:collapse;font-size:.82rem;margin:1rem 0}th{background:var(--bg3);color:var(--gold);text-align:left;padding:.55rem .75rem;border-bottom:1px solid var(--border)}td{padding:.5rem .75rem;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:top}tr:last-child td{border-bottom:none}
+  a{color:var(--gold);text-decoration:none}.refs li{margin-bottom:.45rem}.pill{display:inline-block;color:var(--ok);border:1px solid rgba(99,230,190,.25);background:rgba(99,230,190,.08);border-radius:999px;padding:.08rem .45rem;font-size:.72rem}
+</style>
+</head>
+<body>
+
+<div class="nav"><a href="../_index.html">← 技术前瞻研究</a></div>
+
+<h1>相干可插拔光学</h1>
+<div class="en">Coherent Pluggable Optics / Cisco Acacia / Scale Across</div>
+<div class="meta">
+  <span class="status watch">跟踪中</span>
+  <span class="status">相干光 · DCI · 跨数据中心 GPU 互联</span>
+  首次录入：2026-05-15 · 最后更新：2026-05-15
+</div>
+
+<h2>一、核心判断</h2>
+<div class="callout">
+  <p>Coherent pluggable optics 是“把长距传输系统小型化到可插拔模块”的路线。Cisco 收购 Acacia 后，获得了相干 DSP、硅光 PIC、模块和系统级光传输能力。它和 CPO/Micro LED 解决的距离段不同：CPO/Micro LED 贴近交换芯片和机柜短距互连；相干可插拔光学面向数据中心互连 DCI、城域/区域链路和跨数据中心 GPU 资源协同，也就是 Cisco/Acacia 所强调的 Scale Across。</p>
+</div>
+<p>传统数据中心内部常用强度调制/直接探测（IM-DD）光模块，适合短距高吞吐；而相干光模块使用本振激光、相干接收、DSP 和高阶调制，能恢复光信号的幅度、相位、偏振信息，并补偿色散、偏振模色散和链路损伤。这让单波长 400G、800G 乃至更高容量在更长距离上可用。</p>
+<p>“可插拔”的关键是形态变化：过去相干光主要在传输盒子/线路卡中；400ZR/ZR+、OpenZR+、800G coherent pluggables 把相干能力放进 QSFP-DD、OSFP 等交换机可插拔端口，使 IP 路由器和交换机可以直接接入 DWDM 光层，降低 DCI 的层级、功耗和运维复杂度。</p>
+
+<h2>二、Scale Up / Scale Out / Scale Across</h2>
+<table>
+  <thead><tr><th>层级</th><th>典型范围</th><th>主要技术</th><th>相干可插拔的位置</th></tr></thead>
+  <tbody>
+    <tr><td>Scale Up</td><td>单服务器、单机柜、GPU tray</td><td>NVLink、PCIe/CXL、背板、短距铜/光</td><td>通常不是主角，距离太短</td></tr>
+    <tr><td>Scale Out</td><td>单数据中心内成千上万 GPU</td><td>Ethernet/InfiniBand、CPO、800G/1.6T SR/DR/FR 光模块</td><td>可用于较长园区链路，但多数流量仍由短距光模块承担</td></tr>
+    <tr><td><strong>Scale Across</strong></td><td>跨楼宇、跨园区、跨城域/区域数据中心</td><td>DWDM、400ZR/ZR+、800G 相干可插拔、低时延光纤</td><td><strong>核心角色：把多个数据中心连成更大的 AI 资源池</strong></td></tr>
+  </tbody>
+</table>
+<p>Scale Across 的目标不是把两个相距很远的数据中心“伪装成同一台超级计算机”。物理时延仍然存在，真正同步训练通常对距离极敏感。更现实的价值是把多个 AI 数据中心在网络、存储、模型服务和算力调度层面拉近：模型权重分发、checkpoint 复制、跨区域推理、异步/分阶段训练、容灾迁移、数据集预处理与训练集群之间的高速回传，都需要高容量、可运维、低单位比特成本的 DCI。</p>
+
+<h2>三、技术原理</h2>
+<div class="svg-wrap">
+  <svg width="1000" height="380" viewBox="0 0 1000 380" role="img" aria-label="coherent pluggable optics for scale across GPU data centers">
+    <rect x="35" y="60" width="220" height="250" rx="8" fill="#0c1830" stroke="#1e2d50"/>
+    <text x="145" y="92" text-anchor="middle" fill="#FFEAA7" font-size="18">Data Center A</text>
+    <rect x="70" y="125" width="150" height="56" rx="5" fill="#111e38" stroke="#1e2d50"/>
+    <text x="145" y="158" text-anchor="middle" fill="#94a3b8" font-size="14">GPU pod / Fabric</text>
+    <rect x="70" y="220" width="150" height="50" rx="5" fill="#111e38" stroke="#c9a227"/>
+    <text x="145" y="250" text-anchor="middle" fill="#FFEAA7" font-size="14">400G/800G DCO</text>
+    <rect x="390" y="92" width="220" height="196" rx="90" fill="#111e38" stroke="#c9a227"/>
+    <text x="500" y="145" text-anchor="middle" fill="#FFEAA7" font-size="18">DWDM / HCF / SMF</text>
+    <text x="500" y="175" text-anchor="middle" fill="#94a3b8" font-size="14">相干调制 + DSP 补偿</text>
+    <text x="500" y="203" text-anchor="middle" fill="#94a3b8" font-size="14">多波长跨园区/城域</text>
+    <text x="500" y="232" text-anchor="middle" fill="#94a3b8" font-size="14">Scale Across 数据面</text>
+    <rect x="745" y="60" width="220" height="250" rx="8" fill="#0c1830" stroke="#1e2d50"/>
+    <text x="855" y="92" text-anchor="middle" fill="#FFEAA7" font-size="18">Data Center B</text>
+    <rect x="780" y="125" width="150" height="56" rx="5" fill="#111e38" stroke="#1e2d50"/>
+    <text x="855" y="158" text-anchor="middle" fill="#94a3b8" font-size="14">GPU pod / Fabric</text>
+    <rect x="780" y="220" width="150" height="50" rx="5" fill="#111e38" stroke="#c9a227"/>
+    <text x="855" y="250" text-anchor="middle" fill="#FFEAA7" font-size="14">400G/800G DCO</text>
+    <path d="M220 245 C300 245,325 190,390 190" stroke="#63e6be" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+    <path d="M610 190 C675 190,700 245,780 245" stroke="#63e6be" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+    <path d="M780 225 C700 225,675 160,610 160" stroke="#c9a227" stroke-width="2" fill="none"/>
+    <path d="M390 160 C325 160,300 225,220 225" stroke="#c9a227" stroke-width="2" fill="none"/>
+    <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#63e6be"/></marker></defs>
+  </svg>
+</div>
+
+<h2>四、Cisco Acacia 光学业务解析</h2>
+<table>
+  <thead><tr><th>能力层</th><th>Acacia/Cisco 价值</th><th>为什么重要</th></tr></thead>
+  <tbody>
+    <tr><td>相干 DSP</td><td>高速调制、FEC、色散补偿、链路自适应</td><td>决定模块能在多远距离、多少 OSNR 下稳定工作</td></tr>
+    <tr><td>硅光 PIC</td><td>把调制器、接收器、光学耦合等集成到光子芯片</td><td>降低尺寸、功耗和成本，是可插拔化的基础</td></tr>
+    <tr><td>可插拔 DCO 模块</td><td>400ZR/ZR+、800G coherent pluggables 等</td><td>让路由器/交换机端口直接承载相干 DWDM</td></tr>
+    <tr><td>系统与 IPoDWDM</td><td>Cisco 路由器、交换机、光传输和自动化组合</td><td>把 DCI 从“专用传输层”推向更扁平的路由光网络</td></tr>
+  </tbody>
+</table>
+<p>Cisco 在 2021 年完成对 Acacia Communications 的收购后，把 Acacia 的高速相干互连技术纳入其路由、光网络和 Webscale 互连产品线。对 AI 数据中心而言，这意味着 Cisco 不只卖交换机/路由器，也在向“IP + Optical”一体化的跨数据中心网络底座延伸。</p>
+
+<h2>五、和其他三条硬件路线的边界</h2>
+<table>
+  <thead><tr><th>技术</th><th>主要距离段</th><th>核心问题</th><th>与相干可插拔的关系</th></tr></thead>
+  <tbody>
+    <tr><td>Micro LED 光互连</td><td>2-50 米级短距</td><td>替代铜缆/部分 AOC，降低短距功耗</td><td>互补：它负责机柜和设备附近，相干负责 DCI</td></tr>
+    <tr><td>OCS-MEMS</td><td>数据中心内或园区内光路矩阵</td><td>重构物理拓扑和故障绕行</td><td>可与相干链路组合，作为跨域光路调度层</td></tr>
+    <tr><td>HCF</td><td>园区、城域、跨区域光纤介质</td><td>降低传播时延</td><td>强互补：相干模块跑在 HCF/SMF 上，HCF 降低时延</td></tr>
+    <tr><td>CPO/硅光</td><td>交换芯片封装附近</td><td>降低 ASIC 到光引擎电损耗</td><td>边界清晰：CPO 是交换机内外短距入口，相干是长距出口</td></tr>
+  </tbody>
+</table>
+
+<h2>六、成熟度与观察指标</h2>
+<p><span class="pill">成熟度判断</span> 相干可插拔比 Micro LED 和 HCF 更接近已商业化主线，400ZR/ZR+ 已经是 DCI 的重要方向，800G coherent pluggables 正在成为下一阶段观察重点。</p>
+<ul>
+  <li>观察 800G ZR/ZR+、1.6T coherent roadmap 的功耗、距离和端口密度。</li>
+  <li>观察 AI 云厂商是否把跨园区 GPU 网络从传统传输盒子迁移到路由器/交换机直插 DCO。</li>
+  <li>观察 Cisco/Acacia 与 Arista、Juniper、Ciena、Infinera/Nokia 等生态在 IPoDWDM 上的竞争。</li>
+  <li>观察 HCF 和相干模块的组合：低时延介质 + 高容量相干传输可能成为 Scale Across 的核心物理层。</li>
+</ul>
+
+<h2>七、生成图示</h2>
+<div class="image-wrap">
+  <img src="coherent-pluggable-optics-architecture.png" alt="Cisco Acacia coherent pluggable optics 支撑 Scale Across 跨数据中心 GPU 互联架构图">
+  <p class="caption">生成质量检查：DCO 相干可插拔模块、Coherent DSP、硅光 PIC、DWDM/HCF 链路和 Scale Across 边界表达完整；文字可读，未发现需要重生成的问题。</p>
+</div>
+
+<h2>八、信息来源</h2>
+<ul class="refs">
+  <li><a href="https://acacia-inc.com/blog/why-are-coherent-optics-so-important-for-scale-across/">Acacia: Why are coherent optics so important for Scale Across?</a></li>
+  <li><a href="https://www.cisco.com/c/en/us/about/corporate-strategy-office/acquisitions/acacia.html">Cisco: Acquisition of Acacia Communications</a></li>
+  <li><a href="https://acacia-inc.com/applications/">Acacia: Applications for coherent optical interconnects</a></li>
+  <li><a href="https://www.cisco.com/c/en/us/solutions/service-provider/routed-optical-networking.html">Cisco: Routed Optical Networking</a></li>
+</ul>
+
+</body>
+</html>

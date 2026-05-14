@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LPO 线性可插拔光学 · 技术前瞻</title>
+<style>
+  :root{--bg:#07101f;--bg2:#0c1830;--bg3:#111e38;--border:#1e2d50;--gold:#c9a227;--text:#e2e8f0;--text2:#94a3b8;--accent:#FFEAA7;--ok:#63e6be}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'SF Pro Text','PingFang SC','Helvetica Neue',sans-serif;padding:2rem;max-width:1120px;margin:0 auto}
+  .nav{color:var(--text2);font-size:.8rem;margin-bottom:1.5rem}.nav a{color:var(--text2);text-decoration:none}.nav a:hover{color:var(--gold)}
+  h1{color:var(--gold);font-size:1.5rem;margin-bottom:.25rem}.en{color:var(--text2);font-size:.9rem;margin-bottom:.2rem;font-style:italic}
+  .meta{color:var(--text2);font-size:.78rem;margin-bottom:2rem;border-bottom:1px solid var(--border);padding-bottom:.8rem}
+  h2{color:var(--accent);font-size:1rem;margin:1.8rem 0 .7rem;padding-left:.6rem;border-left:3px solid var(--gold)}
+  h3{color:var(--text);font-size:.9rem;margin:1.2rem 0 .45rem}p,li{color:var(--text2);font-size:.88rem;line-height:1.8;margin-bottom:.65rem}
+  ul{padding-left:1.1rem}.status{display:inline-block;font-size:.72rem;padding:.2rem .6rem;border-radius:3px;background:rgba(148,163,184,.12);color:var(--text2);border:1px solid rgba(148,163,184,.25);margin-right:.5rem}.status.watch{background:rgba(201,162,39,.1);color:var(--gold);border-color:rgba(201,162,39,.3)}
+  .callout{background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.22);border-left:3px solid var(--gold);border-radius:8px;padding:1rem 1.1rem;margin:1rem 0}
+  .svg-wrap,.image-wrap{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:1.2rem;margin:1.2rem 0;overflow-x:auto}.image-wrap{padding:.6rem}.image-wrap img{display:block;width:100%;height:auto;border-radius:6px}.caption{color:#64748b;font-size:.78rem;line-height:1.6;margin-top:.55rem;margin-bottom:0}
+  table{width:100%;border-collapse:collapse;font-size:.82rem;margin:1rem 0}th{background:var(--bg3);color:var(--gold);text-align:left;padding:.55rem .75rem;border-bottom:1px solid var(--border)}td{padding:.5rem .75rem;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:top}tr:last-child td{border-bottom:none}
+  a{color:var(--gold);text-decoration:none}.refs li{margin-bottom:.45rem}.pill{display:inline-block;color:var(--ok);border:1px solid rgba(99,230,190,.25);background:rgba(99,230,190,.08);border-radius:999px;padding:.08rem .45rem;font-size:.72rem}
+</style>
+</head>
+<body>
+
+<div class="nav"><a href="../_index.html">← 技术前瞻研究</a></div>
+
+<h1>LPO 线性可插拔光学</h1>
+<div class="en">Linear Pluggable Optics / Linear Drive Pluggable Optics</div>
+<div class="meta">
+  <span class="status watch">跟踪中</span>
+  <span class="status">光模块 · 800G/1.6T · 低功耗短距</span>
+  首次录入：2026-05-15 · 最后更新：2026-05-15
+</div>
+
+<h2>一、核心判断</h2>
+<div class="callout">
+  <p>LPO 是对传统可插拔光模块的一次“减法”：尽量去掉模块内 DSP/retimer，让 host ASIC 的 SerDes、线性驱动/跨阻放大器和光引擎共同完成链路。它不是 CPO，也不是相干光；它瞄准的是数据中心内部短距 800G/1.6T IM-DD 光互连，目标是在保持可插拔运维形态的同时，降低功耗、时延和模块成本。</p>
+</div>
+<p>传统 800G 光模块通常在模块内放置 DSP，用来做 CDR、均衡、FEC 协同、信号整形和链路容错。DSP 提高了互通性和链路鲁棒性，但也带来明显功耗、成本和时延。LPO 的思路是：如果链路距离较短、host ASIC SerDes 足够强、系统厂商能控制交换机板级通道和模块参数，就可以把部分数字信号处理从模块里拿掉。</p>
+<p>因此 LPO 更像 hyperscaler 和高端交换系统的“系统级优化”，而不是一个单独靠模块厂就能完成的产品。它要求交换 ASIC、PCB 通道、连接器、光模块、线缆、测试仪表和链路训练算法一起设计。</p>
+
+<h2>二、技术原理</h2>
+<div class="svg-wrap">
+  <svg width="1000" height="360" viewBox="0 0 1000 360" role="img" aria-label="linear pluggable optics architecture">
+    <rect x="30" y="65" width="210" height="230" rx="8" fill="#0c1830" stroke="#c9a227"/>
+    <text x="135" y="100" text-anchor="middle" fill="#FFEAA7" font-size="18">Switch ASIC</text>
+    <text x="135" y="132" text-anchor="middle" fill="#94a3b8" font-size="14">强 SerDes / FEC</text>
+    <rect x="300" y="65" width="190" height="230" rx="8" fill="#0c1830" stroke="#1e2d50"/>
+    <text x="395" y="100" text-anchor="middle" fill="#FFEAA7" font-size="18">Host PCB</text>
+    <text x="395" y="132" text-anchor="middle" fill="#94a3b8" font-size="14">短电通道</text>
+    <rect x="560" y="65" width="250" height="230" rx="8" fill="#0c1830" stroke="#c9a227"/>
+    <text x="685" y="100" text-anchor="middle" fill="#FFEAA7" font-size="18">LPO 模块</text>
+    <rect x="590" y="138" width="82" height="54" rx="5" fill="#111e38" stroke="#63e6be"/>
+    <text x="631" y="169" text-anchor="middle" fill="#94a3b8" font-size="13">Linear Driver</text>
+    <rect x="700" y="138" width="82" height="54" rx="5" fill="#111e38" stroke="#63e6be"/>
+    <text x="741" y="169" text-anchor="middle" fill="#94a3b8" font-size="13">TIA</text>
+    <text x="685" y="230" text-anchor="middle" fill="#94a3b8" font-size="14">无模块 DSP / retimer</text>
+    <rect x="875" y="120" width="90" height="120" rx="45" fill="#111e38" stroke="#1e2d50"/>
+    <text x="920" y="174" text-anchor="middle" fill="#FFEAA7" font-size="16">光纤</text>
+    <text x="920" y="198" text-anchor="middle" fill="#94a3b8" font-size="13">短距</text>
+    <path d="M240 180 L300 180 M490 180 L560 180 M810 180 L875 180" stroke="#c9a227" stroke-width="3" marker-end="url(#arrow)"/>
+    <path d="M875 205 L810 205 M560 205 L490 205 M300 205 L240 205" stroke="#63e6be" stroke-width="2.5" marker-end="url(#arrow2)"/>
+    <rect x="585" y="265" width="200" height="40" rx="5" fill="#07101f" stroke="#1e2d50"/>
+    <text x="685" y="291" text-anchor="middle" fill="#94a3b8" font-size="13">功耗下降，链路预算收紧</text>
+    <defs>
+      <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#c9a227"/></marker>
+      <marker id="arrow2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#63e6be"/></marker>
+    </defs>
+  </svg>
+</div>
+
+<h2>三、LPO 与传统光模块、CPO 的区别</h2>
+<table>
+  <thead><tr><th>方案</th><th>光电转换位置</th><th>DSP/retimer</th><th>优势</th><th>约束</th></tr></thead>
+  <tbody>
+    <tr><td>传统 DSP 光模块</td><td>前面板可插拔模块内</td><td>模块内完整 DSP</td><td>链路鲁棒、互通性好、供应链成熟</td><td>功耗、成本和时延较高</td></tr>
+    <tr><td><strong>LPO</strong></td><td>仍在前面板可插拔模块内</td><td>尽量去掉模块 DSP，保留线性模拟链路</td><td>低功耗、低时延、保留可插拔运维</td><td>链路预算更紧，依赖 host SerDes 与系统级协同</td></tr>
+    <tr><td>LRO / Linear Retimed Optics</td><td>前面板模块内</td><td>保留较轻量 retimer 或 CDR</td><td>在 LPO 与 DSP 模块之间折中</td><td>功耗低于 DSP 模块，但不如纯 LPO 激进</td></tr>
+    <tr><td>CPO</td><td>交换 ASIC 封装附近</td><td>系统架构重新分配</td><td>高速电通道最短，长期能效潜力高</td><td>可维护性、热、封装、光纤管理难度高</td></tr>
+  </tbody>
+</table>
+
+<h2>四、为什么 AI 数据中心关心 LPO</h2>
+<ul>
+  <li><strong>功耗：</strong>800G/1.6T 端口数量快速增加，模块内 DSP 的瓦数会被交换机端口数放大成整机散热问题。</li>
+  <li><strong>时延：</strong>DSP 会引入额外处理时延。训练网络的尾延迟和同步通信对时延敏感，短距链路更愿意用简单路径。</li>
+  <li><strong>成本：</strong>去 DSP 可以降低模块 BOM，但节省的一部分成本会转移到 host SerDes、板级设计和测试复杂度上。</li>
+  <li><strong>可插拔：</strong>LPO 仍保留 QSFP-DD/OSFP 这类运维习惯，比 CPO 更容易被数据中心运维体系接受。</li>
+</ul>
+
+<h2>五、产业链与关键玩家</h2>
+<table>
+  <thead><tr><th>环节</th><th>全球玩家/线索</th><th>中国观察映射</th><th>备注</th></tr></thead>
+  <tbody>
+    <tr><td>交换 ASIC / SerDes</td><td>Broadcom、Marvell、NVIDIA、Cisco Silicon One</td><td>交换芯片、SerDes IP 生态</td><td>LPO 成败很大程度取决于 host 端信号能力</td></tr>
+    <tr><td>光模块</td><td>Marvell 1.6T LPO 线索、LPO MSA 生态、云厂商定制模块</td><td>中际旭创、新易盛、光迅科技、华工科技等光模块链条</td><td>需区分“能做 800G 模块”与“能做稳定 LPO 链路”</td></tr>
+    <tr><td>线性驱动/TIA</td><td>高速模拟 IC、硅光/EML/VCSEL 驱动链条</td><td>模拟 IC、光芯片、封装测试</td><td>模拟前端性能决定 LPO 的线性度和噪声余量</td></tr>
+    <tr><td>测试与系统集成</td><td>Hyperscaler、交换机 OEM/ODM、仪表厂商</td><td>交换机、服务器 ODM、测试设备企业</td><td>LPO 是系统级链路工程，测试壁垒高</td></tr>
+  </tbody>
+</table>
+
+<h2>六、成熟度与观察指标</h2>
+<p><span class="pill">成熟度判断</span> LPO 比 CPO 更接近当前可插拔生态，但量产节奏取决于 800G/1.6T 系统互通和 hyperscaler 是否愿意接受更紧的链路预算。它可能先在短距、同厂商闭环、云厂商定制环境里落地。</p>
+<ul>
+  <li>观察 800G/1.6T LPO 是否进入云厂商规模采购，而不仅是 OFC/ECOC 展示。</li>
+  <li>观察 LPO、LRO、传统 DSP 模块之间的功耗差、良率和现场故障率。</li>
+  <li>观察交换 ASIC 是否明确为 LPO 优化 SerDes 和链路训练。</li>
+  <li>观察 200G/lane 时代 LPO 的链路余量是否仍然足够。</li>
+</ul>
+
+<h2>七、与现有 AIDC 主线的关联</h2>
+<p>LPO 是 AIDC 光互连里最现实的“降功耗中间路线”之一。它不改变前面板模块形态，因此比 CPO 更容易在现有交换机和数据中心运维流程里推进；但它也不具备 CPO 那种从根本上缩短 ASIC 到光引擎电距离的长期潜力。可以把 LPO 看作 800G/1.6T 可插拔阶段的效率优化，把 CPO 看作交换系统架构的下一次迁移。</p>
+
+<h2>八、生成图示</h2>
+<div class="image-wrap">
+  <img src="lpo-architecture.png" alt="LPO 线性可插拔光学降低 AI 数据中心短距链路功耗架构图">
+  <p class="caption">生成质量检查：传统 DSP 光模块与 LPO 的链路位置、去 DSP/retimer、功耗下降和链路预算收紧表达清楚；局部小字有轻微生成式错字，不影响理解，暂不重生成。</p>
+</div>
+
+<h2>九、信息来源</h2>
+<ul class="refs">
+  <li><a href="https://www.lpomsa.org/">LPO MSA: Linear Pluggable Optics Multi-Source Agreement</a></li>
+  <li><a href="https://ethernetalliance.org/blog/2025/10/27/ecoc-2025-interoperability-at-800g-is-given-advancing-toward-1-6t/">Ethernet Alliance: ECOC 2025 interoperability at 800G and advancing toward 1.6T</a></li>
+  <li><a href="https://investor.marvell.com/news-events/press-releases/detail/1013/marvell-ushers-in-the-1-6t-era-with-expanded-optical-dsp-platform-portfolio-redefining-ai-data-center-end-to-end-connectivity">Marvell: 1.6T optical DSP platform portfolio and LPO connectivity context</a></li>
+  <li><a href="https://www.cisco.com/c/en/us/solutions/data-center-networking/optics-modules.html">Cisco: Data center optics and pluggable module ecosystem</a></li>
+</ul>
+
+</body>
+</html>

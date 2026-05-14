@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Micro LED 光互连 · 技术前瞻</title>
+<style>
+  :root{--bg:#07101f;--bg2:#0c1830;--bg3:#111e38;--border:#1e2d50;--gold:#c9a227;--text:#e2e8f0;--text2:#94a3b8;--accent:#FFEAA7;--ok:#63e6be;--warn:#f59e0b}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'SF Pro Text','PingFang SC','Helvetica Neue',sans-serif;padding:2rem;max-width:1120px;margin:0 auto}
+  .nav{color:var(--text2);font-size:.8rem;margin-bottom:1.5rem}.nav a{color:var(--text2);text-decoration:none}.nav a:hover{color:var(--gold)}
+  h1{color:var(--gold);font-size:1.5rem;margin-bottom:.25rem}.en{color:var(--text2);font-size:.9rem;margin-bottom:.2rem;font-style:italic}
+  .meta{color:var(--text2);font-size:.78rem;margin-bottom:2rem;border-bottom:1px solid var(--border);padding-bottom:.8rem}
+  h2{color:var(--accent);font-size:1rem;margin:1.8rem 0 .7rem;padding-left:.6rem;border-left:3px solid var(--gold)}
+  h3{color:var(--text);font-size:.9rem;margin:1.2rem 0 .45rem}p,li{color:var(--text2);font-size:.88rem;line-height:1.8;margin-bottom:.65rem}
+  ul{padding-left:1.1rem}.status{display:inline-block;font-size:.72rem;padding:.2rem .6rem;border-radius:3px;background:rgba(148,163,184,.12);color:var(--text2);border:1px solid rgba(148,163,184,.25);margin-right:.5rem}.status.watch{background:rgba(201,162,39,.1);color:var(--gold);border-color:rgba(201,162,39,.3)}
+  .callout{background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.22);border-left:3px solid var(--gold);border-radius:8px;padding:1rem 1.1rem;margin:1rem 0}
+  .svg-wrap,.image-wrap{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:1.2rem;margin:1.2rem 0;overflow-x:auto}
+  .image-wrap{padding:.6rem}.image-wrap img{display:block;width:100%;height:auto;border-radius:6px}.caption{color:#64748b;font-size:.78rem;line-height:1.6;margin-top:.55rem;margin-bottom:0}
+  table{width:100%;border-collapse:collapse;font-size:.82rem;margin:1rem 0}th{background:var(--bg3);color:var(--gold);text-align:left;padding:.55rem .75rem;border-bottom:1px solid var(--border)}td{padding:.5rem .75rem;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:top}tr:last-child td{border-bottom:none}
+  a{color:var(--gold);text-decoration:none}.refs li{margin-bottom:.45rem}
+  .pill{display:inline-block;color:var(--ok);border:1px solid rgba(99,230,190,.25);background:rgba(99,230,190,.08);border-radius:999px;padding:.08rem .45rem;font-size:.72rem}
+</style>
+</head>
+<body>
+
+<div class="nav"><a href="../_index.html">← 技术前瞻研究</a></div>
+
+<h1>Micro LED 光互连</h1>
+<div class="en">Micro LED Optical Interconnect / Microsoft MOSAIC</div>
+<div class="meta">
+  <span class="status watch">跟踪中</span>
+  <span class="status">光通信 · 短距互连 · Wide-and-Slow</span>
+  首次录入：2026-05-15 · 最后更新：2026-05-15
+</div>
+
+<h2>一、核心判断</h2>
+<div class="callout">
+  <p>Micro LED 光互连不是“显示用 Micro LED”的简单外溢，而是一种短距数据中心链路架构：把少数高速激光通道拆成大量低速 Micro LED 通道，用并行度换功耗、可靠性和距离。微软 MOSAIC 的定位很清楚：它要填补铜缆和传统光模块之间的空白，尤其是 AI 数据中心里服务器、GPU、NIC、交换机之间 2-50 米级别的高带宽连接。</p>
+</div>
+<p>今天的数据中心链路大体分成三段：机内/机柜内短距铜缆，机柜间/列间光模块，园区/城域 DWDM 或相干光。AI 集群把第一、第二段的压力放大了：800G/1.6T 以后，高速电信号在 PCB、背板、DAC/ACC 上的损耗和均衡功耗急剧增加；而传统激光光模块虽然距离长，但激光器、DSP、温控和封装复杂度也带来功耗与可靠性成本。</p>
+<p>MOSAIC 的关键词是 <strong>Wide-and-Slow</strong>：不要让每个光通道都跑到 100G/200G，而是用大量 1-几 Gbps 的 Micro LED 像素并行传输。论文原型展示了 100 个光通道、每通道约 2Gbps 的系统，并把未来目标指向 800Gbps 及以上、约 50 米量级链路。</p>
+
+<h2>二、技术原理</h2>
+<div class="svg-wrap">
+  <svg width="1000" height="330" viewBox="0 0 1000 330" role="img" aria-label="MOSAIC Micro LED wide and slow optical interconnect architecture">
+    <rect x="20" y="40" width="190" height="250" rx="8" fill="#0c1830" stroke="#c9a227"/>
+    <text x="115" y="75" text-anchor="middle" fill="#FFEAA7" font-size="18">GPU / NIC / ASIC</text>
+    <rect x="55" y="115" width="120" height="44" rx="5" fill="#111e38" stroke="#1e2d50"/>
+    <text x="115" y="142" text-anchor="middle" fill="#94a3b8" font-size="14">低速电接口</text>
+    <rect x="260" y="40" width="210" height="250" rx="8" fill="#0c1830" stroke="#1e2d50"/>
+    <text x="365" y="75" text-anchor="middle" fill="#FFEAA7" font-size="18">Micro LED 阵列</text>
+    <g fill="#63e6be">
+      <circle cx="310" cy="125" r="6"/><circle cx="335" cy="125" r="6"/><circle cx="360" cy="125" r="6"/><circle cx="385" cy="125" r="6"/><circle cx="410" cy="125" r="6"/>
+      <circle cx="310" cy="155" r="6"/><circle cx="335" cy="155" r="6"/><circle cx="360" cy="155" r="6"/><circle cx="385" cy="155" r="6"/><circle cx="410" cy="155" r="6"/>
+      <circle cx="310" cy="185" r="6"/><circle cx="335" cy="185" r="6"/><circle cx="360" cy="185" r="6"/><circle cx="385" cy="185" r="6"/><circle cx="410" cy="185" r="6"/>
+    </g>
+    <text x="365" y="235" text-anchor="middle" fill="#94a3b8" font-size="13">数百路低速并行</text>
+    <rect x="535" y="80" width="180" height="170" rx="80" fill="#111e38" stroke="#c9a227"/>
+    <text x="625" y="154" text-anchor="middle" fill="#FFEAA7" font-size="17">成像光纤 /</text>
+    <text x="625" y="180" text-anchor="middle" fill="#FFEAA7" font-size="17">多芯光纤束</text>
+    <text x="625" y="214" text-anchor="middle" fill="#94a3b8" font-size="13">保持空间并行度</text>
+    <rect x="790" y="40" width="190" height="250" rx="8" fill="#0c1830" stroke="#1e2d50"/>
+    <text x="885" y="75" text-anchor="middle" fill="#FFEAA7" font-size="18">CMOS 接收阵列</text>
+    <rect x="825" y="125" width="120" height="60" rx="5" fill="#111e38" stroke="#1e2d50"/>
+    <text x="885" y="160" text-anchor="middle" fill="#94a3b8" font-size="14">低功耗模拟前端</text>
+    <path d="M210 160 L260 160 M470 160 L535 160 M715 160 L790 160" stroke="#c9a227" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+    <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#c9a227"/></marker></defs>
+  </svg>
+</div>
+<p>传统光模块靠少数高速激光器、调制器、DSP 和跨阻放大器来支撑大带宽。MOSAIC 反过来把复杂性从“单通道极高速”转移到“阵列封装和并行校准”：每个 Micro LED 只承担较低速率，接收端用 CMOS 阵列并行感知，链路总带宽由通道数堆叠出来。</p>
+
+<h2>三、对比：铜缆、传统/最新光模块、Micro LED</h2>
+<table>
+  <thead><tr><th>方案</th><th>典型位置</th><th>优势</th><th>约束</th><th>对 AI 集群的含义</th></tr></thead>
+  <tbody>
+    <tr><td>DAC/ACC 铜缆</td><td>机内、机柜内、相邻设备</td><td>便宜、低时延、无需光电转换，短距功耗低</td><td>速率越高距离越短，通常在几米内；800G/1.6T 后均衡和线径压力上升</td><td>适合极短距离，但不利于更灵活的 GPU 池化和机柜间重排</td></tr>
+    <tr><td>传统可插拔光模块</td><td>交换机前面板到服务器/交换机</td><td>距离长，标准成熟，产业链完整</td><td>激光器、DSP、热设计和连接器成本高；可靠性和功耗受高速通道限制</td><td>当前主流升级路径，但每代速率提升都更贵、更热</td></tr>
+    <tr><td>最新 800G/1.6T 光模块、LPO/CPO</td><td>高端交换机、CPO 交换芯片周边</td><td>CPO 缩短 ASIC 到光引擎的电距离；1.6T 提升前面板带宽密度</td><td>CPO 运维可替换性、热管理、标准生态仍在演进；LPO 对链路预算和系统协同要求高</td><td>确定性最高，先解决交换机端带宽密度和能效</td></tr>
+    <tr><td><strong>Micro LED MOSAIC</strong></td><td>服务器/GPU/NIC/交换机短距互连</td><td>大量低速通道并行，目标是比铜缆更远、比传统光链路更省电更可靠</td><td>仍处前沿验证期；挑战在阵列封装、光纤成像耦合、校准、测试和标准化</td><td>若成熟，可成为 AI 集群短距光线缆的新类别，而非直接取代长距相干/传统模块</td></tr>
+  </tbody>
+</table>
+
+<h2>四、产业链与关键玩家</h2>
+<table>
+  <thead><tr><th>环节</th><th>全球玩家/线索</th><th>中国观察映射</th><th>备注</th></tr></thead>
+  <tbody>
+    <tr><td>系统架构</td><td>Microsoft Research MOSAIC</td><td>暂无直接量产公司映射</td><td>目前最完整的公开系统级论证来自微软</td></tr>
+    <tr><td>Micro LED 芯片</td><td>Micro LED 外延、巨量转移和微显示供应链</td><td>华灿光电、乾照光电等被市场映射</td><td>显示 Micro LED 能力不等于光互连量产能力，需看高速调制和阵列良率</td></tr>
+    <tr><td>驱动/接收 IC</td><td>CMOS 接收阵列、低功耗模拟前端</td><td>高速 SerDes、模拟 IC、封装测试链条</td><td>Wide-and-Slow 会把难点从单通道 DSP 转向阵列级读出和校准</td></tr>
+    <tr><td>光纤/封装</td><td>成像光纤、多芯光纤、精密对准封装</td><td>特种光纤、精密光学封装厂商</td><td>量产壁垒可能在光学耦合和自动化测试</td></tr>
+  </tbody>
+</table>
+
+<h2>五、成熟度与时间线</h2>
+<p><span class="pill">当前阶段</span> MOSAIC 更接近研究原型和系统可行性验证，而不是已标准化的量产光模块。它的价值在于提出一条不同于“更高速激光器 + 更强 DSP”的路线。</p>
+<ul>
+  <li>短期：作为微软等 hyperscaler 的内部研究方向，验证 100-数百通道并行、链路 BER、校准和封装可制造性。</li>
+  <li>中期：如果能在 800G/1.6T 短距场景拿出稳定 BOM、功耗和可靠性曲线，可能先以专有线缆/内部互连形式出现。</li>
+  <li>长期：标准化和供应链成熟后，才可能成为 AOC/DAC/ACC 之外的新商业类别。</li>
+</ul>
+
+<h2>六、与现有 AIDC 主线的关联</h2>
+<p>Micro LED 光互连最值得关注的不是“替代所有光模块”，而是它可能改变 AI 集群短距链路的成本结构。它和 CPO、OCS、HCF 可以并存：CPO 解决交换 ASIC 附近的电距离；Micro LED 解决机柜内/机柜间短距线缆；OCS 解决光路重构；HCF 解决更长距离低时延传输。</p>
+<p>投资映射上要谨慎区分三层：第一层是拥有 Micro LED 外延/芯片经验的公司；第二层是能做高速调制、阵列驱动和接收的器件公司；第三层才是可交付数据中心级链路产品的系统公司。市场题材往往先交易第一层，但真正产业化取决于第二、第三层。</p>
+
+<h2>七、生成图示</h2>
+<div class="image-wrap">
+  <img src="micro-led-interconnect-architecture.png" alt="Microsoft MOSAIC Micro LED 光互连架构图">
+  <p class="caption">生成质量检查：构图、链路方向、Wide-and-Slow 对比和短距应用场景均符合要求；标题中有一处“互连且连”类生成字误，不影响理解，暂不重生成。</p>
+</div>
+
+<h2>八、信息来源</h2>
+<ul class="refs">
+  <li><a href="https://www.microsoft.com/en-us/research/publication/mosaic-breaking-the-optics-versus-copper-trade-off-with-a-wide-and-slow-architecture-and-microleds/">Microsoft Research: MOSAIC, Breaking the Optics versus Copper Trade-off with a Wide-and-Slow Architecture and MicroLEDs</a></li>
+  <li><a href="https://www.microsoft.com/en-us/research/blog/breaking-the-networking-wall-in-ai-infrastructure/">Microsoft Research Blog: Breaking the networking wall in AI infrastructure</a></li>
+  <li><a href="https://news.microsoft.com/source/features/innovation/using-inexpensive-microleds-microsoft-networking-innovation-aims-to-make-datacenters-more-efficient/">Microsoft Source: Using inexpensive MicroLEDs, Microsoft networking innovation aims to make datacenters more efficient</a></li>
+  <li><a href="https://developer.nvidia.com/blog/scaling-power-efficient-ai-factories-with-nvidia-spectrum-x-ethernet-photonics/">NVIDIA Developer Blog: Scaling Power-Efficient AI Factories with Spectrum-X Ethernet Photonics</a></li>
+</ul>
+
+</body>
+</html>
