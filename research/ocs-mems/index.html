@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OCS-MEMS 光交换 · 技术前瞻</title>
+<style>
+  :root{--bg:#07101f;--bg2:#0c1830;--bg3:#111e38;--border:#1e2d50;--gold:#c9a227;--text:#e2e8f0;--text2:#94a3b8;--accent:#FFEAA7;--ok:#63e6be}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'SF Pro Text','PingFang SC','Helvetica Neue',sans-serif;padding:2rem;max-width:1120px;margin:0 auto}
+  .nav{color:var(--text2);font-size:.8rem;margin-bottom:1.5rem}.nav a{color:var(--text2);text-decoration:none}.nav a:hover{color:var(--gold)}
+  h1{color:var(--gold);font-size:1.5rem;margin-bottom:.25rem}.en{color:var(--text2);font-size:.9rem;margin-bottom:.2rem;font-style:italic}
+  .meta{color:var(--text2);font-size:.78rem;margin-bottom:2rem;border-bottom:1px solid var(--border);padding-bottom:.8rem}
+  h2{color:var(--accent);font-size:1rem;margin:1.8rem 0 .7rem;padding-left:.6rem;border-left:3px solid var(--gold)}
+  h3{color:var(--text);font-size:.9rem;margin:1.2rem 0 .45rem}p,li{color:var(--text2);font-size:.88rem;line-height:1.8;margin-bottom:.65rem}
+  ul{padding-left:1.1rem}.status{display:inline-block;font-size:.72rem;padding:.2rem .6rem;border-radius:3px;background:rgba(148,163,184,.12);color:var(--text2);border:1px solid rgba(148,163,184,.25);margin-right:.5rem}.status.watch{background:rgba(201,162,39,.1);color:var(--gold);border-color:rgba(201,162,39,.3)}
+  .callout{background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.22);border-left:3px solid var(--gold);border-radius:8px;padding:1rem 1.1rem;margin:1rem 0}
+  .svg-wrap,.image-wrap{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:1.2rem;margin:1.2rem 0;overflow-x:auto}.image-wrap{padding:.6rem}.image-wrap img{display:block;width:100%;height:auto;border-radius:6px}.caption{color:#64748b;font-size:.78rem;line-height:1.6;margin-top:.55rem;margin-bottom:0}
+  table{width:100%;border-collapse:collapse;font-size:.82rem;margin:1rem 0}th{background:var(--bg3);color:var(--gold);text-align:left;padding:.55rem .75rem;border-bottom:1px solid var(--border)}td{padding:.5rem .75rem;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:top}tr:last-child td{border-bottom:none}
+  a{color:var(--gold);text-decoration:none}.refs li{margin-bottom:.45rem}.pill{display:inline-block;color:var(--ok);border:1px solid rgba(99,230,190,.25);background:rgba(99,230,190,.08);border-radius:999px;padding:.08rem .45rem;font-size:.72rem}
+</style>
+</head>
+<body>
+
+<div class="nav"><a href="../_index.html">← 技术前瞻研究</a></div>
+
+<h1>OCS-MEMS 光交换</h1>
+<div class="en">Optical Circuit Switching via MEMS / Google Apollo & Palomar</div>
+<div class="meta">
+  <span class="status watch">跟踪中</span>
+  <span class="status">光交换 · AI 组网 · 拓扑重构</span>
+  首次录入：2026-05-15 · 最后更新：2026-05-15
+</div>
+
+<h2>一、核心判断</h2>
+<div class="callout">
+  <p>OCS 不是“更快的以太网交换机”，而是一个可编程光纤配线层。EPS 在纳秒级按包转发；OCS 在毫秒级重构光路。它牺牲包级灵活性，换来纯光域直连、低功耗、大端口数和拓扑可变能力。Google Apollo 论文显示，Palomar OCS 已经以 136×136 端口、毫秒级切换、约 2dB 最坏插损、108W 最大功耗，在 Google 数据中心网络里大规模部署多年。</p>
+</div>
+<p>OCS = Optical Circuit Switch，交换对象是“光路”而不是“数据包”。进入 OCS 的光信号通常不被解析、不经过 O/E/O 转换，而是直接被反射、准直、耦合到目标输出端。它更像一个由软件控制的光纤跳线矩阵。</p>
+<p>OCS-MEMS 是 OCS 的主流实现之一。MEMS 微镜阵列通过微小角度偏转改变光束方向，两级 3D MEMS 镜面配合，可以实现任意输入端口到任意输出端口的光路连接。Google Apollo/Palomar 的公开论文正是这一类系统级落地案例。</p>
+
+<h2>二、OCS 与 OCS-MEMS 的关系</h2>
+<table>
+  <thead><tr><th>概念</th><th>含义</th><th>关键部件</th><th>适用边界</th></tr></thead>
+  <tbody>
+    <tr><td>OCS</td><td>光电路交换，是网络功能层</td><td>准直器、光纤阵列、光学交换矩阵、控制软件</td><td>适合大粒度、持续性、可预测流量；不适合每包快速转发</td></tr>
+    <tr><td>OCS-MEMS</td><td>用微机电镜面实现 OCS 的一种硬件路线</td><td>两组或多组 MEMS 微镜阵列、驱动控制、校准反馈</td><td>端口规模可做大，切换通常为毫秒级，插损和稳定性是工程核心</td></tr>
+    <tr><td>EPS</td><td>Electrical Packet Switching，电包交换</td><td>交换 ASIC、SerDes、缓存、调度器</td><td>适合互联网式突发、小流量、多租户包交换</td></tr>
+  </tbody>
+</table>
+
+<h2>三、技术原理</h2>
+<div class="svg-wrap">
+  <svg width="1000" height="360" viewBox="0 0 1000 360" role="img" aria-label="OCS MEMS optical circuit switching architecture">
+    <rect x="25" y="60" width="140" height="240" rx="8" fill="#0c1830" stroke="#1e2d50"/>
+    <text x="95" y="90" text-anchor="middle" fill="#FFEAA7" font-size="17">输入光纤阵列</text>
+    <g stroke="#63e6be" stroke-width="3">
+      <line x1="60" y1="125" x2="165" y2="125"/><line x1="60" y1="165" x2="165" y2="165"/><line x1="60" y1="205" x2="165" y2="205"/><line x1="60" y1="245" x2="165" y2="245"/>
+    </g>
+    <rect x="265" y="60" width="180" height="240" rx="8" fill="#0c1830" stroke="#c9a227"/>
+    <text x="355" y="90" text-anchor="middle" fill="#FFEAA7" font-size="17">MEMS 镜阵列 A</text>
+    <g fill="#94a3b8">
+      <rect x="310" y="125" width="30" height="10" transform="rotate(-15 325 130)"/><rect x="370" y="155" width="30" height="10" transform="rotate(18 385 160)"/>
+      <rect x="320" y="205" width="30" height="10" transform="rotate(8 335 210)"/><rect x="380" y="240" width="30" height="10" transform="rotate(-22 395 245)"/>
+    </g>
+    <rect x="555" y="60" width="180" height="240" rx="8" fill="#0c1830" stroke="#c9a227"/>
+    <text x="645" y="90" text-anchor="middle" fill="#FFEAA7" font-size="17">MEMS 镜阵列 B</text>
+    <g fill="#94a3b8">
+      <rect x="600" y="120" width="30" height="10" transform="rotate(18 615 125)"/><rect x="660" y="160" width="30" height="10" transform="rotate(-12 675 165)"/>
+      <rect x="610" y="210" width="30" height="10" transform="rotate(-20 625 215)"/><rect x="670" y="245" width="30" height="10" transform="rotate(10 685 250)"/>
+    </g>
+    <rect x="835" y="60" width="140" height="240" rx="8" fill="#0c1830" stroke="#1e2d50"/>
+    <text x="905" y="90" text-anchor="middle" fill="#FFEAA7" font-size="17">输出光纤阵列</text>
+    <g stroke="#63e6be" stroke-width="3">
+      <line x1="835" y1="125" x2="940" y2="125"/><line x1="835" y1="165" x2="940" y2="165"/><line x1="835" y1="205" x2="940" y2="205"/><line x1="835" y1="245" x2="940" y2="245"/>
+    </g>
+    <g stroke="#c9a227" stroke-width="2.3" fill="none">
+      <path d="M165 125 C240 120,270 118,325 130 C430 158,510 178,615 125 C690 95,760 110,835 165"/>
+      <path d="M165 205 C250 210,285 215,335 210 C440 200,520 180,675 165 C740 160,785 178,835 205"/>
+      <path d="M165 245 C255 250,310 245,395 245 C480 250,575 260,685 250 C750 245,800 240,835 245"/>
+    </g>
+    <text x="500" y="330" text-anchor="middle" fill="#94a3b8" font-size="14">软件控制镜面角度：不是逐包转发，而是按需建立光电路</text>
+  </svg>
+</div>
+
+<h2>四、为什么 AI 集群重新看重 OCS</h2>
+<p>AI 训练流量和传统云业务流量不同。训练集群里常见 AllReduce、All-to-All、参数同步、checkpoint 和数据并行/张量并行通信；这些流量往往周期性强、带宽大、持续时间长。OCS 无法替代 ToR/Spine 交换机做每个 packet 的快速调度，但可以在训练阶段、作业级或故障级别重构物理拓扑。</p>
+<ul>
+  <li><strong>热点链路扩容：</strong>把更多光路临时拨给通信密集的 GPU pod 或机柜组。</li>
+  <li><strong>拓扑匹配训练：</strong>让网络物理连接更接近作业通信图，减少多跳转发和拥塞。</li>
+  <li><strong>故障韧性：</strong>链路或交换机故障时，在光层绕开坏路径，降低上层重收敛成本。</li>
+  <li><strong>功耗和成本：</strong>长生命周期、稳定大流量链路不必每跳都 O/E/O 转换。</li>
+</ul>
+
+<h2>五、Google Apollo / Palomar 经验</h2>
+<table>
+  <thead><tr><th>指标/设计</th><th>公开信息</th><th>研究意义</th></tr></thead>
+  <tbody>
+    <tr><td>端口规模</td><td>Palomar OCS 为 136×136</td><td>证明 OCS 可以作为数据中心网络组件，而非实验室小型器件</td></tr>
+    <tr><td>切换时间</td><td>毫秒级</td><td>适合拓扑级/故障级重构，不适合包级调度</td></tr>
+    <tr><td>插损</td><td>最坏约 2dB</td><td>插损决定是否能插入现有光链路预算</td></tr>
+    <tr><td>功耗</td><td>最大约 108W</td><td>相比同等规模电包交换，光路交换具备功耗优势</td></tr>
+    <tr><td>部署</td><td>Google 论文称过去十年部署数万台</td><td>OCS 不是概念演示，已被 hyperscaler 工程化吸收</td></tr>
+  </tbody>
+</table>
+
+<h2>六、推进现状与关键玩家</h2>
+<table>
+  <thead><tr><th>主体</th><th>进展</th><th>时间线</th><th>备注</th></tr></thead>
+  <tbody>
+    <tr><td>Google</td><td>Apollo 论文公开 Palomar OCS，并解释其在数据中心网络中的控制、部署和可靠性经验</td><td>2022 论文公开，部署经验覆盖此前约十年</td><td>最重要的公开规模化案例</td></tr>
+    <tr><td>专业 OCS 厂商</td><td>Polatis、Calient 等长期提供 MEMS/光交换设备</td><td>多年商用</td><td>更多面向测试、运营商、数据中心互连和专业网络</td></tr>
+    <tr><td>AI/HPC 研究社区</td><td>OCS 被用于故障恢复、重构拓扑、光电混合网络研究</td><td>2024-2026 持续升温</td><td>AI 训练通信模式给 OCS 新应用空间</td></tr>
+    <tr><td>中国产业映射</td><td>MEMS、光无源器件、光交换模块、系统集成链条</td><td>处在主题映射和早期验证阶段</td><td>需警惕“有 MEMS 工艺”与“可交付 OCS 系统”之间的距离</td></tr>
+  </tbody>
+</table>
+
+<h2>七、技术障碍与成熟度</h2>
+<p><span class="pill">成熟度判断</span> OCS-MEMS 的硬件可行性已经被 Google 等案例证明，但在 AI 集群里大规模作为“训练网络拓扑重构层”仍依赖控制软件、作业调度器、网络遥测和交换机生态协同。</p>
+<ul>
+  <li>微镜角度控制、振动、温漂和长期稳定性决定可用性。</li>
+  <li>端口数越大，光学校准、插损一致性和制造测试越难。</li>
+  <li>OCS 切换期间需要流量迁移与上层协议配合，否则会形成短暂中断。</li>
+  <li>AI 业务要真正吃到收益，调度器必须知道作业通信图，而不仅是网络设备支持 OCS。</li>
+</ul>
+
+<h2>八、生成图示</h2>
+<div class="image-wrap">
+  <img src="ocs-mems-architecture.png" alt="Google Apollo Palomar OCS-MEMS 光电路交换架构图">
+  <p class="caption">生成质量检查：GPU pod、EPS、OCS-MEMS 光路矩阵、双 3D MEMS 微镜阵列与软件重构控制关系表达清楚；文字可读，未发现需要重生成的问题。</p>
+</div>
+
+<h2>九、信息来源</h2>
+<ul class="refs">
+  <li><a href="https://arxiv.org/abs/2208.10041">Google: Apollo: A Data Center Network Architecture for Deploying Optical Circuit Switching at Scale</a></li>
+  <li><a href="https://arxiv.org/pdf/2208.10041">Apollo paper PDF, including Palomar OCS system details</a></li>
+  <li><a href="https://opg.optica.org/jocn/abstract.cfm?uri=jocn-17-1-A87">JOCN: Optical switching for data centers and advanced computing systems</a></li>
+</ul>
+
+</body>
+</html>

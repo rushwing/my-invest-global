@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CPO 共封装光学 · 技术前瞻</title>
+<style>
+  :root{--bg:#07101f;--bg2:#0c1830;--bg3:#111e38;--border:#1e2d50;--gold:#c9a227;--text:#e2e8f0;--text2:#94a3b8;--accent:#FFEAA7;--ok:#63e6be}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'SF Pro Text','PingFang SC','Helvetica Neue',sans-serif;padding:2rem;max-width:1120px;margin:0 auto}
+  .nav{color:var(--text2);font-size:.8rem;margin-bottom:1.5rem}.nav a{color:var(--text2);text-decoration:none}.nav a:hover{color:var(--gold)}
+  h1{color:var(--gold);font-size:1.5rem;margin-bottom:.25rem}.en{color:var(--text2);font-size:.9rem;margin-bottom:.2rem;font-style:italic}
+  .meta{color:var(--text2);font-size:.78rem;margin-bottom:2rem;border-bottom:1px solid var(--border);padding-bottom:.8rem}
+  h2{color:var(--accent);font-size:1rem;margin:1.8rem 0 .7rem;padding-left:.6rem;border-left:3px solid var(--gold)}
+  h3{color:var(--text);font-size:.9rem;margin:1.2rem 0 .45rem}p,li{color:var(--text2);font-size:.88rem;line-height:1.8;margin-bottom:.65rem}
+  ul{padding-left:1.1rem}.status{display:inline-block;font-size:.72rem;padding:.2rem .6rem;border-radius:3px;background:rgba(148,163,184,.12);color:var(--text2);border:1px solid rgba(148,163,184,.25);margin-right:.5rem}.status.watch{background:rgba(201,162,39,.1);color:var(--gold);border-color:rgba(201,162,39,.3)}
+  .callout{background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.22);border-left:3px solid var(--gold);border-radius:8px;padding:1rem 1.1rem;margin:1rem 0}
+  .svg-wrap,.image-wrap{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:1.2rem;margin:1.2rem 0;overflow-x:auto}.image-wrap{padding:.6rem}.image-wrap img{display:block;width:100%;height:auto;border-radius:6px}.caption{color:#64748b;font-size:.78rem;line-height:1.6;margin-top:.55rem;margin-bottom:0}
+  table{width:100%;border-collapse:collapse;font-size:.82rem;margin:1rem 0}th{background:var(--bg3);color:var(--gold);text-align:left;padding:.55rem .75rem;border-bottom:1px solid var(--border)}td{padding:.5rem .75rem;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:top}tr:last-child td{border-bottom:none}
+  a{color:var(--gold);text-decoration:none}.refs li{margin-bottom:.45rem}.pill{display:inline-block;color:var(--ok);border:1px solid rgba(99,230,190,.25);background:rgba(99,230,190,.08);border-radius:999px;padding:.08rem .45rem;font-size:.72rem}
+</style>
+</head>
+<body>
+
+<div class="nav"><a href="../_index.html">← 技术前瞻研究</a></div>
+
+<h1>CPO 共封装光学</h1>
+<div class="en">Co-Packaged Optics / Optical I/O Near Switch ASIC</div>
+<div class="meta">
+  <span class="status watch">跟踪中</span>
+  <span class="status">交换芯片 · 1.6T 端口 · AI Factory 网络</span>
+  首次录入：2026-05-15 · 最后更新：2026-05-15
+</div>
+
+<h2>一、核心判断</h2>
+<div class="callout">
+  <p>CPO 的核心不是“更小的光模块”，而是把光电转换从前面板模块搬到交换 ASIC 附近，缩短最昂贵、最耗电、最难保持信号完整性的高速电通道。进入 51.2T/102.4T 交换芯片和 1.6T 端口时代，前面板可插拔模块仍会长期存在，但 CPO 是高端 AI 交换机为了突破功耗、带宽密度和信号完整性而必须认真评估的架构迁移。</p>
+</div>
+<p>传统交换机中，交换 ASIC 到前面板光模块之间有一段高速电走线，需要 SerDes、均衡、retimer/DSP 和严格的 PCB 材料控制。速率从 100G/lane 走向 200G/lane 后，这段电通道的损耗和功耗急剧上升。CPO 通过把光引擎放到 ASIC 封装边缘或同一基板附近，让高速电信号只走毫米到厘米级距离，再由光纤扇出到面板或背板。</p>
+<p>NVIDIA 在 2025 年发布 Spectrum-X Photonics / Quantum-X Photonics 时，把 CPO 明确指向百万 GPU 级 AI factory 网络：每端口 1.6Tbps，强调能效、信号完整性和网络韧性提升。无论最终由谁主导，CPO 都代表交换系统从“面板光模块时代”向“封装级光 I/O 时代”的过渡。</p>
+
+<h2>二、技术原理</h2>
+<div class="svg-wrap">
+  <svg width="1000" height="390" viewBox="0 0 1000 390" role="img" aria-label="co-packaged optics architecture">
+    <rect x="55" y="55" width="890" height="280" rx="12" fill="#0c1830" stroke="#1e2d50"/>
+    <text x="500" y="88" text-anchor="middle" fill="#FFEAA7" font-size="18">CPO Switch Package / Board</text>
+    <rect x="355" y="135" width="290" height="150" rx="10" fill="#111e38" stroke="#c9a227" stroke-width="2"/>
+    <text x="500" y="198" text-anchor="middle" fill="#FFEAA7" font-size="22">Switch ASIC</text>
+    <text x="500" y="228" text-anchor="middle" fill="#94a3b8" font-size="14">51.2T / 102.4T</text>
+    <g>
+      <rect x="160" y="120" width="130" height="70" rx="6" fill="#07101f" stroke="#63e6be"/>
+      <rect x="160" y="230" width="130" height="70" rx="6" fill="#07101f" stroke="#63e6be"/>
+      <rect x="710" y="120" width="130" height="70" rx="6" fill="#07101f" stroke="#63e6be"/>
+      <rect x="710" y="230" width="130" height="70" rx="6" fill="#07101f" stroke="#63e6be"/>
+      <text x="225" y="160" text-anchor="middle" fill="#94a3b8" font-size="14">Optical Engine</text>
+      <text x="225" y="270" text-anchor="middle" fill="#94a3b8" font-size="14">Optical Engine</text>
+      <text x="775" y="160" text-anchor="middle" fill="#94a3b8" font-size="14">Optical Engine</text>
+      <text x="775" y="270" text-anchor="middle" fill="#94a3b8" font-size="14">Optical Engine</text>
+    </g>
+    <g stroke="#c9a227" stroke-width="3">
+      <line x1="290" y1="155" x2="355" y2="180"/><line x1="290" y1="265" x2="355" y2="240"/>
+      <line x1="645" y1="180" x2="710" y2="155"/><line x1="645" y1="240" x2="710" y2="265"/>
+    </g>
+    <g stroke="#63e6be" stroke-width="3" fill="none">
+      <path d="M160 155 C105 155,95 105,65 105"/><path d="M160 265 C105 265,95 315,65 315"/>
+      <path d="M840 155 C895 155,905 105,935 105"/><path d="M840 265 C895 265,905 315,935 315"/>
+    </g>
+    <text x="500" y="325" text-anchor="middle" fill="#94a3b8" font-size="14">高速电通道缩短，光纤从封装附近扇出；功耗/密度改善，运维和封装复杂度上升</text>
+  </svg>
+</div>
+
+<h2>三、CPO、LPO、传统可插拔的定位</h2>
+<table>
+  <thead><tr><th>方案</th><th>物理位置</th><th>解决的核心问题</th><th>适合阶段</th><th>主要风险</th></tr></thead>
+  <tbody>
+    <tr><td>传统 DSP 光模块</td><td>前面板可插拔</td><td>标准化、互通性、现场可替换</td><td>现阶段主流 800G/1.6T 升级</td><td>功耗和热密度持续上升</td></tr>
+    <tr><td>LPO/LRO</td><td>前面板可插拔</td><td>保留可插拔，降低模块 DSP 功耗</td><td>短距闭环系统、云厂商定制</td><td>链路预算紧、系统协同难</td></tr>
+    <tr><td><strong>CPO</strong></td><td>ASIC 封装边缘/同基板附近</td><td>缩短高速电通道，提升带宽密度和能效</td><td>高端 AI fabric、未来超大规模交换机</td><td>坏件替换、良率、散热、激光源、光纤管理复杂</td></tr>
+    <tr><td>相干可插拔</td><td>前面板可插拔</td><td>DCI/城域/跨区域长距高容量</td><td>Scale Across</td><td>不是机柜内短距方案</td></tr>
+  </tbody>
+</table>
+
+<h2>四、为什么 AI Factory 需要 CPO</h2>
+<ul>
+  <li><strong>交换芯片带宽膨胀：</strong>AI 训练网络需要更多 GPU 节点、更高端口速率和更低拥塞，交换 ASIC 容量向 51.2T、102.4T 乃至更高演进。</li>
+  <li><strong>200G/lane 电通道变难：</strong>高速电信号在 PCB 和连接器上的损耗迫使系统增加均衡、retimer 和更昂贵材料，功耗和成本同步上升。</li>
+  <li><strong>前面板密度受限：</strong>QSFP-DD/OSFP 可插拔形态受空间、散热和连接器密度约束，CPO 把光 I/O 分布到 ASIC 周围。</li>
+  <li><strong>网络能效：</strong>大规模 AI factory 的网络功耗已经成为 TCO 关键项，CPO 用架构方式降低每 bit 能耗。</li>
+</ul>
+
+<h2>五、产业链与关键玩家</h2>
+<table>
+  <thead><tr><th>环节</th><th>全球玩家/线索</th><th>中国观察映射</th><th>备注</th></tr></thead>
+  <tbody>
+    <tr><td>交换 ASIC / 系统</td><td>NVIDIA Spectrum-X/Quantum-X Photonics、Broadcom、Cisco Silicon One、Marvell</td><td>交换设备、云网络供应链</td><td>系统厂商将决定 CPO 采用节奏</td></tr>
+    <tr><td>硅光/光引擎</td><td>Broadcom、Marvell、Intel、Ayar Labs、TSMC 硅光生态</td><td>硅光芯片、光引擎封装、激光器链条</td><td>光引擎可靠性和热耦合是核心壁垒</td></tr>
+    <tr><td>外置激光源 ELS</td><td>激光器、泵浦源、光源管理厂商</td><td>光源、激光器、光无源器件</td><td>外置光源便于维护，但引入光源分配网络</td></tr>
+    <tr><td>光纤连接/FAU</td><td>Corning、US Conec、Senko 等连接器和光纤阵列生态</td><td>连接器、FAU、MPO/MTP、精密封装</td><td>CPO 的光纤管理和现场可维护性是落地关键</td></tr>
+    <tr><td>封装与制造</td><td>TSMC、ASE、Amkor、OSAT 与先进封装生态</td><td>先进封装、基板、散热和测试</td><td>良率、测试和返修会影响总成本</td></tr>
+  </tbody>
+</table>
+
+<h2>六、技术障碍与成熟度</h2>
+<p><span class="pill">成熟度判断</span> CPO 是确定性很高的长期方向，但不是所有 800G/1.6T 交换机都会立刻转向 CPO。传统可插拔、LPO/LRO 和 CPO 会并行多年：短期以可插拔为主，中期 LPO/LRO 降功耗，长期高端交换节点逐步引入 CPO。</p>
+<ul>
+  <li>可维护性：前面板模块坏了可以直接拔插，CPO 光引擎与 ASIC 更紧密，坏件策略更复杂。</li>
+  <li>热管理：光引擎靠近高功耗 ASIC，温度稳定性、散热路径和封装热应力必须重新设计。</li>
+  <li>良率和测试：ASIC、光引擎、封装、光纤阵列耦合在一起后，测试和返修成本上升。</li>
+  <li>标准生态：CPO 牵涉封装、光源、连接器、管理接口和系统架构，标准化速度慢于可插拔模块。</li>
+</ul>
+
+<h2>七、与现有 AIDC 主线的关联</h2>
+<p>CPO 位于 AI 网络的“交换芯片 I/O”层，和相干可插拔、HCF、OCS、Micro LED 的距离段不同。一个完整 AI factory 可以同时采用：服务器/机柜内短距铜或 Micro LED，交换机内部 CPO，数据中心内 OCS 做光路重构，跨园区使用相干可插拔与 HCF。CPO 的投资映射更偏交换 ASIC、硅光、光引擎、外置激光源、FAU/连接器和先进封装。</p>
+
+<h2>八、生成图示</h2>
+<div class="image-wrap">
+  <img src="cpo-architecture.png" alt="CPO 共封装光学支撑 AI Factory 高带宽交换网络架构图">
+  <p class="caption">生成质量检查：ASIC 周围光引擎、外置激光源 ELS、FAU/光纤扇出、传统前面板模块对比以及优势/挑战表达完整；局部小字有轻微生成式瑕疵，不影响理解，暂不重生成。</p>
+</div>
+
+<h2>九、信息来源</h2>
+<ul class="refs">
+  <li><a href="https://developer.nvidia.com/blog/scaling-power-efficient-ai-factories-with-nvidia-spectrum-x-ethernet-photonics/">NVIDIA Developer Blog: Scaling Power-Efficient AI Factories with Spectrum-X Ethernet Photonics</a></li>
+  <li><a href="https://investor.nvidia.com/news/press-release-details/2025/NVIDIA-Announces-Spectrum-X-Photonics-Co-Packaged-Optics-Networking-Switches-to-Scale-AI-Factories-to-Millions-of-GPUs/default.aspx">NVIDIA: Spectrum-X Photonics CPO networking switches announcement</a></li>
+  <li><a href="https://www.corning.com/optical-communications/worldwide/en/home/products/co-packaged-optics.html">Corning: Co-Packaged Optics connectivity and fiber management</a></li>
+  <li><a href="https://www.oiforum.com/technical-work/hot-topics/co-packaging/">OIF: Co-packaging technical work and ecosystem context</a></li>
+</ul>
+
+</body>
+</html>
