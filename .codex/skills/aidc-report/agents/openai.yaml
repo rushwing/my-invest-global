@@ -1,0 +1,3 @@
+display_name: AIDC Report
+short_description: Refresh and maintain the AIDC stock report from structured agent input.
+default_prompt: Use this skill to add or reclassify AIDC stocks, refresh CN markdown/category data, update aidc_report.html, and run validation.
