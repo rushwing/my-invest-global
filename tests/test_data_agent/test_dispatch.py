@@ -478,3 +478,128 @@ class TestOrchestratorActualSource:
         policy = FIELD_POLICIES[FieldGroup.QUOTE]
         with pytest.raises(AllSourcesFailedError):
             orch._fetch_with_fallback(FieldGroup.QUOTE, ["000001"], policy)
+
+
+# ── P1 --groups fix: run_once honours group override ─────────────────────────
+
+class TestRunOnceGroupOverride:
+    def _make_orch(self, fast_returns=None):
+        from engine.data_agent.orchestrator import StockDataOrchestrator
+        rl = RateLimiter()
+        src = MagicMock()
+        src.domain = "qt.gtimg.cn"
+        fast = MagicMock()
+        fast.fetch.return_value = fast_returns or []
+        storage = MagicMock()
+        storage.upsert.return_value = 0
+        scheduler = MagicMock()
+        scheduler.get_due_groups.return_value = []  # scheduler says nothing is due
+        return StockDataOrchestrator(
+            codes=["688041"],
+            sources={"tencent": src},
+            storage=storage,
+            fast=fast,
+            slow=MagicMock(),
+            scheduler=scheduler,
+            rate_limiter=rl,
+        )
+
+    def test_groups_override_bypasses_scheduler(self):
+        """When groups= is passed, scheduler.get_due_groups is NOT called."""
+        orch = self._make_orch()
+        orch.run_once(groups=[FieldGroup.QUOTE])
+        orch._scheduler.get_due_groups.assert_not_called()
+
+    def test_only_specified_groups_are_fetched(self):
+        """Only the requested group appears in the summary; others are absent."""
+        orch = self._make_orch()
+        summary = orch.run_once(groups=[FieldGroup.QUOTE])
+        assert "quote" in summary
+        assert "kline" not in summary
+
+    def test_no_groups_uses_scheduler(self):
+        """When groups= is None, scheduler.get_due_groups IS called."""
+        orch = self._make_orch()
+        orch.run_once(groups=None)
+        orch._scheduler.get_due_groups.assert_called_once()
+
+    def test_multiple_groups_all_fetched(self):
+        """Two forced groups both appear in summary."""
+        orch = self._make_orch()
+        summary = orch.run_once(groups=[FieldGroup.QUOTE, FieldGroup.INDEX])
+        assert "quote" in summary
+        assert "index" in summary
+
+
+# ── P1 stock pool fix: _load_codes reads the YAML file ────────────────────────
+
+class TestLoadCodes:
+    def test_loads_codes_from_yaml(self, tmp_path):
+        """_load_codes() extracts 6-digit codes from stocks.yaml using regex."""
+        import sys
+        import scripts.refresh_data_agent as cli
+
+        yaml_content = (
+            "stocks:\n"
+            "  - name: \"股票A\"\n"
+            "    code: \"600000\"\n"
+            "  - name: \"股票B\"\n"
+            "    code: \"000001\"\n"
+            "  - name: \"股票C\"\n"
+            "    code: \"688041\"\n"
+        )
+        yaml_file = tmp_path / "stocks.yaml"
+        yaml_file.write_text(yaml_content, encoding="utf-8")
+
+        # Patch the module-level path so _load_codes reads our temp file
+        original = cli._STOCKS_YAML
+        cli._STOCKS_YAML = yaml_file
+        try:
+            codes = cli._load_codes()
+        finally:
+            cli._STOCKS_YAML = original
+
+        assert codes == ["600000", "000001", "688041"]
+
+    def test_deduplicates_codes(self, tmp_path):
+        import scripts.refresh_data_agent as cli
+
+        # Use the same multi-line format as the real stocks.yaml (code: on its own line)
+        yaml_content = (
+            'stocks:\n'
+            '  - name: "股票A"\n'
+            '    code: "600000"\n'
+            '  - name: "股票A重复"\n'
+            '    code: "600000"\n'
+            '  - name: "股票B"\n'
+            '    code: "000001"\n'
+        )
+        yaml_file = tmp_path / "stocks.yaml"
+        yaml_file.write_text(yaml_content, encoding="utf-8")
+        original = cli._STOCKS_YAML
+        cli._STOCKS_YAML = yaml_file
+        try:
+            codes = cli._load_codes()
+        finally:
+            cli._STOCKS_YAML = original
+        assert codes == ["600000", "000001"]
+        assert len(codes) == 2
+
+    def test_fallback_when_yaml_missing(self, tmp_path):
+        import scripts.refresh_data_agent as cli
+
+        original = cli._STOCKS_YAML
+        cli._STOCKS_YAML = tmp_path / "nonexistent.yaml"
+        try:
+            codes = cli._load_codes()
+        finally:
+            cli._STOCKS_YAML = original
+        assert len(codes) >= 1
+        assert all(c.isdigit() and len(c) == 6 for c in codes)
+
+    def test_real_yaml_returns_full_pool(self):
+        """Integration: the real stocks.yaml has more than 3 codes."""
+        import scripts.refresh_data_agent as cli
+        codes = cli._load_codes()
+        assert len(codes) > 3, f"Expected full AIDC pool, got only: {codes}"
+        assert all(c.isdigit() and len(c) == 6 for c in codes)

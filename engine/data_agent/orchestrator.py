@@ -133,12 +133,17 @@ class StockDataOrchestrator:
 
     # ── Public API ────────────────────────────────────────────────────────────
 
-    def run_once(self) -> dict[str, int]:
+    def run_once(
+        self,
+        groups: list[FieldGroup] | None = None,
+    ) -> dict[str, int]:
         """
-        Execute one refresh cycle for all due FieldGroups.
+        Execute one refresh cycle.
+        Pass ``groups`` to force-fetch specific FieldGroups regardless of schedule;
+        omit to let the scheduler decide which groups are due.
         Returns a summary dict: {group_value: row_count}.
         """
-        due = self._scheduler.get_due_groups(self._last_fetched)
+        due: list[FieldGroup] = groups if groups is not None else self._scheduler.get_due_groups(self._last_fetched)
         summary: dict[str, int] = {}
 
         for group in due:
@@ -170,12 +175,13 @@ class StockDataOrchestrator:
 
         return summary
 
-    def run_loop(self) -> None:
-        """Block forever, running run_once() every poll_s seconds."""
+    def run_loop(self, groups: list[FieldGroup] | None = None) -> None:
+        """Block forever, running run_once() every poll_s seconds.
+        Pass ``groups`` to restrict every cycle to specific FieldGroups."""
         log.info("starting orchestrator loop (poll=%ds, codes=%d)", self._poll_s, len(self._codes))
         while True:
             try:
-                summary = self.run_once()
+                summary = self.run_once(groups=groups)
                 if summary:
                     log.info("cycle complete: %s", summary)
             except Exception as exc:

@@ -26,21 +26,34 @@ _ROOT = next(
 if _ROOT and str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-# Default A-share AIDC pool (matches codes tracked in aidc_report.html)
-DEFAULT_CODES = [
-    # Core AIDC semiconductor & equipment
-    "688041",  # 华工科技
-    "688041",  # placeholder — replace with full pool from stock_codes.py
-]
+# Canonical source of stock codes: the YAML pool used by the rest of the agent pipeline.
+_STOCKS_YAML = (
+    _ROOT / "data" / "agent_input" / "cn" / "stocks.yaml"
+    if _ROOT else None
+)
+
+# Minimal hardcoded fallback used only when the YAML cannot be loaded
+# (e.g. fresh clone before running data setup).
+_FALLBACK_CODES = ["688041", "002415", "300308"]
 
 
 def _load_codes() -> list[str]:
-    """Load codes from project stock list, falling back to DEFAULT_CODES."""
-    try:
-        from app.stock_codes import STOCK_CODES  # type: ignore[import]
-        return [c for c in STOCK_CODES if c.isdigit() and len(c) == 6]
-    except ImportError:
-        return DEFAULT_CODES
+    """
+    Load active A-share codes from data/agent_input/cn/stocks.yaml.
+    Extracts all ``code:`` entries (must be 6-digit strings).
+    Falls back to _FALLBACK_CODES if the file is missing or unreadable.
+    """
+    if _STOCKS_YAML and _STOCKS_YAML.exists():
+        try:
+            import re
+            text = _STOCKS_YAML.read_text(encoding="utf-8")
+            # Match lines like:    code: "300308"  or  code: '300308'
+            codes = re.findall(r'^\s+code:\s*["\'](\d{6})["\']', text, re.MULTILINE)
+            if codes:
+                return list(dict.fromkeys(codes))  # deduplicate, preserve order
+        except Exception:
+            pass
+    return list(_FALLBACK_CODES)
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -96,6 +109,24 @@ def main() -> None:
         log.error("No stock codes provided and default pool is empty.")
         sys.exit(1)
 
+    # Parse --groups into FieldGroup instances; None means "let scheduler decide"
+    forced_groups = None
+    if args.groups:
+        from engine.data_agent.fields import FieldGroup
+        valid_values = {g.value for g in FieldGroup}
+        parsed = []
+        for name in args.groups.split(","):
+            name = name.strip()
+            if name not in valid_values:
+                log.error(
+                    "Unknown group %r — valid groups: %s",
+                    name, ", ".join(sorted(valid_values)),
+                )
+                sys.exit(1)
+            parsed.append(FieldGroup(name))
+        forced_groups = parsed
+        log.info("Group override: %s", [g.value for g in forced_groups])
+
     log.info("Starting data agent: %d codes, poll=%ds, once=%s", len(codes), args.poll, args.once)
 
     from engine.data_agent.orchestrator import StockDataOrchestrator
@@ -143,7 +174,7 @@ def main() -> None:
         rate_limiter=shared_rl,
     ) as orch:
         if args.once:
-            summary = orch.run_once()
+            summary = orch.run_once(groups=forced_groups)
             log.info("One-shot complete: %s", summary)
             total = sum(summary.values())
             print(f"Fetched {total} rows across {len(summary)} field groups.")
@@ -151,7 +182,7 @@ def main() -> None:
                 print(f"  {group}: {count} rows")
         else:
             try:
-                orch.run_loop()
+                orch.run_loop(groups=forced_groups)
             except KeyboardInterrupt:
                 log.info("Interrupted — shutting down.")
 
