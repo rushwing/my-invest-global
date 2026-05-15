@@ -748,44 +748,27 @@ def fetch_tencent_stock(meta: StockMeta, end: date | None = None) -> RefreshedSt
     if meta.code is None:
         return RefreshedStock(meta, None, None, None, None, None, None, None)
 
-    end_date = end or date.today()
-    begin_date = end_date - timedelta(days=420)
-    symbol = market_symbol(meta.code)
-    url = (
-        "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get"
-        f"?param={symbol},day,{begin_date:%Y-%m-%d},{end_date:%Y-%m-%d},200,qfq"
-    )
-    payload = fetch_json(url)
-    data = payload["data"][symbol]
-    quote = data["qt"][symbol]
-    kline = data.get("qfqday") or data.get("day") or []
+    from engine.data_agent.sources.tencent import TencentSource
+    from engine.data_agent.rate_limiter import RateLimiter
 
-    price = parse_float(quote[3])
-    market_cap_yi = parse_float(quote[45])
-    dynamic_pe = parse_float(quote[39])
-    quote_time = datetime.strptime(quote[30], "%Y%m%d%H%M%S")
-    daily_return = parse_float(quote[32])
-    one_month_return = calculate_return(kline, quote_time.date(), 30)
-    three_month_return = calculate_return(kline, quote_time.date(), 90)
-    six_month_return = calculate_return(kline, quote_time.date(), 180)
-    one_year_return = calculate_return(kline, quote_time.date(), 365)
-    volume_lot = parse_float(quote[36])
-    amount_wan = parse_float(quote[57]) or parse_float(quote[37])
+    result = TencentSource(RateLimiter()).fetch_kline_day(meta.code, end=end)
+    kline = result["kline"]  # list[dict] with keys: date, open, close, high, low, volume
+    quote_time = result["quote_time"]
 
     return RefreshedStock(
         meta=meta,
-        price=price,
-        one_month_return=one_month_return,
-        three_month_return=three_month_return,
-        market_cap_yi=market_cap_yi,
-        dynamic_pe=dynamic_pe,
+        price=result["price"],
+        daily_return=result["pct_change"],
+        one_month_return=calculate_return(kline, quote_time.date(), 30),
+        three_month_return=calculate_return(kline, quote_time.date(), 90),
+        six_month_return=calculate_return(kline, quote_time.date(), 180),
+        one_year_return=calculate_return(kline, quote_time.date(), 365),
+        market_cap_yi=result["market_cap"],
+        dynamic_pe=result["dynamic_pe"],
         quote_time=quote_time,
         target=target_for(meta.code),
-        daily_return=daily_return,
-        six_month_return=six_month_return,
-        one_year_return=one_year_return,
-        volume_lot=volume_lot,
-        amount_wan=amount_wan,
+        volume_lot=result["volume"],
+        amount_wan=result["amount"],
         product_mix=meta.product_mix,
     )
 
@@ -799,8 +782,18 @@ def target_for(code: str | None) -> TargetPrice | None:
     return target
 
 
-def calculate_return(kline: list[list[Any]], end_date: date, lookback_days: int) -> float | None:
-    closes = [(date.fromisoformat(row[0]), float(row[2])) for row in kline if len(row) >= 3]
+def calculate_return(kline: list[Any], end_date: date, lookback_days: int) -> float | None:
+    def _date_close(row: Any) -> tuple[str, Any]:
+        if isinstance(row, dict):
+            return str(row.get("date", ""))[:10], row.get("close")
+        return str(row[0])[:10], row[2] if len(row) >= 3 else None
+
+    closes = [
+        (date.fromisoformat(d), float(c))
+        for row in kline
+        for d, c in [_date_close(row)]
+        if c is not None and d
+    ]
     if not closes:
         return None
     target_date = end_date - timedelta(days=lookback_days)

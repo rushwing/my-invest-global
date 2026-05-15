@@ -49,13 +49,15 @@ tushare = [
     "tushare>=1.4",
 ]
 data = [
-    "akshare>=1.12",
+    "akshare==1.18.60",
     "yfinance>=0.2",
+    "httpx>=0.27",
 ]
 
 [project.scripts]
 advisor = "app.dashboard:main"
 refresh-aidc-data = "scripts.refresh_aidc_data:main"
+refresh-data-agent = "scripts.refresh_data_agent:main"
 
 [project.urls]
 Repository = "https://github.com/rushwing/my-invest-global"
