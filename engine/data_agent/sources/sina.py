@@ -61,6 +61,66 @@ class SinaSource(AbstractSource):
             results.extend(self._fetch_batch(batch))
         return results
 
+    def fetch_index_quotes(self, symbols: list[str]) -> list[dict[str, Any]]:
+        """Fetch index quotes for pre-prefixed symbols like ['sh000001', 'sz399001']."""
+        results: list[dict[str, Any]] = []
+        for batch in _chunk(symbols, _BATCH_SIZE):
+            results.extend(self._fetch_index_batch(batch))
+        return results
+
+    def _fetch_index_batch(self, symbols: list[str]) -> list[dict[str, Any]]:
+        if self._rl.is_circuit_open(self.domain):
+            raise SourceError(f"Circuit open for {self.domain}")
+        url = f"https://hq.sinajs.cn/list={','.join(symbols)}"
+        self._rl.acquire(self.domain)
+        try:
+            resp = self._session.get(url, timeout=15)
+            resp.raise_for_status()
+            self._rl.record_success(self.domain)
+        except Exception as exc:
+            self._rl.record_failure(self.domain, 0)
+            raise SourceError(f"sina index quote failed: {exc}") from exc
+        return self._parse_index_response(resp.text, set(symbols))
+
+    def _parse_index_response(
+        self, text: str, symbol_set: set[str]
+    ) -> list[dict[str, Any]]:
+        """Parse Sina response for index symbols; code is the full symbol e.g. 'sh000001'."""
+        results = []
+        for line in text.strip().split(";"):
+            line = line.strip()
+            if not line:
+                continue
+            match = re.match(r'var hq_str_(\w+)="(.+)"', line)
+            if not match:
+                continue
+            symbol = match.group(1)
+            if symbol not in symbol_set:
+                continue
+            fields = match.group(2).split(",")
+            if len(fields) < 32:
+                continue
+            date_str = fields[30]
+            time_str = fields[31]
+            try:
+                quote_time = datetime.strptime(
+                    f"{date_str} {time_str}", "%Y-%m-%d %H:%M:%S"
+                )
+            except ValueError:
+                continue
+            results.append({
+                "code": symbol,
+                "quote_time": quote_time,
+                "price": _parse_float(fields[3]),
+                "pct_change": None,
+                "volume": _parse_float(fields[7]),
+                "amount": _parse_float(fields[8]),
+                "market_cap": None,
+                "dynamic_pe": None,
+                "source": "sina",
+            })
+        return results
+
     def _fetch_batch(self, codes: list[str]) -> list[dict[str, Any]]:
         if self._rl.is_circuit_open(self.domain):
             raise SourceError(f"Circuit open for {self.domain}")

@@ -96,6 +96,7 @@ class AbstractSource(ABC):
             try:
                 resp = self._session.get(url, params=params, timeout=timeout)
                 if resp.status_code in _RATE_LIMIT_STATUSES:
+                    # Rate-limit responses: record once and give up immediately
                     self._rl.record_failure(self.domain, resp.status_code)
                     raise SourceError(
                         f"{self.domain} returned {resp.status_code} on {url}"
@@ -107,12 +108,13 @@ class AbstractSource(ABC):
                 raise
             except Exception as exc:
                 last_exc = exc
-                self._rl.record_failure(self.domain, 0)
                 if attempt < retries - 1:
-                    # Rotate UA on retry to vary fingerprint
+                    # Rotate UA on retry to vary fingerprint; don't record yet
                     self._rotate_ua()
                     time.sleep(2 ** attempt)  # 1s, 2s before final attempt
 
+        # Record a single failure after all retries are exhausted
+        self._rl.record_failure(self.domain, 0)
         raise SourceError(
             f"{self.domain} failed after {retries} attempts: {last_exc}"
         ) from last_exc

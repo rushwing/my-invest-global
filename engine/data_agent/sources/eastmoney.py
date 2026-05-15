@@ -249,10 +249,7 @@ class EastmoneySource(AbstractSource):
             "fields": "f62,f184,f66,f69,f72,f75,f78,f81,f164,f165",
             "ut": "bd1d9ddb04089700cf9c27f6f7426281",
         }
-        try:
-            payload = self._get(url, params=params)
-        except SourceError:
-            return []
+        payload = self._get(url, params=params)
         data = payload.get("data") or {}
         if not data:
             return []

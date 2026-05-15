@@ -104,7 +104,7 @@ GROUP_DISPATCH: dict[FieldGroup, str] = {
     FieldGroup.FUND_FLOW:    "fetch_fund_flow",
     FieldGroup.SHAREHOLDER:  "fetch_shareholders",
     FieldGroup.ANNOUNCEMENT: "fetch_announcements",
-    FieldGroup.INDEX:        "fetch_quotes",
+    FieldGroup.INDEX:        "fetch_index_quotes",
 }
 
 # FieldGroups whose dispatch method is called once per code (code: str) rather

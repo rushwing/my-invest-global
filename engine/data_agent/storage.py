@@ -150,6 +150,17 @@ CREATE TABLE IF NOT EXISTS stock_announcements (
     PRIMARY KEY (code, ann_id)
 );
 
+CREATE TABLE IF NOT EXISTS stock_index_quotes (
+    code          TEXT        NOT NULL,
+    quote_time    TIMESTAMPTZ NOT NULL,
+    price         DOUBLE,
+    pct_change    DOUBLE,
+    volume        BIGINT,
+    amount        DOUBLE,
+    source        TEXT,
+    PRIMARY KEY (code, quote_time)
+);
+
 CREATE TABLE IF NOT EXISTS stock_meta (
     code       TEXT PRIMARY KEY,
     name       TEXT,
@@ -194,6 +205,18 @@ ON CONFLICT (code, quote_time) DO UPDATE SET
     pb            = excluded.pb,
     turnover_rate = excluded.turnover_rate,
     source        = excluded.source
+"""
+
+_UPSERT_INDEX_QUOTES = """
+INSERT INTO stock_index_quotes
+    (code, quote_time, price, pct_change, volume, amount, source)
+VALUES (?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT (code, quote_time) DO UPDATE SET
+    price      = excluded.price,
+    pct_change = excluded.pct_change,
+    volume     = excluded.volume,
+    amount     = excluded.amount,
+    source     = excluded.source
 """
 
 _UPSERT_PRICES = """
@@ -331,6 +354,22 @@ class Storage:
         self._conn.executemany(_UPSERT_QUOTES, params)
         return len(params)
 
+    def upsert_index_quotes(self, rows: list[dict[str, Any]]) -> int:
+        """Upsert index quote snapshots (sh000001 etc.) into stock_index_quotes."""
+        if not rows:
+            return 0
+        params = [
+            (
+                r["code"], r["quote_time"],
+                r.get("price"), r.get("pct_change"),
+                r.get("volume"), r.get("amount"),
+                r.get("source"),
+            )
+            for r in rows
+        ]
+        self._conn.executemany(_UPSERT_INDEX_QUOTES, params)
+        return len(params)
+
     def upsert_prices(self, rows: list[dict[str, Any]]) -> int:
         """Upsert OHLCV daily price rows."""
         if not rows:
@@ -447,7 +486,7 @@ class Storage:
         """Dispatch to the correct upsert method by FieldGroup."""
         dispatch = {
             FieldGroup.QUOTE:        self.upsert_quotes,
-            FieldGroup.INDEX:        self.upsert_quotes,     # index quotes share schema
+            FieldGroup.INDEX:        self.upsert_index_quotes,
             FieldGroup.KLINE:        self.upsert_prices,
             FieldGroup.KLINE_MIN:    self.upsert_price_minutes,
             FieldGroup.FUNDAMENTAL:  self.upsert_fundamentals,

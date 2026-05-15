@@ -38,6 +38,16 @@ from engine.data_agent.sub_agents.slow_agent import SlowAgent
 
 log = logging.getLogger(__name__)
 
+# Default Chinese market index symbols to fetch for FieldGroup.INDEX.
+# These are passed to fetch_index_quotes() as pre-prefixed Tencent/Sina symbols.
+DEFAULT_INDEX_CODES: list[str] = [
+    "sh000001",  # 上证综指
+    "sz399001",  # 深证成指
+    "sz399006",  # 创业板指
+    "sh000016",  # 上证50
+    "sh000300",  # 沪深300
+]
+
 
 class AllSourcesFailedError(Exception):
     pass
@@ -58,8 +68,10 @@ class StockDataOrchestrator:
         scheduler: Schedule,
         rate_limiter: RateLimiter,
         poll_s: int = 30,
+        index_codes: list[str] | None = None,
     ) -> None:
         self._codes        = codes
+        self._index_codes  = index_codes if index_codes is not None else DEFAULT_INDEX_CODES
         self._sources      = sources
         self._storage      = storage
         self._fast         = fast
@@ -80,6 +92,7 @@ class StockDataOrchestrator:
         poll_s: int = 30,
         extra_sources: dict[str, AbstractSource] | None = None,
         rate_limiter: RateLimiter | None = None,
+        index_codes: list[str] | None = None,
     ) -> "StockDataOrchestrator":
         """
         Build an orchestrator with all default sources wired up.
@@ -115,6 +128,7 @@ class StockDataOrchestrator:
             scheduler=scheduler,
             rate_limiter=rl,
             poll_s=poll_s,
+            index_codes=index_codes,
         )
 
     # ── Public API ────────────────────────────────────────────────────────────
@@ -129,17 +143,22 @@ class StockDataOrchestrator:
 
         for group in due:
             policy = FIELD_POLICIES[group]
+            # INDEX group uses its own universe of index symbols, not the stock pool
+            codes = self._index_codes if group == FieldGroup.INDEX else self._codes
             t0 = _time.perf_counter()
             try:
-                rows = self._fetch_with_fallback(group, policy)
+                actual_src, rows = self._fetch_with_fallback(group, codes, policy)
                 count = self._storage.upsert(group, rows)
                 latency = int((_time.perf_counter() - t0) * 1000)
                 self._storage.log_retrieval(
-                    group, policy.primary, "ok", latency_ms=latency
+                    group, actual_src, "ok", latency_ms=latency
                 )
                 self._last_fetched[group] = dt.datetime.now(tz=dt.timezone.utc)
                 summary[group.value] = count
-                log.info("fetched %s: %d rows in %dms", group.value, count, latency)
+                log.info(
+                    "fetched %s via %s: %d rows in %dms",
+                    group.value, actual_src, count, latency,
+                )
             except AllSourcesFailedError as exc:
                 latency = int((_time.perf_counter() - t0) * 1000)
                 self._storage.log_retrieval(
@@ -177,10 +196,12 @@ class StockDataOrchestrator:
     def _fetch_with_fallback(
         self,
         group: FieldGroup,
+        codes: list[str],
         policy: SourcePolicy,
-    ) -> list[dict[str, Any]]:
+    ) -> tuple[str, list[dict[str, Any]]]:
         """
         Try primary source then each backup in order.
+        Returns (actual_source_name, rows) so callers can log the real source.
         Raises AllSourcesFailedError if every source is unavailable or fails.
         """
         errors: list[str] = []
@@ -195,7 +216,8 @@ class StockDataOrchestrator:
                 continue
             try:
                 agent = self._fast if src_name in FAST_SOURCES else self._slow
-                return agent.fetch(group, self._codes, source)
+                rows = agent.fetch(group, codes, source)
+                return src_name, rows
             except (SourceError, Exception) as exc:
                 errors.append(f"{src_name}: {exc!s:.100}")
                 log.debug("source %s failed for %s: %s", src_name, group.value, exc)

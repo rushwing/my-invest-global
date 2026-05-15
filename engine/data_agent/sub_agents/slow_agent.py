@@ -87,9 +87,9 @@ class SlowAgent:
                 elif isinstance(rows, dict):
                     rows = [rows]
                 results.extend(rows)
-                self._rl.record_success(source.domain)
             except SourceError:
-                self._rl.record_failure(source.domain, 0)
+                # Recording is the source's responsibility (_get() or its own HTTP call).
+                # Re-check circuit here in case the source just opened it.
                 if self._rl.is_circuit_open(source.domain):
                     circuit_tripped = True
                     break
@@ -111,13 +111,8 @@ class SlowAgent:
         """Call method(codes) once for the whole batch."""
         if self._rl.is_circuit_open(source.domain):
             raise SourceError(f"Circuit open for {source.domain}")
-        try:
-            rows = method(codes)
-            self._rl.record_success(source.domain)
-            return rows or []
-        except SourceError:
-            self._rl.record_failure(source.domain, 0)
-            raise
+        rows = method(codes)
+        return rows or []
 
     def _inter_code_sleep(self, domain: str) -> None:
         """

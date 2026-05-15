@@ -272,3 +272,209 @@ class TestEastmoneySegmentFallback:
         src = self._make_source()
         assert src._parse_segments("600000", {}) == []
         assert src._parse_segments("600000", {"zygcfx": []}) == []
+
+
+# ── P1 INDEX fix: separate index codes and fetch_index_quotes ─────────────────
+
+class TestIndexGroupDispatch:
+    def test_index_dispatches_to_fetch_index_quotes(self):
+        assert GROUP_DISPATCH[FieldGroup.INDEX] == "fetch_index_quotes"
+
+    def test_index_not_in_fast_sources_dispatch_uses_batch(self):
+        # INDEX is not per-code; agents should call method(symbols_list)
+        assert FieldGroup.INDEX not in GROUP_PER_CODE
+
+    def test_tencent_has_fetch_index_quotes(self):
+        from engine.data_agent.sources.tencent import TencentSource
+        assert hasattr(TencentSource, "fetch_index_quotes")
+
+    def test_sina_has_fetch_index_quotes(self):
+        from engine.data_agent.sources.sina import SinaSource
+        assert hasattr(SinaSource, "fetch_index_quotes")
+
+    def test_tencent_parse_index_response_uses_full_symbol_as_code(self):
+        from engine.data_agent.sources.tencent import TencentSource
+        rl = RateLimiter()
+        src = TencentSource.__new__(TencentSource)
+        src._rl = rl
+        src._session = MagicMock()
+        src.domain = "qt.gtimg.cn"
+
+        # Minimal valid qt response (58+ tilde-separated fields)
+        fields = ["1"] * 58
+        fields[3] = "3456.78"    # price
+        fields[30] = "20260516093000"  # quote_time
+        fields[32] = "0.12"      # pct_change
+        text = 'v_sh000001="' + "~".join(fields) + '"'
+
+        rows = src._parse_index_response(text, {"sh000001"})
+        assert len(rows) == 1
+        assert rows[0]["code"] == "sh000001"
+        assert rows[0]["price"] == pytest.approx(3456.78)
+
+    def test_tencent_parse_index_response_ignores_unrequested_symbols(self):
+        from engine.data_agent.sources.tencent import TencentSource
+        rl = RateLimiter()
+        src = TencentSource.__new__(TencentSource)
+        src._rl = rl
+        src._session = MagicMock()
+        src.domain = "qt.gtimg.cn"
+
+        fields = ["1"] * 58
+        fields[30] = "20260516093000"
+        text = 'v_sh000001="' + "~".join(fields) + '";v_sz399001="' + "~".join(fields) + '"'
+
+        # Only request sh000001
+        rows = src._parse_index_response(text, {"sh000001"})
+        assert len(rows) == 1
+        assert rows[0]["code"] == "sh000001"
+
+
+# ── P1 FUND_FLOW fix: SourceError propagates (no silent swallow) ──────────────
+
+class TestFundFlowSourceErrorPropagation:
+    def _make_source(self):
+        from engine.data_agent.sources.eastmoney import EastmoneySource
+        rl = RateLimiter()
+        src = EastmoneySource.__new__(EastmoneySource)
+        src._rl = rl
+        src._session = MagicMock()
+        src.domain = "push2.eastmoney.com"
+        return src
+
+    def test_network_error_raises_source_error(self):
+        from engine.data_agent.sources.base import SourceError
+        src = self._make_source()
+        src._get = MagicMock(side_effect=SourceError("connection failed"))
+        with pytest.raises(SourceError, match="connection failed"):
+            src.fetch_fund_flow("600000")
+
+    def test_empty_data_returns_empty_list(self):
+        src = self._make_source()
+        src._get = MagicMock(return_value={"data": {}})
+        assert src.fetch_fund_flow("600000") == []
+
+    def test_none_data_returns_empty_list(self):
+        src = self._make_source()
+        src._get = MagicMock(return_value={"data": None})
+        assert src.fetch_fund_flow("600000") == []
+
+
+# ── P2 double-recording fix: base._get records failure once ──────────────────
+
+class TestBaseGetFailureRecording:
+    def test_single_failure_recorded_once_after_all_retries(self):
+        """A connection error across 3 retries should call record_failure exactly once."""
+        from engine.data_agent.sources.base import AbstractSource, SourceError
+
+        class _Src(AbstractSource):
+            name = "test"
+            domain = "example.com"
+            def fetch_quotes(self, codes):
+                return []
+
+        rl = RateLimiter()
+        src = _Src(rl)
+        src._session = MagicMock()
+        src._session.get.side_effect = ConnectionError("timeout")
+
+        record_calls = []
+        original = rl.record_failure
+        rl.record_failure = lambda domain, status: record_calls.append((domain, status))
+
+        with pytest.raises(SourceError):
+            src._get("https://example.com/api", retries=3)
+
+        assert len(record_calls) == 1, (
+            f"Expected 1 record_failure call, got {len(record_calls)}"
+        )
+
+    def test_rate_limit_response_records_failure_immediately(self):
+        """A 429 response should record failure once without retrying."""
+        from engine.data_agent.sources.base import AbstractSource, SourceError
+
+        class _Src(AbstractSource):
+            name = "test"
+            domain = "example.com"
+            def fetch_quotes(self, codes):
+                return []
+
+        rl = RateLimiter()
+        src = _Src(rl)
+        mock_resp = MagicMock()
+        mock_resp.status_code = 429
+        src._session = MagicMock()
+        src._session.get.return_value = mock_resp
+
+        record_calls = []
+        rl.record_failure = lambda domain, status: record_calls.append((domain, status))
+
+        with pytest.raises(SourceError):
+            src._get("https://example.com/api", retries=3)
+
+        assert len(record_calls) == 1
+        assert record_calls[0][1] == 429  # status code preserved
+
+
+# ── P2 retrieval_log fix: log records actual source name ─────────────────────
+
+class TestOrchestratorActualSource:
+    def test_fetch_with_fallback_returns_actual_source_name(self):
+        """_fetch_with_fallback must return (src_name, rows), not just rows."""
+        from engine.data_agent.orchestrator import StockDataOrchestrator, AllSourcesFailedError
+        from engine.data_agent.fields import FIELD_POLICIES
+        from engine.data_agent.sources.base import SourceError
+
+        rl = RateLimiter()
+        storage = MagicMock()
+        fast = MagicMock()
+        slow = MagicMock()
+        scheduler = MagicMock()
+
+        primary_src = MagicMock()
+        primary_src.domain = "qt.gtimg.cn"
+        backup_src = MagicMock()
+        backup_src.domain = "hq.sinajs.cn"
+
+        fast.fetch.side_effect = [SourceError("primary down"), [{"code": "000001"}]]
+
+        orch = StockDataOrchestrator(
+            codes=["000001"],
+            sources={"tencent": primary_src, "sina": backup_src},
+            storage=storage,
+            fast=fast,
+            slow=slow,
+            scheduler=scheduler,
+            rate_limiter=rl,
+        )
+        policy = FIELD_POLICIES[FieldGroup.QUOTE]
+        src_name, rows = orch._fetch_with_fallback(
+            FieldGroup.QUOTE, ["000001"], policy
+        )
+        assert src_name == "sina"
+        assert rows == [{"code": "000001"}]
+
+    def test_all_sources_fail_raises(self):
+        from engine.data_agent.orchestrator import StockDataOrchestrator, AllSourcesFailedError
+        from engine.data_agent.fields import FIELD_POLICIES
+        from engine.data_agent.sources.base import SourceError
+
+        rl = RateLimiter()
+        fast = MagicMock()
+        fast.fetch.side_effect = SourceError("down")
+
+        src = MagicMock()
+        src.domain = "qt.gtimg.cn"
+
+        orch = StockDataOrchestrator(
+            codes=["000001"],
+            sources={"tencent": src},
+            storage=MagicMock(),
+            fast=fast,
+            slow=MagicMock(),
+            scheduler=MagicMock(),
+            rate_limiter=rl,
+        )
+        policy = FIELD_POLICIES[FieldGroup.QUOTE]
+        with pytest.raises(AllSourcesFailedError):
+            orch._fetch_with_fallback(FieldGroup.QUOTE, ["000001"], policy)
