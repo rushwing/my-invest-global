@@ -67,10 +67,17 @@ class SlowAgent:
         codes: list[str],
         source: AbstractSource,
     ) -> list[dict[str, Any]]:
-        """Call method(code) for each code serially; stop if circuit opens."""
+        """Call method(code) for each code serially; stop if circuit opens.
+
+        Raises SourceError if the circuit trips before any code succeeds, so
+        the orchestrator falls back to a backup source instead of recording a
+        silent empty-result success.
+        """
         results: list[dict[str, Any]] = []
+        circuit_tripped = False
         for code in codes:
             if self._rl.is_circuit_open(source.domain):
+                circuit_tripped = True
                 break
             try:
                 rows = method(code)
@@ -84,8 +91,15 @@ class SlowAgent:
             except SourceError:
                 self._rl.record_failure(source.domain, 0)
                 if self._rl.is_circuit_open(source.domain):
+                    circuit_tripped = True
                     break
             self._inter_code_sleep(source.domain)
+
+        if circuit_tripped and not results:
+            raise SourceError(
+                f"{source.name} circuit opened before any successful fetch "
+                f"(domain={source.domain})"
+            )
         return results
 
     def _fetch_batch(

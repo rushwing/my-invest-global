@@ -166,15 +166,16 @@ class EastmoneySource(AbstractSource):
             parts = item.split(",")
             if len(parts) < 5:
                 continue
+            # parts[0] is "YYYY-MM-DD HH:MM" for minute bars — keep full datetime
             rows.append({
                 "code": code,
-                "trade_date": parts[0][:10],
+                "bar_time": parts[0],   # full datetime string, e.g. "2026-05-16 09:30"
+                "period": period,
                 "open": _parse_float(parts[1]),
                 "close": _parse_float(parts[2]),
                 "high": _parse_float(parts[3]),
                 "low": _parse_float(parts[4]),
                 "volume": _parse_float(parts[5]) if len(parts) > 5 else None,
-                "adj_type": "none",
                 "source": "eastmoney",
             })
         return rows

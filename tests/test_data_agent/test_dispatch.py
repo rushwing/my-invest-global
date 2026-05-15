@@ -46,7 +46,10 @@ class TestGroupDispatch:
         assert GROUP_DISPATCH[FieldGroup.FUND_FLOW] == "fetch_fund_flow"
 
     def test_per_code_groups_correct(self):
-        batch_groups = {FieldGroup.QUOTE, FieldGroup.INDEX}
+        # QUOTE, INDEX, and FUNDAMENTAL are batch-call groups (not per-code).
+        # FUNDAMENTAL is excluded because TushareSource.fetch_fundamentals()
+        # accepts codes: list[str] — calling it per-code would iterate characters.
+        batch_groups = {FieldGroup.QUOTE, FieldGroup.INDEX, FieldGroup.FUNDAMENTAL}
         for group in FieldGroup:
             if group in batch_groups:
                 assert group not in GROUP_PER_CODE

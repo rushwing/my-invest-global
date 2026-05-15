@@ -99,42 +99,39 @@ def main() -> None:
     log.info("Starting data agent: %d codes, poll=%ds, once=%s", len(codes), args.poll, args.once)
 
     from engine.data_agent.orchestrator import StockDataOrchestrator
+    from engine.data_agent.rate_limiter import RateLimiter
+
+    # One shared RateLimiter so all sources and agents share circuit-breaker
+    # and backoff state globally (split instances cause domain-level state divergence).
+    shared_rl = RateLimiter()
 
     extra_sources: dict = {}
 
     # Wire optional sources based on environment
     try:
         from engine.data_agent.sources.akshare import AKShareSource
-        from engine.data_agent.rate_limiter import RateLimiter
-        _rl = RateLimiter()
-        extra_sources["akshare"] = AKShareSource(_rl)
+        extra_sources["akshare"] = AKShareSource(shared_rl)
         log.info("AKShare source enabled")
     except Exception as exc:
         log.warning("AKShare source unavailable: %s", exc)
 
     try:
         from engine.data_agent.sources.sina import SinaSource
-        from engine.data_agent.rate_limiter import RateLimiter as _RL
-        _rl2 = _RL()
-        extra_sources["sina"] = SinaSource(_rl2)
+        extra_sources["sina"] = SinaSource(shared_rl)
         log.info("Sina source enabled")
     except Exception as exc:
         log.warning("Sina source unavailable: %s", exc)
 
     try:
         from engine.data_agent.sources.tushare import TushareSource
-        from engine.data_agent.rate_limiter import RateLimiter as _RL3
-        _rl3 = _RL3()
-        extra_sources["tushare"] = TushareSource(_rl3)
+        extra_sources["tushare"] = TushareSource(shared_rl)
         log.info("Tushare source enabled")
     except Exception as exc:
         log.warning("Tushare source unavailable: %s", exc)
 
     try:
         from engine.data_agent.sources.cninfo import CNINFOSource
-        from engine.data_agent.rate_limiter import RateLimiter as _RL4
-        _rl4 = _RL4()
-        extra_sources["cninfo"] = CNINFOSource(_rl4)
+        extra_sources["cninfo"] = CNINFOSource(shared_rl)
         log.info("CNINFO source enabled")
     except Exception as exc:
         log.warning("CNINFO source unavailable: %s", exc)
@@ -143,6 +140,7 @@ def main() -> None:
         codes=codes,
         poll_s=args.poll,
         extra_sources=extra_sources or None,
+        rate_limiter=shared_rl,
     ) as orch:
         if args.once:
             summary = orch.run_once()

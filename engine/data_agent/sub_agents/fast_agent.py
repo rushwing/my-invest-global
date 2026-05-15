@@ -56,7 +56,7 @@ class FastAgent:
                 f"(required for {group.value})"
             )
 
-        return asyncio.run(self._fetch_async(group, method, codes))
+        return asyncio.run(self._fetch_async(group, method, codes, source.name))
 
     # ── Async internals ───────────────────────────────────────────────────────
 
@@ -65,17 +65,13 @@ class FastAgent:
         group: FieldGroup,
         method,
         codes: list[str],
+        source_name: str = "unknown",
     ) -> list[dict[str, Any]]:
         loop = asyncio.get_event_loop()
 
         if group in GROUP_PER_CODE:
-            # Per-code: each code gets its own executor task
-            tasks = [
-                loop.run_in_executor(None, method, code)
-                for code in codes
-            ]
+            tasks = [loop.run_in_executor(None, method, code) for code in codes]
         else:
-            # Batch: split into chunks, each chunk is one task
             tasks = [
                 loop.run_in_executor(None, method, batch)
                 for batch in _chunk(codes, BATCH_SIZE)
@@ -84,13 +80,23 @@ class FastAgent:
         raw_results = await asyncio.gather(*tasks, return_exceptions=True)
 
         results: list[dict[str, Any]] = []
+        errors: list[BaseException] = []
         for item in raw_results:
             if isinstance(item, BaseException):
-                continue  # individual task failure — skip, orchestrator handles fallback
+                errors.append(item)
+                continue
             if item is None:
                 continue
             if isinstance(item, dict):
                 results.append(item)
             elif isinstance(item, list):
                 results.extend(item)
+
+        # If every task failed, propagate so orchestrator falls back to a backup source.
+        # Partial success is acceptable — return what we have.
+        if errors and not results:
+            raise SourceError(
+                f"{source_name}: all {len(errors)} task(s) failed — "
+                f"first error: {errors[0]}"
+            )
         return results

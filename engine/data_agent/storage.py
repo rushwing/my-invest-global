@@ -104,6 +104,52 @@ CREATE TABLE IF NOT EXISTS business_segments (
     PRIMARY KEY (code, report_date, segment_name)
 );
 
+CREATE TABLE IF NOT EXISTS stock_price_minutes (
+    code     TEXT        NOT NULL,
+    bar_time TIMESTAMPTZ NOT NULL,
+    period   INTEGER     NOT NULL,
+    open     DOUBLE,
+    high     DOUBLE,
+    low      DOUBLE,
+    close    DOUBLE,
+    volume   BIGINT,
+    source   TEXT,
+    PRIMARY KEY (code, bar_time, period)
+);
+
+CREATE TABLE IF NOT EXISTS stock_fund_flow (
+    code             TEXT NOT NULL,
+    trade_date       DATE NOT NULL,
+    main_net_inflow  DOUBLE,
+    super_large_net  DOUBLE,
+    large_net        DOUBLE,
+    medium_net       DOUBLE,
+    small_net        DOUBLE,
+    source           TEXT,
+    PRIMARY KEY (code, trade_date)
+);
+
+CREATE TABLE IF NOT EXISTS stock_shareholders (
+    code         TEXT NOT NULL,
+    report_date  DATE NOT NULL,
+    holder_name  TEXT NOT NULL,
+    hold_amount  DOUBLE,
+    hold_ratio   DOUBLE,
+    source       TEXT,
+    PRIMARY KEY (code, report_date, holder_name)
+);
+
+CREATE TABLE IF NOT EXISTS stock_announcements (
+    code         TEXT NOT NULL,
+    ann_id       TEXT NOT NULL,
+    title        TEXT,
+    ann_time     TIMESTAMPTZ,
+    category     TEXT,
+    adjunct_url  TEXT,
+    source       TEXT,
+    PRIMARY KEY (code, ann_id)
+);
+
 CREATE TABLE IF NOT EXISTS stock_meta (
     code       TEXT PRIMARY KEY,
     name       TEXT,
@@ -202,6 +248,55 @@ ON CONFLICT (code, report_date, segment_name) DO UPDATE SET
 """
 
 
+_UPSERT_PRICE_MINUTES = """
+INSERT INTO stock_price_minutes
+    (code, bar_time, period, open, high, low, close, volume, source)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT (code, bar_time, period) DO UPDATE SET
+    open   = excluded.open,
+    high   = excluded.high,
+    low    = excluded.low,
+    close  = excluded.close,
+    volume = excluded.volume,
+    source = excluded.source
+"""
+
+_UPSERT_FUND_FLOW = """
+INSERT INTO stock_fund_flow
+    (code, trade_date, main_net_inflow, super_large_net, large_net, medium_net, small_net, source)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT (code, trade_date) DO UPDATE SET
+    main_net_inflow = excluded.main_net_inflow,
+    super_large_net = excluded.super_large_net,
+    large_net       = excluded.large_net,
+    medium_net      = excluded.medium_net,
+    small_net       = excluded.small_net,
+    source          = excluded.source
+"""
+
+_UPSERT_SHAREHOLDERS = """
+INSERT INTO stock_shareholders
+    (code, report_date, holder_name, hold_amount, hold_ratio, source)
+VALUES (?, ?, ?, ?, ?, ?)
+ON CONFLICT (code, report_date, holder_name) DO UPDATE SET
+    hold_amount = excluded.hold_amount,
+    hold_ratio  = excluded.hold_ratio,
+    source      = excluded.source
+"""
+
+_UPSERT_ANNOUNCEMENTS = """
+INSERT INTO stock_announcements
+    (code, ann_id, title, ann_time, category, adjunct_url, source)
+VALUES (?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT (code, ann_id) DO UPDATE SET
+    title       = excluded.title,
+    ann_time    = excluded.ann_time,
+    category    = excluded.category,
+    adjunct_url = excluded.adjunct_url,
+    source      = excluded.source
+"""
+
+
 # ── Storage class ─────────────────────────────────────────────────────────────
 
 class Storage:
@@ -288,18 +383,82 @@ class Storage:
         self._conn.executemany(_UPSERT_SEGMENTS, params)
         return len(params)
 
+    def upsert_price_minutes(self, rows: list[dict[str, Any]]) -> int:
+        """Upsert 1-min (or other intraday) OHLCV bars into the dedicated minutes table."""
+        if not rows:
+            return 0
+        params = [
+            (
+                r["code"], r["bar_time"], r.get("period", 1),
+                r.get("open"), r.get("high"), r.get("low"), r.get("close"),
+                r.get("volume"), r.get("source"),
+            )
+            for r in rows
+        ]
+        self._conn.executemany(_UPSERT_PRICE_MINUTES, params)
+        return len(params)
+
+    def upsert_fund_flow(self, rows: list[dict[str, Any]]) -> int:
+        """Upsert fund-flow (主力净流入) rows."""
+        if not rows:
+            return 0
+        params = [
+            (
+                r["code"], r["trade_date"],
+                r.get("main_net_inflow"), r.get("super_large_net"),
+                r.get("large_net"), r.get("medium_net"), r.get("small_net"),
+                r.get("source"),
+            )
+            for r in rows
+        ]
+        self._conn.executemany(_UPSERT_FUND_FLOW, params)
+        return len(params)
+
+    def upsert_shareholders(self, rows: list[dict[str, Any]]) -> int:
+        """Upsert top-10 free-float shareholder rows."""
+        if not rows:
+            return 0
+        params = [
+            (
+                r["code"], r["report_date"], r["holder_name"],
+                r.get("hold_amount"), r.get("hold_ratio"), r.get("source"),
+            )
+            for r in rows
+        ]
+        self._conn.executemany(_UPSERT_SHAREHOLDERS, params)
+        return len(params)
+
+    def upsert_announcements(self, rows: list[dict[str, Any]]) -> int:
+        """Upsert announcement metadata rows."""
+        if not rows:
+            return 0
+        params = [
+            (
+                r["code"], r["ann_id"], r.get("title"),
+                r.get("ann_time"), r.get("category"),
+                r.get("adjunct_url"), r.get("source"),
+            )
+            for r in rows
+        ]
+        self._conn.executemany(_UPSERT_ANNOUNCEMENTS, params)
+        return len(params)
+
     def upsert(self, group: FieldGroup, rows: list[dict[str, Any]]) -> int:
         """Dispatch to the correct upsert method by FieldGroup."""
         dispatch = {
-            FieldGroup.QUOTE:       self.upsert_quotes,
-            FieldGroup.KLINE:       self.upsert_prices,
-            FieldGroup.KLINE_MIN:   self.upsert_prices,
-            FieldGroup.FUNDAMENTAL: self.upsert_fundamentals,
-            FieldGroup.SEGMENT:     self.upsert_segments,
+            FieldGroup.QUOTE:        self.upsert_quotes,
+            FieldGroup.INDEX:        self.upsert_quotes,     # index quotes share schema
+            FieldGroup.KLINE:        self.upsert_prices,
+            FieldGroup.KLINE_MIN:    self.upsert_price_minutes,
+            FieldGroup.FUNDAMENTAL:  self.upsert_fundamentals,
+            FieldGroup.SEGMENT:      self.upsert_segments,
+            FieldGroup.FUND_FLOW:    self.upsert_fund_flow,
+            FieldGroup.SHAREHOLDER:  self.upsert_shareholders,
+            FieldGroup.ANNOUNCEMENT: self.upsert_announcements,
         }
         fn = dispatch.get(group)
         if fn is None:
-            return 0  # FUND_FLOW, SHAREHOLDER, ANNOUNCEMENT, INDEX — future tables
+            raise ValueError(f"No storage handler for FieldGroup.{group.name}")
         return fn(rows)
 
     def log_retrieval(

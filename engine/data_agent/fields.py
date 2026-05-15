@@ -109,10 +109,12 @@ GROUP_DISPATCH: dict[FieldGroup, str] = {
 
 # FieldGroups whose dispatch method is called once per code (code: str) rather
 # than once for the whole batch (codes: list[str]).
+# NOTE: FUNDAMENTAL is intentionally excluded — TushareSource.fetch_fundamentals()
+# accepts codes: list[str] (one API call for multiple codes). Calling it per-code
+# would iterate over individual characters of the code string.
 GROUP_PER_CODE: frozenset[FieldGroup] = frozenset({
     FieldGroup.KLINE,
     FieldGroup.KLINE_MIN,
-    FieldGroup.FUNDAMENTAL,
     FieldGroup.SEGMENT,
     FieldGroup.FUND_FLOW,
     FieldGroup.SHAREHOLDER,

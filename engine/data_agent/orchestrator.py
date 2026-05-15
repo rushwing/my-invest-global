@@ -79,17 +79,21 @@ class StockDataOrchestrator:
         codes: list[str],
         poll_s: int = 30,
         extra_sources: dict[str, AbstractSource] | None = None,
+        rate_limiter: RateLimiter | None = None,
     ) -> "StockDataOrchestrator":
         """
         Build an orchestrator with all default sources wired up.
         Only Tencent and Eastmoney are available at this stage;
         remaining sources (akshare, tushare, sina, yahoo, cninfo) are added
         as they are implemented.
+
+        Pass ``rate_limiter`` to share a single RateLimiter instance across all
+        sources and agents so circuit-breaker and backoff state is global.
         """
         from engine.data_agent.sources.tencent import TencentSource
         from engine.data_agent.sources.eastmoney import EastmoneySource
 
-        rl = RateLimiter()
+        rl = rate_limiter if rate_limiter is not None else RateLimiter()
         sources: dict[str, AbstractSource] = {
             "tencent":   TencentSource(rl),
             "eastmoney": EastmoneySource(rl),
