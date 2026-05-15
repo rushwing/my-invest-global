@@ -83,10 +83,38 @@ class TencentSource(AbstractSource):
         end: date | None = None,
         lookback_days: int = 420,
         adjust: str = "qfq",
+    ) -> list[dict[str, Any]]:
+        """
+        Daily K-line as a flat list of price rows — compatible with storage.upsert(KLINE).
+        Each row: {code, trade_date, open, close, high, low, volume, adj_type, source}.
+        """
+        combined = self.fetch_kline_and_quote(code, end=end, lookback_days=lookback_days, adjust=adjust)
+        return [
+            {
+                "code": code,
+                "trade_date": row["date"],
+                "open":  row["open"],
+                "close": row["close"],
+                "high":  row["high"],
+                "low":   row["low"],
+                "volume": row["volume"],
+                "amount": None,   # not available from this endpoint
+                "adj_type": adjust,
+                "source": "tencent",
+            }
+            for row in combined["kline"]
+        ]
+
+    def fetch_kline_and_quote(
+        self,
+        code: str,
+        end: date | None = None,
+        lookback_days: int = 420,
+        adjust: str = "qfq",
     ) -> dict[str, Any]:
         """
         Fetch daily K-line + embedded real-time quote for one stock.
-        Refactored from scripts/refresh_aidc_data.py:fetch_tencent_stock().
+        Used by scripts/refresh_aidc_data.py:fetch_tencent_stock().
 
         Returns a dict with keys: code, quote_time, price, pct_change, volume,
         amount, market_cap, dynamic_pe, kline (list of {date, open, high, low, close, volume}).
@@ -100,7 +128,6 @@ class TencentSource(AbstractSource):
             "param": f"{symbol},day,{start_date:%Y-%m-%d},{end_date:%Y-%m-%d},200,{adjust}"
         }
 
-        # Use _get with the ifzq domain
         saved_domain = self.domain
         self.domain = "web.ifzq.gtimg.cn"
         try:
@@ -151,6 +178,8 @@ class TencentSource(AbstractSource):
         Fetch one batch of up to BATCH_SIZE codes from qt.gtimg.cn.
         Response format: v_sh600000="1~name~code~price~...";
         """
+        if self._rl.is_circuit_open(self.domain):
+            raise SourceError(f"Circuit open for {self.domain}")
         symbols = ",".join(_tencent_symbol(c) for c in codes)
         url = f"https://qt.gtimg.cn/q={symbols}"
         self._rl.acquire(self.domain)

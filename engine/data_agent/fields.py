@@ -93,3 +93,28 @@ FIELD_POLICIES: dict[FieldGroup, SourcePolicy] = {
 # Sources that use async parallel fetching (fast_agent).
 # Everything else goes through slow_agent (serial + anti-blacklist delays).
 FAST_SOURCES: frozenset[str] = frozenset({"tencent", "sina", "yahoo"})
+
+# Maps each FieldGroup to the source method name the agents should call.
+GROUP_DISPATCH: dict[FieldGroup, str] = {
+    FieldGroup.QUOTE:        "fetch_quotes",
+    FieldGroup.KLINE:        "fetch_kline_day",
+    FieldGroup.KLINE_MIN:    "fetch_kline_min",
+    FieldGroup.FUNDAMENTAL:  "fetch_fundamentals",
+    FieldGroup.SEGMENT:      "fetch_business_segments",
+    FieldGroup.FUND_FLOW:    "fetch_fund_flow",
+    FieldGroup.SHAREHOLDER:  "fetch_shareholders",
+    FieldGroup.ANNOUNCEMENT: "fetch_announcements",
+    FieldGroup.INDEX:        "fetch_quotes",
+}
+
+# FieldGroups whose dispatch method is called once per code (code: str) rather
+# than once for the whole batch (codes: list[str]).
+GROUP_PER_CODE: frozenset[FieldGroup] = frozenset({
+    FieldGroup.KLINE,
+    FieldGroup.KLINE_MIN,
+    FieldGroup.FUNDAMENTAL,
+    FieldGroup.SEGMENT,
+    FieldGroup.FUND_FLOW,
+    FieldGroup.SHAREHOLDER,
+    FieldGroup.ANNOUNCEMENT,
+})

@@ -62,6 +62,8 @@ class SinaSource(AbstractSource):
         return results
 
     def _fetch_batch(self, codes: list[str]) -> list[dict[str, Any]]:
+        if self._rl.is_circuit_open(self.domain):
+            raise SourceError(f"Circuit open for {self.domain}")
         symbols = ",".join(_sina_symbol(c) for c in codes)
         url = f"https://hq.sinajs.cn/list={symbols}"
         self._rl.acquire(self.domain)
@@ -103,8 +105,8 @@ class SinaSource(AbstractSource):
                 "quote_time": quote_time,
                 "price": _parse_float(fields[3]),
                 "pct_change": None,  # calculated from prev_close if needed
-                "volume": _parse_float(fields[8]),   # amount in yuan
-                "amount": _parse_float(fields[8]),
+                "volume": _parse_float(fields[7]),   # shares (index 7)
+                "amount": _parse_float(fields[8]),   # yuan (index 8)
                 "market_cap": None,  # not provided by Sina real-time
                 "dynamic_pe": None,
                 "source": "sina",

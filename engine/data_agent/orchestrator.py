@@ -181,12 +181,13 @@ class StockDataOrchestrator:
         """
         errors: list[str] = []
         for src_name in [policy.primary] + list(policy.backups):
-            if self._rl.is_circuit_open(src_name):
-                errors.append(f"{src_name}: circuit open")
-                continue
             source = self._sources.get(src_name)
             if source is None:
                 errors.append(f"{src_name}: not configured")
+                continue
+            # Check circuit by domain (where rate-limiter state is actually stored)
+            if self._rl.is_circuit_open(source.domain):
+                errors.append(f"{src_name}: circuit open ({source.domain})")
                 continue
             try:
                 agent = self._fast if src_name in FAST_SOURCES else self._slow

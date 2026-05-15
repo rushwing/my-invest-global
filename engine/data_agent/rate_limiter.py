@@ -88,8 +88,15 @@ class RateLimiter:
         return time.monotonic() < state._circuit_open_until
 
     def acquire(self, domain: str) -> None:
-        """Block until it is safe to make a request to this domain."""
+        """
+        Block until it is safe to make a request to this domain.
+        Raises RuntimeError if the circuit is open — callers that bypass
+        AbstractSource._get() (e.g. batch methods) get an immediate error
+        instead of silently sending requests during a cooldown.
+        """
         state = self._get_state(domain)
+        if time.monotonic() < state._circuit_open_until:
+            raise RuntimeError(f"Circuit open for {domain} — request blocked by rate limiter")
         with state._lock:
             now = time.monotonic()
             elapsed = now - state._last_request

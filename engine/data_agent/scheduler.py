@@ -190,8 +190,11 @@ class Schedule:
 
         due: list[FieldGroup] = []
         for group, cfg in FIELD_SCHEDULES.items():
-            if cfg.get("during_trading") and not is_th:
-                continue  # skip intraday groups when market is closed
+            # Skip purely intraday groups when market is closed.
+            # Groups that have fixed_times (e.g. FUND_FLOW post-close run) are
+            # NOT skipped — _is_due() will check their fixed windows regardless.
+            if cfg.get("during_trading") and not is_th and "fixed_times" not in cfg:
+                continue
             if self._is_due(group, cfg, now_cst, last_fetched.get(group), is_td, is_th):
                 due.append(group)
         return due
@@ -207,8 +210,9 @@ class Schedule:
     ) -> bool:
         t = now.time()
 
-        # Fixed-time groups: due if current time is within 5 min past a fixed time
-        # and we haven't already fetched since that time today.
+        # Fixed-time windows: always evaluated, even outside trading hours.
+        # A group may have BOTH fixed_times (post-close run) and interval_s
+        # (intraday polling) — e.g. FUND_FLOW.
         if "fixed_times" in cfg:
             for fixed_t in cfg["fixed_times"]:
                 window_start = dt.datetime.combine(now.date(), fixed_t, tzinfo=self.CST)
@@ -216,15 +220,19 @@ class Schedule:
                 if window_start <= now <= window_end:
                     if last is None or last < window_start:
                         return True
+            # Pure fixed-time group (no interval) — only fire on fixed windows.
+            if "interval_s" not in cfg:
+                return False
+
+        # Interval-based check.  Respects during_trading restriction.
+        if cfg.get("during_trading") and not is_trading_hours:
             return False
 
-        # Interval-based groups
-        interval = cfg["interval_s"]
+        interval: int = cfg["interval_s"]
         dense_windows: list[str] = cfg.get("dense_windows", [])
         if dense_windows and self.in_dense_window(dense_windows, t):
             interval = cfg.get("dense_interval_s", interval)
 
         if last is None:
             return True
-        elapsed = (now - last).total_seconds()
-        return elapsed >= interval
+        return (now - last).total_seconds() >= interval

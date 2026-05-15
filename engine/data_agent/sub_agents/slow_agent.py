@@ -14,7 +14,7 @@ import random
 import time
 from typing import Any
 
-from engine.data_agent.fields import FieldGroup
+from engine.data_agent.fields import GROUP_DISPATCH, GROUP_PER_CODE, FieldGroup
 from engine.data_agent.rate_limiter import RateLimiter
 from engine.data_agent.sources.base import AbstractSource, SourceError
 
@@ -23,9 +23,12 @@ class SlowAgent:
     """
     Serial, polite retrieval agent for web-scraping and rate-limited sources.
 
+    Dispatches to the correct source method (fetch_quotes, fetch_kline_day,
+    fetch_business_segments, etc.) based on FieldGroup rather than always
+    calling fetch_quotes().
+
     Respects domain-level delays from the RateLimiter and stops early if the
-    circuit breaker opens mid-batch (signalling the source should be abandoned
-    for this cycle; the orchestrator will try a backup source).
+    circuit breaker opens mid-batch.
     """
 
     def __init__(self, rate_limiter: RateLimiter) -> None:
@@ -38,51 +41,69 @@ class SlowAgent:
         source: AbstractSource,
     ) -> list[dict[str, Any]]:
         """
-        Iterate through codes, fetching one at a time with paced delays.
-        Returns all successfully retrieved rows; stops if circuit opens.
+        Dispatch to the right fetch method for this FieldGroup and iterate serially.
         """
-        results: list[dict[str, Any]] = []
-        for code in codes:
-            if self._rl.is_circuit_open(source.domain):
-                break  # let orchestrator fall back to backup source
-            try:
-                rows = source.fetch_quotes([code])
-                results.extend(rows)
-                self._rl.record_success(source.domain)
-            except SourceError as exc:
-                self._rl.record_failure(source.domain, 0)
-                # On circuit open after this failure, the outer loop will break
-                if self._rl.is_circuit_open(source.domain):
-                    break
-            # Add a small random jitter between codes to reduce detection probability
-            self._inter_code_sleep(source.domain)
-        return results
+        method_name = GROUP_DISPATCH.get(group)
+        if not method_name:
+            raise SourceError(f"No dispatch method configured for {group}")
 
-    def fetch_segments(
+        method = getattr(source, method_name, None)
+        if method is None:
+            raise SourceError(
+                f"{source.name} does not implement {method_name} "
+                f"(required for {group.value})"
+            )
+
+        if group in GROUP_PER_CODE:
+            return self._fetch_per_code(method, codes, source)
+        else:
+            return self._fetch_batch(method, codes, source)
+
+    # ── Internal ──────────────────────────────────────────────────────────────
+
+    def _fetch_per_code(
         self,
+        method,
         codes: list[str],
         source: AbstractSource,
     ) -> list[dict[str, Any]]:
-        """
-        Fetch business segment rows (主营构成) for a list of codes.
-        Source must implement fetch_business_segments(code).
-        """
+        """Call method(code) for each code serially; stop if circuit opens."""
         results: list[dict[str, Any]] = []
         for code in codes:
             if self._rl.is_circuit_open(source.domain):
                 break
             try:
-                rows = source.fetch_business_segments(code)  # type: ignore[attr-defined]
+                rows = method(code)
+                # Normalise: methods may return list[dict] or dict or None
+                if rows is None:
+                    rows = []
+                elif isinstance(rows, dict):
+                    rows = [rows]
                 results.extend(rows)
                 self._rl.record_success(source.domain)
-            except (SourceError, AttributeError):
+            except SourceError:
                 self._rl.record_failure(source.domain, 0)
                 if self._rl.is_circuit_open(source.domain):
                     break
             self._inter_code_sleep(source.domain)
         return results
 
-    # ── Internal ──────────────────────────────────────────────────────────────
+    def _fetch_batch(
+        self,
+        method,
+        codes: list[str],
+        source: AbstractSource,
+    ) -> list[dict[str, Any]]:
+        """Call method(codes) once for the whole batch."""
+        if self._rl.is_circuit_open(source.domain):
+            raise SourceError(f"Circuit open for {source.domain}")
+        try:
+            rows = method(codes)
+            self._rl.record_success(source.domain)
+            return rows or []
+        except SourceError:
+            self._rl.record_failure(source.domain, 0)
+            raise
 
     def _inter_code_sleep(self, domain: str) -> None:
         """

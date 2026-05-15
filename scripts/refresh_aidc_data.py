@@ -751,7 +751,7 @@ def fetch_tencent_stock(meta: StockMeta, end: date | None = None) -> RefreshedSt
     from engine.data_agent.sources.tencent import TencentSource
     from engine.data_agent.rate_limiter import RateLimiter
 
-    result = TencentSource(RateLimiter()).fetch_kline_day(meta.code, end=end)
+    result = TencentSource(RateLimiter()).fetch_kline_and_quote(meta.code, end=end)
     kline = result["kline"]  # list[dict] with keys: date, open, close, high, low, volume
     quote_time = result["quote_time"]
 

@@ -35,6 +35,27 @@ def _parse_float(value: Any) -> float | None:
         return None
 
 
+# Eastmoney push2 returns several numeric fields as integers scaled by 100.
+# Divide by this factor to get the real value (e.g. f43=1234 → price 12.34).
+_EM_QUOTE_SCALE: dict[str, float] = {
+    "f43":  0.01,   # current price × 100
+    "f170": 0.01,   # daily pct_change × 100  (result is %)
+    "f162": 0.01,   # dynamic PE × 100
+    "f167": 0.01,   # PB × 100
+    "f168": 0.01,   # turnover rate × 100  (result is %)
+    # f47 (volume shares), f48 (amount yuan), f116/f117 (market cap yuan): no scale
+}
+
+
+def _em_float(data: dict, field: str) -> float | None:
+    """Parse an Eastmoney push2 field, applying the scale factor if configured."""
+    raw = _parse_float(data.get(field))
+    if raw is None:
+        return None
+    scale = _EM_QUOTE_SCALE.get(field, 1.0)
+    return raw * scale
+
+
 class EastmoneySource(AbstractSource):
     """Eastmoney real-time quotes, K-line, business segments, and fund flow."""
 
@@ -182,24 +203,28 @@ class EastmoneySource(AbstractSource):
     def _parse_segments(self, code: str, payload: dict[str, Any]) -> list[dict[str, Any]]:
         """Extract structured rows from the zygcfx payload."""
         rows = payload.get("zygcfx") or []
-        # Prefer product-type rows (MAINOP_TYPE=2), fall back to industry-type (1)
-        product_rows = [r for r in rows if str(r.get("MAINOP_TYPE")) == "2" and r.get("ITEM_NAME")]
+        if not rows:
+            return []
+
+        # Determine the latest report date across ALL rows (both type 1 and 2).
+        # Only then apply the type preference within that period, so we never
+        # silently return an older period's product rows when the latest period
+        # only has industry-type rows.
+        dates = [str(r.get("REPORT_DATE") or "")[:10] for r in rows if r.get("REPORT_DATE")]
+        if not dates:
+            return []
+        latest_date = max(dates)
+        latest_rows = [r for r in rows if str(r.get("REPORT_DATE") or "")[:10] == latest_date]
+
+        # Within the latest period: prefer product type (2), fallback to industry type (1)
+        product_rows = [r for r in latest_rows if str(r.get("MAINOP_TYPE")) == "2" and r.get("ITEM_NAME")]
         if not product_rows:
-            product_rows = [r for r in rows if str(r.get("MAINOP_TYPE")) == "1" and r.get("ITEM_NAME")]
+            product_rows = [r for r in latest_rows if str(r.get("MAINOP_TYPE")) == "1" and r.get("ITEM_NAME")]
         if not product_rows:
             return []
 
-        # Use most recent report date
-        latest_date = max(
-            str(r.get("REPORT_DATE") or "")[:10] for r in product_rows
-        )
-        latest_rows = [
-            r for r in product_rows
-            if str(r.get("REPORT_DATE") or "")[:10] == latest_date
-        ]
-
         result = []
-        for r in latest_rows:
+        for r in product_rows:
             result.append({
                 "code": code,
                 "report_date": latest_date,
@@ -214,8 +239,8 @@ class EastmoneySource(AbstractSource):
 
     # ── Fund flow ─────────────────────────────────────────────────────────────
 
-    def fetch_fund_flow(self, code: str) -> dict[str, Any] | None:
-        """Fetch individual stock fund flow (主力净流入) via datacenter.eastmoney.com."""
+    def fetch_fund_flow(self, code: str) -> list[dict[str, Any]]:
+        """Fetch individual stock fund flow (主力净流入) via push2.eastmoney.com."""
         secid = ("1." if code.startswith(("6", "9")) else "0.") + code
         url = "https://push2.eastmoney.com/api/qt/stock/get"
         params = {
@@ -226,17 +251,20 @@ class EastmoneySource(AbstractSource):
         try:
             payload = self._get(url, params=params)
         except SourceError:
-            return None
+            return []
         data = payload.get("data") or {}
-        return {
+        if not data:
+            return []
+        return [{
             "code": code,
+            "trade_date": dt.date.today().isoformat(),
             "main_net_inflow": _parse_float(data.get("f62")),
             "super_large_net": _parse_float(data.get("f66")),
             "large_net": _parse_float(data.get("f72")),
             "medium_net": _parse_float(data.get("f78")),
             "small_net": _parse_float(data.get("f81")),
             "source": "eastmoney",
-        }
+        }]
 
     # ── Internal ──────────────────────────────────────────────────────────────
 
@@ -257,13 +285,13 @@ class EastmoneySource(AbstractSource):
         return {
             "code": code,
             "quote_time": now,
-            "price": _parse_float(data.get("f43")),
-            "pct_change": _parse_float(data.get("f170")),
-            "volume": _parse_float(data.get("f47")),
-            "amount": _parse_float(data.get("f48")),
-            "market_cap": _parse_float(data.get("f116")),  # 亿元
-            "dynamic_pe": _parse_float(data.get("f162")),
-            "pb": _parse_float(data.get("f167")),
-            "turnover_rate": _parse_float(data.get("f168")),
+            "price":        _em_float(data, "f43"),    # ÷100
+            "pct_change":   _em_float(data, "f170"),   # ÷100 → %
+            "volume":       _parse_float(data.get("f47")),   # shares, no scale
+            "amount":       _parse_float(data.get("f48")),   # yuan, no scale
+            "market_cap":   _parse_float(data.get("f116")),  # yuan, no scale
+            "dynamic_pe":   _em_float(data, "f162"),   # ÷100
+            "pb":           _em_float(data, "f167"),   # ÷100
+            "turnover_rate": _em_float(data, "f168"),  # ÷100 → %
             "source": "eastmoney",
         }
