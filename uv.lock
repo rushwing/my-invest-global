@@ -1090,6 +1090,7 @@ dependencies = [
 [package.optional-dependencies]
 data = [
     { name = "akshare" },
+    { name = "httpx" },
     { name = "yfinance" },
 ]
 dev = [
@@ -1112,9 +1113,10 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "akshare", marker = "extra == 'data'", specifier = ">=1.12" },
+    { name = "akshare", marker = "extra == 'data'", specifier = "==1.18.60" },
     { name = "anthropic", specifier = ">=0.25" },
     { name = "duckdb", specifier = ">=1.0" },
+    { name = "httpx", marker = "extra == 'data'", specifier = ">=0.27" },
     { name = "loguru", specifier = ">=0.7" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.9" },
     { name = "numpy", specifier = ">=1.26" },

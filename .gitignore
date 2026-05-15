@@ -35,8 +35,12 @@ logs/
 # Data (raw data not committed — too large / contains PII)
 data/raw/
 data/cache/
+data/db/
 data/agent_input/*.json
 data/agent_input/*.csv
+
+# Generated docs
+docs/akshare-validation-report.md
 
 # Keep processed signals and the directory structure
 !data/agent_input/.gitkeep
