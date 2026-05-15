@@ -3,6 +3,9 @@
 Important data-quality rules:
 - Tradeable A-share quote, market-cap, PE, and 1/3-month return fields come from
   Tencent quote/kline endpoints in one refresh pass.
+- Product-line revenue/profit mix comes from Eastmoney F10 BusinessAnalysis PageAjax
+  when available. Eastmoney labels the profit field as main-business profit, which
+  is a gross-profit style segment metric rather than audited attributable net profit.
 - Target prices are allowed only when the report date is on or after 2026-01-01
   and the source is explicitly recorded in VERIFIED_TARGETS.
 - Missing or unverified post-2026 target prices stay blank.
@@ -16,14 +19,17 @@ import re
 import sys
 import time
 import urllib.request
-from dataclasses import dataclass
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass, replace
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 REPORT_HTML = ROOT / "aidc_report.html"
-CHINA_MD = ROOT / "data_china_aidc.md"
+CN_DIR = ROOT / "data" / "agent_input" / "cn"
+CHINA_MD = CN_DIR / "data_china_aidc.md"
+STOCKS_YAML = CN_DIR / "stocks.yaml"
 TARGET_CUTOFF = date(2026, 1, 1)
 
 
@@ -38,6 +44,13 @@ class StockMeta:
     scarcity: str
     rating: str
     active: bool = True
+    category_id: str = ""
+    source_file: str = ""
+    exchange: str = ""
+    board: str = ""
+    product_mix: str = "待获取"
+    valuation_signal: str = ""
+    davis_signal: str = ""
 
 
 @dataclass(frozen=True)
@@ -57,6 +70,12 @@ class RefreshedStock:
     dynamic_pe: float | None
     quote_time: datetime | None
     target: TargetPrice | None
+    daily_return: float | None = None
+    six_month_return: float | None = None
+    one_year_return: float | None = None
+    volume_lot: float | None = None
+    amount_wan: float | None = None
+    product_mix: str = "待获取"
 
 
 # Add entries here only after verifying the original report date is >= TARGET_CUTOFF.
@@ -478,6 +497,139 @@ STOCKS: list[StockMeta] = [
 ]
 
 
+def parse_simple_yaml_lists(path: Path) -> dict[str, Any]:
+    """Parse the small stocks.yaml schema without adding a runtime dependency."""
+
+    data: dict[str, Any] = {}
+    current_section: str | None = None
+    current_item: dict[str, Any] | None = None
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        if not raw_line.strip() or raw_line.lstrip().startswith("#"):
+            continue
+        if not raw_line.startswith(" "):
+            key, _, value = raw_line.partition(":")
+            key = key.strip()
+            value = value.strip()
+            if value == "":
+                data[key] = []
+                current_section = key
+                current_item = None
+            else:
+                data[key] = parse_yaml_scalar(value)
+                current_section = None
+                current_item = None
+            continue
+        if raw_line.startswith("  - "):
+            if current_section is None:
+                continue
+            current_item = {}
+            data.setdefault(current_section, []).append(current_item)
+            rest = raw_line[4:].strip()
+            if rest:
+                key, _, value = rest.partition(":")
+                current_item[key.strip()] = parse_yaml_scalar(value.strip())
+            continue
+        if raw_line.startswith("    ") and current_item is not None:
+            key, _, value = raw_line.strip().partition(":")
+            current_item[key.strip()] = parse_yaml_scalar(value.strip())
+    return data
+
+
+def parse_yaml_scalar(value: str) -> Any:
+    if value == "null":
+        return None
+    if value.startswith('"') and value.endswith('"'):
+        return value[1:-1].replace('\\"', '"').replace("\\\\", "\\")
+    try:
+        return int(value)
+    except ValueError:
+        return value
+
+
+def split_md_row(line: str) -> list[str]:
+    return [cell.strip() for cell in line.strip().strip("|").split("|")]
+
+
+def read_existing_row_data() -> dict[str, dict[str, str]]:
+    """Read mutable per-stock fields from existing markdown before refreshing."""
+
+    rows: dict[str, dict[str, str]] = {}
+    paths = [
+        path
+        for path in CN_DIR.glob("*.md")
+        if path.name not in {"README.md"} and path.is_file()
+    ]
+    for path in paths:
+        lines = path.read_text(encoding="utf-8").splitlines()
+        for i, line in enumerate(lines):
+            if not line.startswith("| 领域 |"):
+                continue
+            headers = split_md_row(line)
+            for row_line in lines[i + 2 :]:
+                if not row_line.startswith("|"):
+                    break
+                values = split_md_row(row_line)
+                if len(values) != len(headers):
+                    continue
+                row = dict(zip(headers, values, strict=True))
+                code = row.get("股票代码")
+                if code and code != "未上市":
+                    rows[code] = row
+    return rows
+
+
+def normalize_product_mix_text(value: str) -> str:
+    return re.sub(r"/\+([0-9])", r"/\1", value)
+
+
+def default_summary(name: str) -> str:
+    return f"待补：{name}为新增自选观察标的，需补充2026Q1、订单、客户、产能和利润率数据。"
+
+
+def load_stocks_from_yaml(path: Path = STOCKS_YAML) -> list[StockMeta]:
+    if not path.exists():
+        return STOCKS
+
+    stock_yaml = parse_simple_yaml_lists(path)
+    existing_rows = read_existing_row_data()
+    metas: list[StockMeta] = []
+    seen_codes: set[str] = set()
+    for item in stock_yaml.get("stocks", []):
+        code = item.get("code")
+        if code in seen_codes:
+            continue
+        if code is not None:
+            seen_codes.add(code)
+        row = existing_rows.get(code or "", {})
+        name = str(item["name"])
+        davis_observation = (row.get("戴维斯双击观察") or "").replace(
+            "扭亏时间线",
+            "扭亏拐点",
+        )
+        product_mix = normalize_product_mix_text(row.get("产品线营收/净利份额比例") or "待获取")
+        metas.append(
+            StockMeta(
+                sector=str(item.get("source_category") or item.get("category") or ""),
+                subsector=str(item.get("sub_sector") or ""),
+                name=name,
+                code=code,
+                summary=row.get("一季度财报总结") or default_summary(name),
+                rank=row.get("行业排行") or "待核验",
+                scarcity=row.get("产品紧缺度") or "待核验",
+                rating=row.get("投资价值评级") or "观察",
+                active=bool(item.get("category_id") != "out_of_scope"),
+                category_id=str(item.get("category_id") or ""),
+                source_file=str(item.get("source_file") or ""),
+                exchange=str(item.get("exchange") or ""),
+                board=str(item.get("board") or ""),
+                product_mix=product_mix,
+                valuation_signal=row.get("估值/业绩弹性") or "",
+                davis_signal=davis_observation,
+            )
+        )
+    return metas
+
+
 def market_symbol(code: str) -> str:
     """Return Tencent market symbol for an A-share code."""
 
@@ -493,7 +645,7 @@ def parse_float(value: str | None) -> float | None:
         return None
 
 
-def fetch_json(url: str, retries: int = 3) -> dict[str, Any]:
+def fetch_json(url: str, retries: int = 3, timeout: int = 20) -> dict[str, Any]:
     request = urllib.request.Request(
         url,
         headers={
@@ -503,10 +655,11 @@ def fetch_json(url: str, retries: int = 3) -> dict[str, Any]:
             )
         },
     )
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
     last_error: Exception | None = None
     for attempt in range(1, retries + 1):
         try:
-            with urllib.request.urlopen(request, timeout=20) as response:
+            with opener.open(request, timeout=timeout) as response:
                 return json.loads(response.read().decode("utf-8"))
         except Exception as exc:  # pragma: no cover - depends on external network
             last_error = exc
@@ -517,12 +670,86 @@ def fetch_json(url: str, retries: int = 3) -> dict[str, Any]:
     raise last_error
 
 
+def eastmoney_code(code: str) -> str:
+    return ("SH" if code.startswith(("6", "9")) else "SZ") + code
+
+
+def fetch_eastmoney_business_analysis(code: str) -> dict[str, Any]:
+    url = (
+        "https://emweb.securities.eastmoney.com/PC_HSF10/BusinessAnalysis/PageAjax"
+        f"?code={eastmoney_code(code)}"
+    )
+    return fetch_json(url, retries=1, timeout=20)
+
+
+def format_money_yuan(value: float | None) -> str:
+    if value is None:
+        return "N/A"
+    if abs(value) >= 100_000_000:
+        return f"{value / 100_000_000:.2f}亿"
+    if abs(value) >= 10_000:
+        return f"{value / 10_000:.2f}万"
+    return f"{value:.0f}"
+
+
+def format_product_mix(payload: dict[str, Any]) -> str:
+    rows = payload.get("zygcfx") or []
+    product_rows = [
+        row for row in rows if str(row.get("MAINOP_TYPE")) == "2" and row.get("ITEM_NAME")
+    ]
+    if not product_rows:
+        product_rows = [
+            row for row in rows if str(row.get("MAINOP_TYPE")) == "1" and row.get("ITEM_NAME")
+        ]
+    if not product_rows:
+        return "待获取"
+
+    latest_date = max(str(row.get("REPORT_DATE") or "")[:10] for row in product_rows)
+    latest_rows = [
+        row for row in product_rows if str(row.get("REPORT_DATE") or "")[:10] == latest_date
+    ]
+    latest_rows.sort(key=lambda row: float(row.get("MAIN_BUSINESS_INCOME") or 0), reverse=True)
+
+    parts: list[str] = []
+    for row in latest_rows[:6]:
+        name = str(row.get("ITEM_NAME") or "").replace("|", "/")
+        income = format_money_yuan(parse_float(str(row.get("MAIN_BUSINESS_INCOME") or "")))
+        mbi_ratio = parse_float(str(row.get("MBI_RATIO") or ""))
+        income_ratio = format_share_percent(None if mbi_ratio is None else mbi_ratio * 100)
+        profit = format_money_yuan(parse_float(str(row.get("MAIN_BUSINESS_RPOFIT") or "")))
+        mbr_ratio = parse_float(str(row.get("MBR_RATIO") or ""))
+        profit_ratio = format_share_percent(None if mbr_ratio is None else mbr_ratio * 100)
+        parts.append(f"{name}:收入{income}/{income_ratio},利润{profit}/{profit_ratio}")
+    return f"{latest_date}；" + "；".join(parts)
+
+
+def product_mix_for(meta: StockMeta) -> str:
+    if meta.code is None:
+        return "未上市"
+    product_mix = format_product_mix(fetch_eastmoney_business_analysis(meta.code))
+    return product_mix if product_mix != "待获取" else (meta.product_mix or "待获取")
+
+
+def fetch_product_mixes(metas: list[StockMeta], max_workers: int = 16) -> dict[str, str]:
+    product_mixes: dict[str, str] = {}
+    tradeable = [meta for meta in metas if meta.code is not None]
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = {executor.submit(product_mix_for, meta): meta for meta in tradeable}
+        for future in as_completed(futures):
+            meta = futures[future]
+            try:
+                product_mixes[meta.code or ""] = future.result()
+            except Exception:
+                product_mixes[meta.code or ""] = meta.product_mix or "待获取"
+    return product_mixes
+
+
 def fetch_tencent_stock(meta: StockMeta, end: date | None = None) -> RefreshedStock:
     if meta.code is None:
         return RefreshedStock(meta, None, None, None, None, None, None, None)
 
     end_date = end or date.today()
-    begin_date = end_date - timedelta(days=130)
+    begin_date = end_date - timedelta(days=420)
     symbol = market_symbol(meta.code)
     url = (
         "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get"
@@ -537,8 +764,13 @@ def fetch_tencent_stock(meta: StockMeta, end: date | None = None) -> RefreshedSt
     market_cap_yi = parse_float(quote[45])
     dynamic_pe = parse_float(quote[39])
     quote_time = datetime.strptime(quote[30], "%Y%m%d%H%M%S")
+    daily_return = parse_float(quote[32])
     one_month_return = calculate_return(kline, quote_time.date(), 30)
     three_month_return = calculate_return(kline, quote_time.date(), 90)
+    six_month_return = calculate_return(kline, quote_time.date(), 180)
+    one_year_return = calculate_return(kline, quote_time.date(), 365)
+    volume_lot = parse_float(quote[36])
+    amount_wan = parse_float(quote[57]) or parse_float(quote[37])
 
     return RefreshedStock(
         meta=meta,
@@ -549,6 +781,12 @@ def fetch_tencent_stock(meta: StockMeta, end: date | None = None) -> RefreshedSt
         dynamic_pe=dynamic_pe,
         quote_time=quote_time,
         target=target_for(meta.code),
+        daily_return=daily_return,
+        six_month_return=six_month_return,
+        one_year_return=one_year_return,
+        volume_lot=volume_lot,
+        amount_wan=amount_wan,
+        product_mix=meta.product_mix,
     )
 
 
@@ -569,9 +807,7 @@ def calculate_return(kline: list[list[Any]], end_date: date, lookback_days: int)
     base_candidates = [
         (trade_date, close) for trade_date, close in closes if trade_date <= target_date
     ]
-    if not base_candidates:
-        return None
-    base_close = base_candidates[-1][1]
+    base_close = base_candidates[-1][1] if base_candidates else closes[0][1]
     last_close = closes[-1][1]
     if base_close <= 0:
         return None
@@ -600,6 +836,12 @@ def validate_refreshed_rows(rows: list[RefreshedStock]) -> list[str]:
             issues.append(f"{label}: missing one-month return")
         if row.three_month_return is None:
             issues.append(f"{label}: missing three-month return")
+        if row.daily_return is None:
+            issues.append(f"{label}: missing daily return")
+        if row.volume_lot is None:
+            issues.append(f"{label}: missing trading volume")
+        if row.amount_wan is None:
+            issues.append(f"{label}: missing trading amount")
 
         if row.target is not None:
             if row.target.report_date < TARGET_CUTOFF:
@@ -622,12 +864,36 @@ def format_return(value: float | None) -> str:
     return f"{rounded:+.1f}%"
 
 
+def format_share_percent(value: float | None) -> str:
+    if value is None:
+        return "N/A"
+    rounded = round(value, 1)
+    if rounded == 0:
+        return "0%"
+    return f"{rounded:.1f}%"
+
+
 def format_market_cap(value: float | None) -> str:
     if value is None:
         return "N/A"
     if value >= 10_000:
         return f"{value / 10_000:.2f}万亿"
     return f"{round(value):.0f}亿"
+
+
+def format_volume_lot(value: float | None) -> str:
+    if value is None:
+        return "N/A"
+    return f"{value:.0f}"
+
+
+def format_amount_wan(value: float | None) -> str:
+    if value is None:
+        return "N/A"
+    yi = value / 10_000
+    if abs(yi) >= 1:
+        return f"{yi:.2f}亿"
+    return f"{value:.0f}万"
 
 
 def format_pe(value: float | None) -> str:
@@ -652,6 +918,41 @@ def display_name(meta: StockMeta) -> str:
     return f"{meta.name}({meta.code})"
 
 
+def valuation_signal(row: RefreshedStock) -> str:
+    if row.meta.valuation_signal:
+        return row.meta.valuation_signal
+    pe = row.dynamic_pe
+    if pe is None:
+        return "估值待取数"
+    if pe <= 0:
+        return "亏损/扭亏弹性待验证"
+    if pe >= 150:
+        return "高PE，需盈利上修消化估值"
+    if pe >= 80:
+        return "中高PE，订单兑现决定弹性"
+    if pe <= 50:
+        return "PE相对可消化，关注业绩上修"
+    return "估值中性，跟踪订单与利润率"
+
+
+def davis_signal(row: RefreshedStock) -> str:
+    if row.meta.davis_signal:
+        return row.meta.davis_signal
+    if row.dynamic_pe is None:
+        return "待估值数据确认"
+    if row.dynamic_pe <= 0:
+        return "先看扭亏拐点，暂不判双击"
+    medium_momentum = (row.three_month_return or 0) > 20 or (row.six_month_return or 0) > 35
+    strong_momentum = (row.six_month_return or 0) > 80 or (row.one_year_return or 0) > 120
+    if strong_momentum and row.dynamic_pe >= 100:
+        return "价格已先行，需盈利继续上修"
+    if medium_momentum and row.dynamic_pe <= 80:
+        return "动量+估值可消化，双击观察"
+    if medium_momentum:
+        return "动量确认，等待盈利上修匹配"
+    return "等待盈利/估值同向确认"
+
+
 def html_row(row: RefreshedStock) -> list[str]:
     meta = row.meta
     return [
@@ -671,19 +972,96 @@ def html_row(row: RefreshedStock) -> list[str]:
     ]
 
 
+def html_cn_row(row: RefreshedStock) -> list[str]:
+    meta = row.meta
+    return [
+        meta.sector,
+        meta.subsector,
+        display_name(meta),
+        format_price(row.price),
+        format_return(row.daily_return),
+        format_return(row.one_month_return),
+        format_return(row.three_month_return),
+        format_return(row.six_month_return),
+        format_return(row.one_year_return),
+        format_volume_lot(row.volume_lot),
+        format_amount_wan(row.amount_wan),
+        format_market_cap(row.market_cap_yi),
+        "未上市" if meta.code is None else format_pe(row.dynamic_pe),
+        meta.summary,
+        row.product_mix,
+        meta.rank,
+        meta.scarcity,
+        "N/A" if meta.code is None else format_target(row.target),
+        valuation_signal(row),
+        davis_signal(row),
+        meta.rating,
+    ]
+
+
+def markdown_row(row: RefreshedStock) -> list[str]:
+    meta = row.meta
+    code = meta.code or "未上市"
+    return [
+        meta.sector,
+        meta.subsector,
+        display_name(meta),
+        code,
+        format_price(row.price),
+        format_return(row.daily_return),
+        format_return(row.one_month_return),
+        format_return(row.three_month_return),
+        format_return(row.six_month_return),
+        format_return(row.one_year_return),
+        format_volume_lot(row.volume_lot),
+        format_amount_wan(row.amount_wan),
+        format_market_cap(row.market_cap_yi),
+        "未上市" if meta.code is None else format_pe(row.dynamic_pe),
+        meta.summary,
+        row.product_mix,
+        meta.rank,
+        meta.scarcity,
+        "N/A" if meta.code is None else format_target(row.target),
+        valuation_signal(row),
+        davis_signal(row),
+        meta.rating,
+    ]
+
+
 def update_html(rows: list[RefreshedStock], refresh_date: date, path: Path = REPORT_HTML) -> None:
     text = path.read_text(encoding="utf-8")
     active_rows = [row for row in rows if row.meta.active]
     cn_data = ",\n".join(
-        "  " + json.dumps(html_row(row), ensure_ascii=False) for row in active_rows
+        "  " + json.dumps(html_cn_row(row), ensure_ascii=False) for row in active_rows
     )
     text = re.sub(r"var CN=\[[\s\S]*?\];", f"var CN=[\n{cn_data}\n];", text)
     text = re.sub(r"数据截止：\d{4}-\d{2}-\d{2}", f"数据截止：{refresh_date:%Y-%m-%d}", text)
     text = re.sub(
-        r"A股股价与总市值已按腾讯证券收盘行情刷新；近一月/近三月涨跌幅和目标价仍需后续用同一历史行情源重算。",
-        "A股股价、总市值、动态PE、近一月/近三月涨跌幅已按腾讯证券行情与复权日K刷新。",
+        r"A股股价、总市值、动态PE、近一月/近三月涨跌幅已按腾讯证券行情与复权日K刷新。",
+        "A股股价、当日涨跌幅、成交量、成交额、总市值、动态PE、近一月/近三月/近半年/近一年涨跌幅已按腾讯证券行情与复权日K刷新。",
         text,
     )
+    text = re.sub(
+        r"A股股价、总市值、动态PE、近一月/近三月/近半年/近一年涨跌幅已按腾讯证券行情与复权日K刷新。",
+        "A股股价、当日涨跌幅、成交量、成交额、总市值、动态PE、近一月/近三月/近半年/近一年涨跌幅已按腾讯证券行情与复权日K刷新。",
+        text,
+    )
+    text = re.sub(
+        r"A股股价与总市值已按腾讯证券收盘行情刷新；近一月/近三月涨跌幅和目标价仍需后续用同一历史行情源重算。",
+        "A股股价、当日涨跌幅、成交量、成交额、总市值、动态PE、近一月/近三月/近半年/近一年涨跌幅已按腾讯证券行情与复权日K刷新。",
+        text,
+    )
+    product_mix_note = (
+        "<p>产品线营收/净利份额比例来自东方财富 F10 主营构成；"
+        "其中“利润”为主营利润/毛利口径，不等同归母净利。</p>"
+    )
+    market_data_note = (
+        f"<p>数据截止：{refresh_date:%Y-%m-%d}。"
+        "A股股价、当日涨跌幅、成交量、成交额、总市值、动态PE、"
+        "近一月/近三月/近半年/近一年涨跌幅已按腾讯证券行情与复权日K刷新。</p>"
+    )
+    if product_mix_note not in text:
+        text = text.replace(market_data_note, f"{market_data_note}\n  {product_mix_note}")
     old_target_note = (
         r"目标价来源：Goldman Sachs、Morgan Stanley、UBS、Bernstein、中信证券、"
         r"中金公司、华泰证券、国泰君安等机构2026Q1-Q2研报（仅供参考）。"
@@ -693,23 +1071,31 @@ def update_html(rows: list[RefreshedStock], refresh_date: date, path: Path = REP
         "未核验或早于该日期的目标价留空。"
     )
     text = re.sub(old_target_note, new_target_note, text)
+    text = re.sub(
+        r"中美两市\d+家核心标的",
+        f"中美两市{len(active_rows) + 18}家核心标的",
+        text,
+    )
+    text = re.sub(
+        r"覆盖中美两市 \d+ 家核心标的 · 9 大主线 \+ 基建观察 · \d+ 列关键指标",
+        f"覆盖中美两市 {len(active_rows) + 18} 家核心标的 · 9 大主线 + 基建观察 · 21 列关键指标",
+        text,
+    )
     path.write_text(text, encoding="utf-8")
 
 
 def md_table(rows: list[RefreshedStock]) -> str:
     header = (
-        "| 领域 | 细分版块 | 细分龙头 | 股票代码 | 目前股价(¥) | 近一月涨跌幅 | 近三月涨跌幅 | "
-        "目前市值 | 动态市盈率 | 一季度财报总结 | 行业排行 | 产品紧缺度 | "
-        "投研目标股价 | 投资价值评级 |\n"
-        "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"
+        "| 领域 | 细分版块 | 细分龙头 | 股票代码 | 目前股价(¥) | 当日涨跌幅 | 近一月涨跌幅 | "
+        "近三月涨跌幅 | 近半年涨跌幅 | 近一年涨跌幅 | 成交量(手) | 成交额 | "
+        "目前市值 | 动态市盈率 | "
+        "一季度财报总结 | 产品线营收/净利份额比例 | 行业排行 | 产品紧缺度 | 投研目标股价 | "
+        "估值/业绩弹性 | 戴维斯双击观察 | 投资价值评级 |\n"
+        "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"
     )
     lines = [header]
     for row in rows:
-        meta = row.meta
-        values = html_row(row)
-        code = meta.code or "未上市"
-        values = values[:3] + [code] + values[3:]
-        lines.append("| " + " | ".join(values) + " |")
+        lines.append("| " + " | ".join(markdown_row(row)) + " |")
     return "\n".join(lines)
 
 
@@ -722,13 +1108,17 @@ def update_markdown(rows: list[RefreshedStock], refresh_date: date, path: Path =
     content = f"""# 中国 AIDC 产业链核心标的数据表
 
 > **数据截止：{refresh_date:%Y-%m-%d}**  
-> 股价、总市值、动态PE、近一月/近三月涨跌幅已按腾讯证券行情刷新；  
+> 股价、当日涨跌幅、成交量、成交额、总市值、动态PE、
+> 近一月/近三月/近半年/近一年涨跌幅已按腾讯证券行情刷新；  
 > 行情源为 `web.ifzq.gtimg.cn` 收盘行情与前复权日 K。  
+> 产品线营收/净利份额比例来自东方财富 F10 主营构成；
+> 其中“利润”为主营利润/毛利口径，不等同归母净利。  
 > 目标价规则：仅保留研报日期在 2026-01-01 之后且已核验来源的投研目标价；  
 > 未核验或早于该日期的目标价留空。  
 > {target_note}  
 > 一季度财报指 2026 年 1-3 月（2026Q1）数据。  
-> 动态市盈率取腾讯行情接口 PE 字段；亏损或负 PE 显示为“亏损”。
+> 动态市盈率取腾讯行情接口 PE 字段；亏损或负 PE 显示为“亏损”。  
+> 新股上市不足完整观察周期时，区间涨跌幅按可得最早前复权日 K 估算。
 
 ---
 
@@ -746,8 +1136,12 @@ def update_markdown(rows: list[RefreshedStock], refresh_date: date, path: Path =
 
 ### 价格数据备注
 
-- {refresh_date:%Y-%m-%d} 收盘价、总市值、动态PE来自腾讯证券行情接口；
-  近一月/近三月涨跌幅来自同源前复权日 K。
+- {refresh_date:%Y-%m-%d} 收盘价、当日涨跌幅、成交量、成交额、总市值、动态PE来自腾讯证券行情接口；
+  近一月/近三月/近半年/近一年涨跌幅来自同源前复权日 K。
+- “产品线营收/净利份额比例”来自东方财富 F10 `BusinessAnalysis/PageAjax` 的按产品分类；
+  其中利润字段为主营利润/毛利口径，不等同归母净利。
+- “估值/业绩弹性”“戴维斯双击观察”为人工/agent 后续维护字段；
+  脚本仅在字段为空时按 PE 与价格动量给出粗粒度观察，不替代财报和研报核验。
 - 代码核验保留：太辰光正确代码为 300570，原表 300003 实为乐普医疗；
   星融元尚未 IPO，原表误配的 688616 实为西力科技且与 RoCE 逻辑不匹配。
 - AI网络板块已标记为 Deprecated，脚本保留源数据但不渲染到研报主表。
@@ -769,8 +1163,44 @@ def update_markdown(rows: list[RefreshedStock], refresh_date: date, path: Path =
     path.write_text(content, encoding="utf-8")
 
 
+def update_category_markdowns(rows: list[RefreshedStock], refresh_date: date) -> None:
+    stock_yaml = parse_simple_yaml_lists(STOCKS_YAML)
+    categories = stock_yaml.get("categories", [])
+    for category in categories:
+        filename = category.get("file")
+        if not filename:
+            continue
+        category_id = category.get("id")
+        category_rows = [row for row in rows if row.meta.category_id == category_id]
+        title = str(category.get("name") or category.get("source_category") or category_id)
+        if category_id == "out_of_scope":
+            title = "源表中未归入截图 9 大领域的条目"
+        prefix = [
+            f"# {title}",
+            "<!-- Auto-generated by scripts/refresh_aidc_data.py from stocks.yaml. -->",
+            "",
+            f"- 数据截止：`{refresh_date:%Y-%m-%d}`",
+            "- 来源文件：`data_china_aidc.md`",
+            f"- 源表领域：`{category.get('source_category', '')}`",
+            f"- 标的数量：{len(category_rows)}",
+        ]
+        if category_id == "out_of_scope":
+            prefix.append("- 这些条目保留用于溯源，不进入截图定义的 9 大领域分类。")
+        prefix.append("")
+        content = "\n".join(prefix) + md_table(category_rows) + "\n"
+        (CN_DIR / str(filename)).write_text(content, encoding="utf-8")
+
+
+STOCKS = load_stocks_from_yaml()
+
+
 def refresh_rows() -> list[RefreshedStock]:
-    return [fetch_tencent_stock(meta) for meta in STOCKS]
+    product_mixes = fetch_product_mixes(STOCKS)
+    rows = [fetch_tencent_stock(meta) for meta in STOCKS]
+    return [
+        replace(row, product_mix=product_mixes.get(row.meta.code or "", row.product_mix))
+        for row in rows
+    ]
 
 
 def current_refresh_date(rows: list[RefreshedStock]) -> date:
@@ -788,8 +1218,9 @@ def run(check: bool) -> int:
 
     refresh_date = current_refresh_date(rows)
     if not check:
-        update_html(rows, refresh_date)
         update_markdown(rows, refresh_date)
+        update_category_markdowns(rows, refresh_date)
+        update_html(rows, refresh_date)
     active_count = sum(1 for row in rows if row.meta.active)
     print(
         f"Validated {len(rows)} China AIDC rows "

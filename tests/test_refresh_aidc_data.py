@@ -7,6 +7,7 @@ from scripts.refresh_aidc_data import (
     TargetPrice,
     calculate_return,
     format_market_cap,
+    format_share_percent,
     format_target,
     market_symbol,
     validate_refreshed_rows,
@@ -39,6 +40,9 @@ def test_validate_rejects_stale_or_below_market_target() -> None:
         dynamic_pe=30,
         quote_time=datetime(2026, 5, 13, 15, 0),
         target=TargetPrice(value=90, broker="示例证券", report_date=TARGET_CUTOFF),
+        daily_return=0.5,
+        volume_lot=12345,
+        amount_wan=67890,
     )
 
     assert validate_refreshed_rows([row]) == [
@@ -50,3 +54,4 @@ def test_formatters_keep_unverified_targets_blank() -> None:
     assert format_target(None) == ""
     assert format_market_cap(11683.9) == "1.17万亿"
     assert format_market_cap(6252.22) == "6252亿"
+    assert format_share_percent(63.9) == "63.9%"
