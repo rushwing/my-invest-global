@@ -84,6 +84,18 @@ class FREDSource(MacroAbstractSource):
                 continue
 
             period_date = dt.date.fromisoformat(obs["date"])
+            # Call-param realtime_start takes precedence; fall back to observation-level
+            # realtime_start from the FRED payload so vintage info is never silently lost.
+            obs_rt: dt.date | None
+            if realtime_start_date is not None:
+                obs_rt = realtime_start_date
+            else:
+                raw_rt = obs.get("realtime_start")
+                try:
+                    obs_rt = dt.date.fromisoformat(raw_rt) if raw_rt else None
+                except ValueError:
+                    obs_rt = None
+
             records.append(
                 self._make_period_record(
                     indicator_id=series_id,
@@ -92,7 +104,7 @@ class FREDSource(MacroAbstractSource):
                     market_tz="America/New_York",
                     value=value,
                     value_raw=raw_val,
-                    realtime_start=realtime_start_date,
+                    realtime_start=obs_rt,
                 )
             )
         return records

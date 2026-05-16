@@ -36,6 +36,12 @@ class SECEdgarSource(MacroAbstractSource):
         # SEC EDGAR requires a compliant User-Agent — override at class level (BP-2).
         self._session.headers["User-Agent"] = _SEC_USER_AGENT
 
+    def _rotate_ua(self) -> None:
+        # Re-apply SEC-compliant UA instead of rotating to a browser UA.
+        # Base class calls _rotate_ua() on each retry; without this override
+        # the compliance header would be silently replaced.
+        self._session.headers["User-Agent"] = _SEC_USER_AGENT
+
     def fetch_capex_quarterly(
         self,
         cik: str,

@@ -60,6 +60,21 @@ def test_fetch_series_skips_missing_values(fred: FREDSource) -> None:
     assert results[0]["value"] == pytest.approx(3.5)
 
 
+# TC-006-12: observation-level realtime_start captured when call param not provided
+def test_fetch_series_captures_observation_realtime_start(fred: FREDSource) -> None:
+    mock_response = {
+        "observations": [
+            {"date": "2026-04-01", "value": "3.5", "realtime_start": "2026-04-11"},
+        ]
+    }
+    with patch.object(fred, "_get", return_value=mock_response):
+        results = fred.fetch_series("CPIAUCSL")  # no realtime_start call param
+
+    assert results[0]["realtime_start"] == dt.date(2026, 4, 11), (
+        "should fall back to observation-level realtime_start from payload"
+    )
+
+
 # TC-006-02: missing FRED_API_KEY raises RuntimeError at construction time
 def test_missing_api_key_raises(monkeypatch: pytest.MonkeyPatch, rate_limiter: RateLimiter) -> None:
     monkeypatch.delenv("FRED_API_KEY", raising=False)

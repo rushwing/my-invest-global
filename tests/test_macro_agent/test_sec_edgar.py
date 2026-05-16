@@ -169,6 +169,15 @@ def test_q4_decumulation_from_10k(src: SECEdgarSource) -> None:
     assert q4["filing_form"] == "10-K"
 
 
+# TC-006-11: _rotate_ua() must re-apply SEC-compliant UA, not a browser UA
+def test_rotate_ua_preserves_sec_compliance(src: SECEdgarSource) -> None:
+    src._rotate_ua()  # simulates base-class retry path
+    ua = src._session.headers["User-Agent"]
+    assert "my-invest-global ruoxu.wang@gmail.com" in ua, (
+        f"UA after _rotate_ua() should remain SEC-compliant, got: {ua}"
+    )
+
+
 # TC-006-07: source_hash is a valid 64-char lowercase hex SHA-256
 def test_source_hash_is_sha256(src: SECEdgarSource) -> None:
     with patch.object(src, "_get", return_value=_FIXTURE_Q1_ONLY):

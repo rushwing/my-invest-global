@@ -44,7 +44,7 @@ def test_budget_under_limit_allows_http(rate_limiter: RateLimiter) -> None:
         get_budget=track_budget,
         inc_budget=lambda: None,
     )
-    mock_response = {"feed": []}
+    mock_response: dict[str, list] = {"feed": []}
     with patch.object(src, "_get", return_value=mock_response):
         result = src.fetch_news_sentiment()
 

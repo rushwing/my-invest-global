@@ -71,22 +71,20 @@ class AKShareMacroSource(MacroAbstractSource):
         df = self._ak_call("stock_info_global_cls", symbol="全部")
         if df is None or df.empty:
             return []
-        now_utc = dt.datetime.now(tz=__import__("zoneinfo").ZoneInfo("UTC"))
-        rows = df.head(limit).to_dict(orient="records")
-        return [
-            {
-                "indicator_id": "CLS_NEWS",
-                "group_code":   "O",
-                "period_date":  dt.date.today(),
-                "market_tz":    "Asia/Shanghai",
-                "value":        None,
-                "value_raw":    str(r),
-                "source":       self.name,
-                "utc_ts":       now_utc,
-                "fetched_at":   now_utc,
-            }
-            for r in rows
-        ]
+        records: list[dict[str, Any]] = []
+        for _, row in df.head(limit).iterrows():
+            records.append(
+                self._make_period_record(
+                    indicator_id="CLS_NEWS",
+                    group_code="O",
+                    period_date=dt.date.today(),
+                    market_tz="Asia/Shanghai",
+                    value=None,
+                    value_unit="",
+                    value_raw=str(row.to_dict()),
+                )
+            )
+        return records
 
     def fetch_sgx_a50(self) -> list[dict[str, Any]]:
         """SGX Xinhua A50 futures — pre-open A-share leading indicator."""

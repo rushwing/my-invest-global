@@ -1,7 +1,7 @@
 """
 Yahoo Finance source for global indices, futures, FX, and US equities.
 
-Uses yfinance for OHLCV fetching. Handles crumb-based quoteSummary for
+Uses yfinance for OHLCV fetching. Uses crumb-based quoteSummary endpoint for
 CapEx backup (BP-8). Returns records with period_date / market_tz / utc_ts
 matching macro_indicators DDL (BP-5).
 """
@@ -13,7 +13,13 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from engine.data_agent.rate_limiter import RateLimiter
+from engine.data_agent.sources.base import SourceError
 from engine.shared.sources.base_macro import MacroAbstractSource
+
+_CRUMB_COOKIE_URL = "https://finance.yahoo.com/"
+_CRUMB_URL = "https://query1.finance.yahoo.com/v1/test/getcrumb"
+_QUOTE_SUMMARY_BASE = "https://query1.finance.yahoo.com/v10/finance/quoteSummary"
+_CRUMB_TTL_SECONDS = 86_400  # 24 hours (BP-8)
 
 # Ticker → market timezone mapping for period_date resolution.
 _TZ_MAP: dict[str, str] = {
@@ -49,6 +55,10 @@ _GROUP_MAP: dict[str, str] = {
 }
 
 
+class _CrumbExpiredError(Exception):
+    """Internal signal: Yahoo returned 401 → expire cached crumb and retry."""
+
+
 class YahooGlobalSource(MacroAbstractSource):
     name = "yahoo_global"
     domain = "query1.finance.yahoo.com"
@@ -57,6 +67,42 @@ class YahooGlobalSource(MacroAbstractSource):
         super().__init__(rate_limiter)
         self._crumb: str | None = None
         self._crumb_refreshed_at: dt.datetime | None = None
+
+    # ── Crumb management (BP-8) ───────────────────────────────────────────────
+
+    def _refresh_crumb(self) -> str:
+        """Return cached crumb or fetch a new one. TTL = 24 hours."""
+        now = dt.datetime.now(tz=ZoneInfo("UTC"))
+        if (
+            self._crumb is not None
+            and self._crumb_refreshed_at is not None
+            and (now - self._crumb_refreshed_at).total_seconds() < _CRUMB_TTL_SECONDS
+        ):
+            return self._crumb
+
+        # Prime session cookies with a finance.yahoo.com visit.
+        self._rl.acquire(self.domain)
+        self._session.get(_CRUMB_COOKIE_URL, timeout=10)
+        self._rl.record_success(self.domain)
+
+        # Fetch crumb string.
+        self._rl.acquire(self.domain)
+        try:
+            resp = self._session.get(_CRUMB_URL, timeout=10)
+            resp.raise_for_status()
+            self._rl.record_success(self.domain)
+        except Exception as exc:
+            self._rl.record_failure(self.domain, 0)
+            raise SourceError(f"Failed to fetch Yahoo crumb: {exc}") from exc
+
+        crumb = resp.text.strip()
+        if not crumb:
+            raise SourceError("Yahoo Finance returned empty crumb")
+        self._crumb = crumb
+        self._crumb_refreshed_at = now
+        return crumb
+
+    # ── Public API ────────────────────────────────────────────────────────────
 
     def fetch_ohlcv(
         self,
@@ -124,23 +170,48 @@ class YahooGlobalSource(MacroAbstractSource):
         modules: list[str] | None = None,
     ) -> dict[str, Any]:
         """
-        Fetch Yahoo Finance quoteSummary for a single ticker.
-        Used as CapEx backup (cashflowStatementHistoryQuarterly).
-        """
-        try:
-            import yfinance as yf
-        except ImportError as exc:
-            raise ImportError(
-                "yfinance is required: uv pip install 'my-invest-global[data]'"
-            ) from exc
+        Fetch Yahoo Finance quoteSummary for a single ticker via the crumb API.
 
-        t = yf.Ticker(ticker)
-        result: dict[str, Any] = {}
+        Used as CapEx backup source (cashflowStatementHistoryQuarterly).
+        Refreshes crumb and retries once on 401 (BP-8).
+        """
         requested = modules or ["cashflowStatementHistoryQuarterly"]
-        if "cashflowStatementHistoryQuarterly" in requested:
-            try:
-                cf = t.quarterly_cashflow
-                result["cashflowStatementHistoryQuarterly"] = cf.to_dict() if cf is not None else {}
-            except Exception:
-                result["cashflowStatementHistoryQuarterly"] = {}
-        return result
+        crumb = self._refresh_crumb()
+        url = f"{_QUOTE_SUMMARY_BASE}/{ticker}"
+        params: dict[str, str] = {"modules": ",".join(requested), "crumb": crumb}
+
+        try:
+            return self._quote_summary_request(url, params)
+        except _CrumbExpiredError:
+            self._crumb = None  # force cache expiry
+            params["crumb"] = self._refresh_crumb()
+            return self._quote_summary_request(url, params)
+
+    # ── Internal ──────────────────────────────────────────────────────────────
+
+    def _quote_summary_request(self, url: str, params: dict[str, str]) -> dict[str, Any]:
+        """Single attempt at the quoteSummary endpoint. Raises _CrumbExpiredError on 401."""
+        self._rl.acquire(self.domain)
+        try:
+            resp = self._session.get(url, params=params, timeout=20)
+        except Exception as exc:
+            self._rl.record_failure(self.domain, 0)
+            raise SourceError(f"Yahoo quoteSummary network error: {exc}") from exc
+
+        if resp.status_code == 401:
+            self._rl.record_failure(self.domain, resp.status_code)
+            raise _CrumbExpiredError()
+        if resp.status_code in (429, 403, 503):
+            self._rl.record_failure(self.domain, resp.status_code)
+            raise SourceError(f"Yahoo quoteSummary rate-limited ({resp.status_code})")
+
+        try:
+            resp.raise_for_status()
+        except Exception as exc:
+            self._rl.record_failure(self.domain, 0)
+            raise SourceError(f"Yahoo quoteSummary HTTP error: {exc}") from exc
+
+        self._rl.record_success(self.domain)
+        data: dict[str, Any] = resp.json()
+        result: list[dict[str, Any]] = data.get("quoteSummary", {}).get("result") or []
+        return result[0] if result else {}
