@@ -1,0 +1,23 @@
+---
+# Agent UID registry — source of truth for role ↔ model ↔ handles mapping.
+# Consumed by: harness/req-constants.sh
+# Override path via: AGENT_REGISTRY=<path> (env var, for test fixtures)
+
+agents:
+  - uid: optimizer-001
+    role: optimizer
+    model: claude-sonnet-4-6
+    description: "Primary optimizer — requirement design, TC review, TC implementation, feature implementation"
+    handles: [req_review, tc_review, tc_impl, req_impl]
+
+  - uid: evaluator-001
+    role: evaluator
+    model: claude-sonnet-4-6
+    description: "Primary evaluator (separate Claude session) — requirement review, TC design, TC code review, implementation review"
+    handles: [req_review, tc_design, tc_impl_review, req_impl_review]
+
+  - uid: human-001
+    role: human
+    model: human
+    description: "Human orchestrator (Daniel) — scope approval, final merge, escalation resolution"
+    handles: [pr_draft]
