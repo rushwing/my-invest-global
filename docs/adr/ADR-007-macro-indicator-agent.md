@@ -144,14 +144,14 @@ def get_news_sentiment(hours_back: int = 24) -> dict:
 
 ---
 
-## 决策四：UpdateClass 七级分类体系
+## 决策四：UpdateClass 八级分类体系
 
 ### 决策：引入 `UpdateClass` 枚举，分类所有 30+ 指标
 
 ```python
 # engine/macro_agent/update_class.py
 class UpdateClass(str, Enum):
-    INTRADAY_FAST = "intraday_fast"   # 1–5 min：NVDA/MSFT/AVGO/ANET/VRT、SGX A50、创业板50
+    INTRADAY_FAST = "intraday_fast"   # 1–5 min：NVDA/MSFT/AVGO/ANET/VRT、SGX A50、科创50
     INTRADAY_SLOW = "intraday_slow"   # 15–60 min：全球指数、大宗商品、FX、新闻
     DAILY         = "daily"           # 收盘后：国债收益率、三星、台湾加权、成交额、绿电指数
     WEEKLY        = "weekly"          # 保留
@@ -177,11 +177,11 @@ class UpdateClass(str, Enum):
 | K | NVDA/MSFT/AVGO/ANET/VRT | `INTRADAY_FAST` | Yahoo Finance | A 股链条领先指标 |
 | L | MSFT/AMZN/GOOGL/META CapEx | `QUARTERLY` | SEC EDGAR companyfacts | 10-Q/10-K 受理后触发 |
 | L | CapEx YoY 增速 | `QUARTERLY` | 本地计算 | 新季度数据落地后重算 |
-| M | SOXX/TWII/TSM (^SOX/TWII/TSM) | `INTRADAY_SLOW` | Yahoo Finance | TWSE 09:00–13:30 CST |
+| M | SOXX ETF / TWII / TSM (SOXX/^TWII/TSM) | `INTRADAY_SLOW` | Yahoo Finance | TWSE 09:00–13:30 CST |
 | M | 三星 (005930.KS) | `DAILY` | Yahoo Finance | KRX 收盘后 |
 | M | KRX 半导体指数 | `DAILY` | investing.com 备用 | 稳定免费源缺失，仅日频 |
 | N | SGX A50 期货 | `INTRADAY_FAST` | AKShare SGX | A 股开盘前关键信号 |
-| N | 创业板 50 (000688.SH) | `INTRADAY_FAST` | AKShare stock_zh_index_spot | A 股交易时段 |
+| N | 科创 50 (000688.SH) | `INTRADAY_FAST` | AKShare stock_zh_index_spot | A 股交易时段 |
 | N | USD/CNH (离岸人民币) | `INTRADAY_SLOW` | Sina FX | 24h 市场 |
 | N | USD/CNY (在岸人民币) | `INTRADAY_SLOW` | Sina FX | 人行中间价 09:15 CST |
 | N | 绿电板块指数 | `DAILY` | AKShare 概念板块 | 收盘后；需概念名称映射 |
@@ -229,13 +229,14 @@ SEC EDGAR 10-Q 披露财年累计 CapEx，而非单季。`SECEdgarSource` 必须
 
 ### BP-5：双列时区归一化
 
-所有宏观表时间戳采用双列模式：
+所有宏观表时间戳采用双列模式（DB 列名以 DDL 为准）：
 - `utc_ts TIMESTAMPTZ`：入库时刻（UTC）
-- `local_date DATE`：原始市场的本地交易日期（非 UTC 日期）
+- `period_date DATE`：原始市场的**本地**交易日期（非 UTC 日期），DB 列名全局统一
 - `market_tz TEXT`：原始市场时区（`America/New_York`、`Asia/Shanghai` 等）
 
 此设计避免跨日查询时的 UTC 偏移错误（如"2026-05-15 SOX 收盘价"对应 ET
-日期，而非 UTC 次日）。
+日期，而非 UTC 次日）。MCP 工具层 `IndexSnapshot` 同样使用 `period_date`
+字段名，三层（storage / source / tool）保持一致，不引入别名映射。
 
 ### BP-6：FOMC ICS 解析，优于 HTML 抓取
 

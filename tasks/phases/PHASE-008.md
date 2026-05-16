@@ -24,7 +24,7 @@ Agent 覆盖 `docs/macro-market-indicator-matrix.md` 中 Groups I–O 的全部
 
 ### Track 8b — 采集层（REQ-008, REQ-009）
 
-- `engine/macro_agent/update_class.py` — UpdateClass 七级枚举
+- `engine/macro_agent/update_class.py` — UpdateClass 八级枚举
 - `engine/macro_agent/indicator_groups.py` — IndicatorGroup 枚举（I–O）+ SourcePolicy
 - `engine/macro_agent/scheduler.py` — MacroScheduler（时区感知 + BLS/NBS 发布日历驱动）
 - `engine/macro_agent/orchestrator.py` — MacroOrchestrator（主循环 + UpdateClass 分发）
@@ -35,7 +35,7 @@ Agent 覆盖 `docs/macro-market-indicator-matrix.md` 中 Groups I–O 的全部
 
 - Group L（云巨头 CapEx）：SEC EDGAR 10-Q/10-K + 单季反算 + 哈希去重
 - Group M（亚太半导体）：Yahoo Finance 全球指数 + KRX 备用
-- Group N（中国市场）：AKShare SGX A50/创业板50/成交额 + Sina FX
+- Group N（中国市场）：AKShare SGX A50/科创50 (000688.SH)/成交额 + Sina FX
 - Group O（地缘政治/新闻）：CLS 电报 + Alpha Vantage 新闻情绪（预算门控）
 - `engine/macro_agent/regime.py` — MacroRegime 门控计算（STALE 守卫 + 三色输出）
 
