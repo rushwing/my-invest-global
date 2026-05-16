@@ -17,10 +17,9 @@ import subprocess
 import sys
 from pathlib import Path
 
+import engine.macro_gate as _mg
 import pandas as pd
 import pytest
-
-import engine.macro_gate as _mg
 from engine.macro_gate import (
     TARGET_ELASTIC_BY_MACRO_STATE,
     MacroState,
