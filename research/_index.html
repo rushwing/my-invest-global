@@ -2,78 +2,15 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="refresh" content="0; url=index.html">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>技术前瞻研究 · 目录</title>
+<title>AIDC 产业研究知识库 · 跳转中</title>
 <style>
-  :root{--bg:#07101f;--bg2:#0c1830;--border:#1e2d50;--gold:#c9a227;--text:#e2e8f0;--text2:#94a3b8}
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--bg);color:var(--text);font-family:'SF Pro Text','PingFang SC','Helvetica Neue',sans-serif;padding:2rem}
-  h1{color:var(--gold);font-size:1.4rem;margin-bottom:.4rem}
-  .subtitle{color:var(--text2);font-size:.85rem;margin-bottom:2rem}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.2rem}
-  .card{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:8px;padding:1.2rem 1.4rem;text-decoration:none;color:inherit;transition:border-color .2s}
-  .card:hover{border-left-color:#e8c040;border-color:#2a3d60}
-  .card-title{color:var(--gold);font-size:1rem;font-weight:600;margin-bottom:.3rem}
-  .card-en{color:var(--text2);font-size:.75rem;margin-bottom:.8rem;font-style:italic}
-  .card-desc{color:var(--text2);font-size:.82rem;line-height:1.6}
-  .tag{display:inline-block;font-size:.7rem;padding:.15rem .5rem;border-radius:3px;margin-top:.8rem;margin-right:.3rem;background:rgba(201,162,39,.12);color:var(--gold);border:1px solid rgba(201,162,39,.25)}
-  .tag.obs{background:rgba(148,163,184,.1);color:var(--text2);border-color:rgba(148,163,184,.2)}
-  .footer{margin-top:3rem;color:var(--text2);font-size:.78rem;border-top:1px solid var(--border);padding-top:1rem}
+  body{background:#07101f;color:#e2e8f0;font-family:'SF Pro Text','PingFang SC','Helvetica Neue',sans-serif;padding:2rem}
+  a{color:#c9a227}
 </style>
 </head>
 <body>
-<h1>技术前瞻研究</h1>
-<p class="subtitle">酝酿中的技术方向与产品路径 · 入库时间倒序排列</p>
-
-<div class="grid">
-
-  <a class="card" href="cpo-co-packaged-optics/index.html">
-    <div class="card-title">CPO 共封装光学</div>
-    <div class="card-en">Co-Packaged Optics</div>
-    <div class="card-desc">把光引擎从前面板模块搬到交换 ASIC 附近，缩短高速电通道，是 51.2T/102.4T 交换机迈向 1.6T 端口和更高能效的关键路线。</div>
-    <span class="tag">CPO</span><span class="tag">交换芯片</span><span class="tag obs">跟踪中</span>
-  </a>
-
-  <a class="card" href="lpo-linear-pluggable-optics/index.html">
-    <div class="card-title">LPO 线性可插拔光学</div>
-    <div class="card-en">Linear Pluggable Optics</div>
-    <div class="card-desc">去掉光模块内 DSP/retimer，把线性模拟链路直接交给 host ASIC 和光引擎协同，目标是在短距 800G/1.6T 场景降低功耗与时延。</div>
-    <span class="tag">光模块</span><span class="tag">低功耗</span><span class="tag obs">跟踪中</span>
-  </a>
-
-  <a class="card" href="coherent-pluggable-optics/index.html">
-    <div class="card-title">相干可插拔光学</div>
-    <div class="card-en">Coherent Pluggable Optics</div>
-    <div class="card-desc">Cisco/Acacia 路线：把传统传输盒子的相干 DSP、硅光 PIC 与 DWDM 能力塞进可插拔模块，支撑 Scale Across 跨数据中心 GPU 互联。</div>
-    <span class="tag">相干光</span><span class="tag">Scale Across</span><span class="tag obs">跟踪中</span>
-  </a>
-
-  <a class="card" href="micro-led-interconnect/index.html">
-    <div class="card-title">Micro LED 光互连</div>
-    <div class="card-en">Micro LED Optical Interconnect</div>
-    <div class="card-desc">微软 MOSAIC 路线：用数百个低速 Micro LED 通道替代少数高速激光通道，试图打破铜缆距离短与传统光模块高功耗/低可靠性的取舍。</div>
-    <span class="tag">光通信</span><span class="tag">短距互连</span><span class="tag obs">跟踪中</span>
-  </a>
-
-  <a class="card" href="ocs-mems/index.html">
-    <div class="card-title">OCS-MEMS 光交换</div>
-    <div class="card-en">Optical Circuit Switching via MEMS</div>
-    <div class="card-desc">Google Apollo/Palomar 已验证的纯光电路交换层：用 3D MEMS 微镜重排物理光路，适合 AI 训练的长期大流量、拓扑重构和故障绕行。</div>
-    <span class="tag">光交换</span><span class="tag">AI组网</span><span class="tag obs">跟踪中</span>
-  </a>
-
-  <a class="card" href="hcf-hollow-core-fiber/index.html">
-    <div class="card-title">空芯光纤 HCF</div>
-    <div class="card-en">Hollow Core Fiber</div>
-    <div class="card-desc">光主要在空气芯中传播，降低时延、色散和非线性；微软 Azure 已推进量产与区域部署，是跨园区/跨区域 AI 互联的底层介质变量。</div>
-    <span class="tag">光纤</span><span class="tag">低延迟</span><span class="tag obs">跟踪中</span>
-  </a>
-
-</div>
-
-<div class="footer">
-  · 每个主题文件位于对应子目录的 <code>index.html</code>
-  · 状态标签：<strong>观察中</strong> / <strong>跟踪中</strong> / <strong>可关注</strong> / <strong>已纳入研报</strong>
-</div>
+  <p>研究目录已迁移至 <a href="index.html">research/index.html</a>。</p>
 </body>
 </html>

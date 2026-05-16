@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>光通信与互连 · 研报归档</title>
+<style>
+  :root{--bg:#07101f;--bg2:#0c1830;--bg3:#111e38;--border:#1e2d50;--gold:#c9a227;--text:#e2e8f0;--text2:#94a3b8;--accent:#FFEAA7}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'SF Pro Text','PingFang SC','Helvetica Neue',sans-serif;padding:2rem;max-width:1050px;margin:0 auto}
+  .nav{font-size:.8rem;margin-bottom:1.5rem}.nav a{color:var(--text2);text-decoration:none}.nav a:hover{color:var(--gold)}
+  h1{color:var(--gold);font-size:1.4rem;margin-bottom:.4rem}.subtitle{color:var(--text2);font-size:.85rem;margin-bottom:1.2rem;line-height:1.7}
+  .toolbar{display:flex;gap:.7rem;flex-wrap:wrap;margin:1rem 0 1.3rem}button{background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.28);color:var(--gold);border-radius:6px;padding:.42rem .72rem;font-size:.78rem;cursor:pointer}
+  .month{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin:.8rem 0;overflow:hidden}.month-head{width:100%;display:flex;gap:.7rem;align-items:center;background:transparent;border:none;border-radius:0;padding:1rem;color:var(--text);text-align:left}
+  .arrow{display:inline-block;color:var(--gold);transition:transform .16s ease}.month.open .arrow{transform:rotate(90deg)}.month-title{color:var(--accent);font-weight:650}
+  .month-body{display:none;border-top:1px solid var(--border);padding:1rem;background:rgba(17,30,56,.55)}.month.open .month-body{display:block}
+  .report{display:block;background:#07101f;border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:8px;padding:1rem;text-decoration:none;color:inherit}.report:hover{border-color:#2a3d60;border-left-color:#e8c040}
+  .report-title{color:var(--gold);font-size:.9rem;font-weight:650;margin-bottom:.38rem}.report-meta{color:var(--text2);font-size:.78rem;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="nav"><a href="../../index.html">← AIDC 产业研究知识库</a> · <a href="../knowledge/index.html">产业基础知识</a></div>
+<h1>光通信与互连 · 研报归档</h1>
+<p class="subtitle">研报按月份归档。展开后显示“机构-日期-原始标题”，方便保留预测口径和时间戳。</p>
+<div class="toolbar"><button type="button" data-action="expand">全部展开</button><button type="button" data-action="collapse">全部收起</button></div>
+
+<section class="month open">
+  <button class="month-head" type="button" aria-expanded="true"><span class="arrow">▶</span><span class="month-title">2026-05</span></button>
+  <div class="month-body">
+    <a class="report" href="2026-05/jpmorgan-2026-05-15-c1q26-optical-market-update-datacom-market-outlook-revised-higher-positive-for-cohr-fn-and-lite/index.html">
+      <div class="report-title">摩根大通-2026.5.15-C1Q26 Optical Market Update: Datacom Market Outlook Revised Higher; Positive for COHR, FN, and LITE</div>
+      <div class="report-meta">J.P. Morgan North America Equity Research · Hardware & Networking · 数据中心光模块、CPO、OCS、DCI 市场预测更新</div>
+    </a>
+  </div>
+</section>
+
+<script>
+  const months = Array.from(document.querySelectorAll('.month'));
+  function setOpen(section, open){
+    section.classList.toggle('open', open);
+    const head = section.querySelector('.month-head');
+    if(head) head.setAttribute('aria-expanded', String(open));
+  }
+  months.forEach(section => section.querySelector('.month-head').addEventListener('click', () => setOpen(section, !section.classList.contains('open'))));
+  document.querySelector('[data-action="expand"]').addEventListener('click', () => months.forEach(m => setOpen(m, true)));
+  document.querySelector('[data-action="collapse"]').addEventListener('click', () => months.forEach(m => setOpen(m, false)));
+</script>
+</body>
+</html>
