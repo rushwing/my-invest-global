@@ -748,8 +748,8 @@ def fetch_tencent_stock(meta: StockMeta, end: date | None = None) -> RefreshedSt
     if meta.code is None:
         return RefreshedStock(meta, None, None, None, None, None, None, None)
 
-    from engine.data_agent.sources.tencent import TencentSource
     from engine.data_agent.rate_limiter import RateLimiter
+    from engine.data_agent.sources.tencent import TencentSource
 
     result = TencentSource(RateLimiter()).fetch_kline_and_quote(meta.code, end=end)
     kline = result["kline"]  # list[dict] with keys: date, open, close, high, low, volume

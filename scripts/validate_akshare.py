@@ -205,7 +205,6 @@ def run() -> int:
     print("\nTier 3: Eastmoney push2 CDN smoke tests")
     print("  (connection errors → SKIP; only Python/API errors → FAIL)")
     cdn_results: dict[str, dict] = {}
-    cdn_any_skipped = False
     for fn, call in CDN_FUNCTIONS.items():
         print(f"  [CDN] {fn}… ", end="", flush=True)
         r = _smoke(call, ak, bypass_proxy=True, network_skip=True)
@@ -213,7 +212,6 @@ def run() -> int:
         if r["status"] == "ok":
             print(f"ok ({r['rows']} rows, {r['latency_ms']}ms)")
         elif r["status"] == "SKIP":
-            cdn_any_skipped = True
             print(f"SKIP (network env: {r.get('reason','')[:80]})")
         else:
             print(f"FAIL — {r.get('error','')[:100]}")
@@ -277,8 +275,10 @@ def run() -> int:
         "",
         "## Tier 3 — Eastmoney push2 CDN Functions",
         "",
-        "> Covers `push2his.eastmoney.com` (hist/min bars) and `xx.push2.eastmoney.com` (spot/boards).",
-        "> **SKIP** = connection-class network error (expected behind VPN/proxy or outside mainland CN).",
+        "> Covers `push2his.eastmoney.com` (hist/min bars) and "
+        "`xx.push2.eastmoney.com` (spot/boards).",
+        "> **SKIP** = connection-class network error (expected behind VPN/proxy "
+        "or outside mainland CN).",
         "> **FAIL** = Python/API contract error (blocks version pin).",
         "",
         _row(["Function", "Status", "Rows", "Latency / Note"]),
@@ -297,7 +297,8 @@ def run() -> int:
         "",
         "## Tier 4 — Monitored Compatibility (presence only)",
         "",
-        "> Failures do not block pin. These functions depend on upstream HTML/API structures that change frequently.",
+        "> Failures do not block pin. These functions depend on upstream HTML/API "
+        "structures that change frequently.",
         "",
         "| Function | Status | Note |",
         "| --- | --- | --- |",
@@ -315,7 +316,8 @@ def run() -> int:
         for f in missing_presence:
             lines.append(f"- **Presence MISSING**: `{f}`")
         for f in core_fails:
-            lines.append(f"- **Core runtime FAIL**: `{f}` — {core_results[f].get('error','')[:200]}")
+            err = core_results[f].get("error", "")[:200]
+            lines.append(f"- **Core runtime FAIL**: `{f}` — {err}")
         for f in cdn_skips:
             lines.append(f"- **CDN SKIP** (network): `{f}`")
         for f in cdn_fails:

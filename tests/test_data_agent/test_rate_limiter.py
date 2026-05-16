@@ -2,8 +2,6 @@
 
 import time
 
-import pytest
-
 from engine.data_agent.rate_limiter import DOMAIN_CONFIGS, RateLimiter
 
 
@@ -60,7 +58,6 @@ class TestCircuitBreaker:
         rl = RateLimiter()
         domain = "test.cooldown"
         # Override cooldown to be very short for testing
-        from engine.data_agent.rate_limiter import _DomainState
         state = rl._get_state(domain)
         state.cooldown_s = 0.01  # 10ms cooldown
         for _ in range(3):

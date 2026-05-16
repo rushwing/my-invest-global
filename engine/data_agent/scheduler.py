@@ -21,7 +21,6 @@ from typing import NamedTuple
 
 from engine.data_agent.fields import FieldGroup
 
-
 # ── Trading windows (China A-share, UTC+8) ───────────────────────────────────
 
 class _Window(NamedTuple):

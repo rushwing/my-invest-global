@@ -88,7 +88,9 @@ class TencentSource(AbstractSource):
         Daily K-line as a flat list of price rows — compatible with storage.upsert(KLINE).
         Each row: {code, trade_date, open, close, high, low, volume, adj_type, source}.
         """
-        combined = self.fetch_kline_and_quote(code, end=end, lookback_days=lookback_days, adjust=adjust)
+        combined = self.fetch_kline_and_quote(
+            code, end=end, lookback_days=lookback_days, adjust=adjust
+        )
         return [
             {
                 "code": code,

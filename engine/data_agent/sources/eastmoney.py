@@ -218,9 +218,15 @@ class EastmoneySource(AbstractSource):
         latest_rows = [r for r in rows if str(r.get("REPORT_DATE") or "")[:10] == latest_date]
 
         # Within the latest period: prefer product type (2), fallback to industry type (1)
-        product_rows = [r for r in latest_rows if str(r.get("MAINOP_TYPE")) == "2" and r.get("ITEM_NAME")]
+        product_rows = [
+            r for r in latest_rows if str(r.get("MAINOP_TYPE")) == "2" and r.get("ITEM_NAME")
+        ]
         if not product_rows:
-            product_rows = [r for r in latest_rows if str(r.get("MAINOP_TYPE")) == "1" and r.get("ITEM_NAME")]
+            product_rows = [
+                r
+                for r in latest_rows
+                if str(r.get("MAINOP_TYPE")) == "1" and r.get("ITEM_NAME")
+            ]
         if not product_rows:
             return []
 
@@ -271,7 +277,10 @@ class EastmoneySource(AbstractSource):
         url = "https://push2.eastmoney.com/api/qt/stock/get"
         params = {
             "secid": secid,
-            "fields": "f43,f44,f45,f46,f47,f48,f57,f58,f60,f116,f117,f162,f163,f164,f167,f168,f169,f170,f171",
+            "fields": (
+                "f43,f44,f45,f46,f47,f48,f57,f58,f60,f116,f117,f162,f163,f164,"
+                "f167,f168,f169,f170,f171"
+            ),
             "ut": "bd1d9ddb04089700cf9c27f6f7426281",
         }
         payload = self._get(url, params=params)
@@ -279,7 +288,7 @@ class EastmoneySource(AbstractSource):
         if not data:
             return None
 
-        now = dt.datetime.now(tz=dt.timezone.utc)
+        now = dt.datetime.now(tz=dt.UTC)
         return {
             "code": code,
             "quote_time": now,

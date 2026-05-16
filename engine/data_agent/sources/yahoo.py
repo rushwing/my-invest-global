@@ -58,7 +58,7 @@ class YahooSource(AbstractSource):
                     info = tickers.tickers[symbol].fast_info
                     results.append({
                         "code": symbol,
-                        "quote_time": dt.datetime.now(tz=dt.timezone.utc),
+                        "quote_time": dt.datetime.now(tz=dt.UTC),
                         "price": getattr(info, "last_price", None),
                         "pct_change": None,  # computed from prev_close if needed
                         "volume": getattr(info, "last_volume", None),

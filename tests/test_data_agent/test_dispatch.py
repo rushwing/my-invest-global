@@ -10,8 +10,6 @@ Verifies that:
 
 from __future__ import annotations
 
-import datetime as dt
-from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -19,12 +17,10 @@ import pytest
 from engine.data_agent.fields import (
     GROUP_DISPATCH,
     GROUP_PER_CODE,
-    FAST_SOURCES,
     FieldGroup,
 )
 from engine.data_agent.rate_limiter import RateLimiter
 from engine.data_agent.sub_agents.slow_agent import SlowAgent
-
 
 # ── GROUP_DISPATCH completeness ───────────────────────────────────────────────
 
@@ -142,8 +138,6 @@ class TestSlowAgentDispatch:
         src.fetch_kline_day.return_value = [{"code": "x"}]
         # Open the circuit after first call
         call_count = 0
-        original_is_circuit_open = self.rl.is_circuit_open
-
         def is_open_after_one(domain):
             nonlocal call_count
             call_count += 1
@@ -379,7 +373,6 @@ class TestBaseGetFailureRecording:
         src._session.get.side_effect = ConnectionError("timeout")
 
         record_calls = []
-        original = rl.record_failure
         rl.record_failure = lambda domain, status: record_calls.append((domain, status))
 
         with pytest.raises(SourceError):
@@ -421,8 +414,8 @@ class TestBaseGetFailureRecording:
 class TestOrchestratorActualSource:
     def test_fetch_with_fallback_returns_actual_source_name(self):
         """_fetch_with_fallback must return (src_name, rows), not just rows."""
-        from engine.data_agent.orchestrator import StockDataOrchestrator, AllSourcesFailedError
         from engine.data_agent.fields import FIELD_POLICIES
+        from engine.data_agent.orchestrator import StockDataOrchestrator
         from engine.data_agent.sources.base import SourceError
 
         rl = RateLimiter()
@@ -455,8 +448,8 @@ class TestOrchestratorActualSource:
         assert rows == [{"code": "000001"}]
 
     def test_all_sources_fail_raises(self):
-        from engine.data_agent.orchestrator import StockDataOrchestrator, AllSourcesFailedError
         from engine.data_agent.fields import FIELD_POLICIES
+        from engine.data_agent.orchestrator import AllSourcesFailedError, StockDataOrchestrator
         from engine.data_agent.sources.base import SourceError
 
         rl = RateLimiter()
@@ -536,7 +529,6 @@ class TestRunOnceGroupOverride:
 class TestLoadCodes:
     def test_loads_codes_from_yaml(self, tmp_path):
         """_load_codes() extracts 6-digit codes from stocks.yaml using regex."""
-        import sys
         import scripts.refresh_data_agent as cli
 
         yaml_content = (

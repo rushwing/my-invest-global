@@ -18,7 +18,6 @@ import requests
 
 from engine.data_agent.rate_limiter import RateLimiter
 
-
 # User-Agent pool — rotate to reduce fingerprinting
 _UA_POOL = [
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "

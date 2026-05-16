@@ -1,7 +1,6 @@
 """Tests for engine.data_agent.storage — DuckDB upsert and git-root resolution."""
 
 import datetime as dt
-import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
@@ -51,7 +50,7 @@ class TestUpsertQuotes:
         rows = [
             {
                 "code": "600000",
-                "quote_time": dt.datetime(2026, 5, 15, 9, 30, tzinfo=dt.timezone.utc),
+                "quote_time": dt.datetime(2026, 5, 15, 9, 30, tzinfo=dt.UTC),
                 "price": 10.5,
                 "pct_change": 1.2,
                 "volume": 1000000,
@@ -70,7 +69,7 @@ class TestUpsertQuotes:
         rows = [
             {
                 "code": "600000",
-                "quote_time": dt.datetime(2026, 5, 15, 9, 30, tzinfo=dt.timezone.utc),
+                "quote_time": dt.datetime(2026, 5, 15, 9, 30, tzinfo=dt.UTC),
                 "price": 10.5,
                 "pct_change": 1.2,
                 "volume": 1000000,
@@ -84,7 +83,7 @@ class TestUpsertQuotes:
         ]
         tmp_db.upsert(FieldGroup.QUOTE, rows)
         # Insert same row again — should update, not duplicate
-        count = tmp_db.upsert(FieldGroup.QUOTE, rows)
+        tmp_db.upsert(FieldGroup.QUOTE, rows)
         total = tmp_db._conn.execute("SELECT COUNT(*) FROM stock_quotes").fetchone()[0]
         assert total == 1
 

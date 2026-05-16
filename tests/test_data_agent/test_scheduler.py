@@ -1,13 +1,10 @@
 """Tests for engine.data_agent.scheduler — due-group logic and trading calendar."""
 
 import datetime as dt
-from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest.mock import patch
 
 from engine.data_agent.fields import FieldGroup
-from engine.data_agent.scheduler import Schedule, TRADING_HOURS, LUNCH_BREAK
-
+from engine.data_agent.scheduler import Schedule
 
 CST = dt.timezone(dt.timedelta(hours=8))
 
