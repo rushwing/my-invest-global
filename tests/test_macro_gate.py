@@ -6,8 +6,8 @@ TC coverage:
   TC-001-03  default when cache file missing
   TC-001-04  invalid file content fallback
   TC-001-05  idempotent write
-  TC-001-06  CLI invalid args → non-zero exit
-  TC-001-07  TARGET_ELASTIC_BY_MACRO_STATE constants
+  TC-001-06  CLI invalid args → non-zero exit; valid --set green → exit 0
+  TC-001-07  TARGET_ELASTIC_BY_MACRO_STATE constants + mypy --strict self-check
 """
 
 from __future__ import annotations
@@ -149,6 +149,26 @@ def test_cli_missing_set_arg_exits_nonzero() -> None:
     assert result.returncode != 0
 
 
+def test_cli_valid_set_green_exits_zero() -> None:
+    """TC-001-06 valid path: --set green exits 0 and writes {"state": "green"}."""
+    real_cache = Path("data/cache/macro_state.json")
+    real_cache.parent.mkdir(parents=True, exist_ok=True)
+    prev = real_cache.read_bytes() if real_cache.exists() else None
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "engine.macro_gate", "--set", "green"],
+            capture_output=True,
+        )
+        assert result.returncode == 0
+        assert real_cache.exists()
+        assert json.loads(real_cache.read_text())["state"] == "green"
+    finally:
+        if prev is not None:
+            real_cache.write_bytes(prev)
+        elif real_cache.exists():
+            real_cache.unlink()
+
+
 # ── TC-001-07: TARGET_ELASTIC_BY_MACRO_STATE constants ───────────────────────
 
 
@@ -170,3 +190,13 @@ def test_target_elastic_has_all_states() -> None:
         MacroState.YELLOW,
         MacroState.RED,
     }
+
+
+def test_mypy_strict_passes() -> None:
+    """TC-001-07: uv run mypy engine/macro_gate.py --strict exits 0."""
+    result = subprocess.run(
+        ["uv", "run", "mypy", "engine/macro_gate.py", "--strict"],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
