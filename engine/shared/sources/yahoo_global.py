@@ -147,8 +147,13 @@ class YahooGlobalSource(MacroAbstractSource):
                     row = df.iloc[-1]
                     close_val = float(row["Close"])
                     idx = df.index[-1]
-                    # yfinance index is tz-aware (UTC); convert to local market date.
-                    local_date = idx.astimezone(ZoneInfo(tz_str)).date()
+                    # yfinance daily bars may return tz-naive or tz-aware DatetimeIndex.
+                    # tz-naive (common for daily interval): use date() directly.
+                    # tz-aware: convert to market timezone then extract date.
+                    if idx.tzinfo is None:
+                        local_date = idx.date()
+                    else:
+                        local_date = idx.astimezone(ZoneInfo(tz_str)).date()
                     records.append(
                         self._make_period_record(
                             indicator_id=ticker,

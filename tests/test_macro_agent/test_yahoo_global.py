@@ -1,5 +1,5 @@
 """
-Tests for YahooGlobalSource — covers TC-006-09 and TC-006-10.
+Tests for YahooGlobalSource — covers TC-006-09, TC-006-10, TC-006-16.
 """
 
 from __future__ import annotations
@@ -119,3 +119,25 @@ def test_fetch_quote_summary_retries_on_401(src: YahooGlobalSource) -> None:
         result = src.fetch_quote_summary("MSFT")
 
     assert result.get("ok") is True
+
+
+# TC-006-16: fetch_ohlcv handles tz-naive DatetimeIndex (daily bars from yfinance)
+def test_fetch_ohlcv_tz_naive_index(src: YahooGlobalSource) -> None:
+    import sys
+    pandas = pytest.importorskip("pandas")
+
+    naive_df = pandas.DataFrame(
+        {"Close": [150.0]},
+        index=[pandas.Timestamp("2026-05-15")],  # tz-naive
+    )
+    mock_yf = MagicMock()
+    # Single-ticker download returns the DataFrame directly (not nested by ticker key)
+    mock_yf.download.return_value = naive_df
+
+    with patch.dict(sys.modules, {"yfinance": mock_yf}):
+        records = src.fetch_ohlcv(["MSFT"])
+
+    assert records, "fetch_ohlcv must not return empty list for tz-naive daily index"
+    assert records[0]["indicator_id"] == "MSFT"
+    assert records[0]["period_date"] == dt.date(2026, 5, 15)
+    assert records[0]["value"] == pytest.approx(150.0)
