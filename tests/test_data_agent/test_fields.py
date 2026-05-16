@@ -1,6 +1,5 @@
 """Tests for engine.data_agent.fields — FieldGroup enum and FIELD_POLICIES."""
 
-import pytest
 
 from engine.data_agent.fields import (
     FAST_SOURCES,

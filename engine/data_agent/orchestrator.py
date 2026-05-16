@@ -19,8 +19,8 @@ Usage:
 from __future__ import annotations
 
 import datetime as dt
-import time as _time
 import logging
+import time as _time
 from typing import Any
 
 from engine.data_agent.fields import (
@@ -93,7 +93,7 @@ class StockDataOrchestrator:
         extra_sources: dict[str, AbstractSource] | None = None,
         rate_limiter: RateLimiter | None = None,
         index_codes: list[str] | None = None,
-    ) -> "StockDataOrchestrator":
+    ) -> StockDataOrchestrator:
         """
         Build an orchestrator with all default sources wired up.
         Only Tencent and Eastmoney are available at this stage;
@@ -103,8 +103,8 @@ class StockDataOrchestrator:
         Pass ``rate_limiter`` to share a single RateLimiter instance across all
         sources and agents so circuit-breaker and backoff state is global.
         """
-        from engine.data_agent.sources.tencent import TencentSource
         from engine.data_agent.sources.eastmoney import EastmoneySource
+        from engine.data_agent.sources.tencent import TencentSource
 
         rl = rate_limiter if rate_limiter is not None else RateLimiter()
         sources: dict[str, AbstractSource] = {
@@ -143,7 +143,11 @@ class StockDataOrchestrator:
         omit to let the scheduler decide which groups are due.
         Returns a summary dict: {group_value: row_count}.
         """
-        due: list[FieldGroup] = groups if groups is not None else self._scheduler.get_due_groups(self._last_fetched)
+        due: list[FieldGroup] = (
+            groups
+            if groups is not None
+            else self._scheduler.get_due_groups(self._last_fetched)
+        )
         summary: dict[str, int] = {}
 
         for group in due:
@@ -158,7 +162,7 @@ class StockDataOrchestrator:
                 self._storage.log_retrieval(
                     group, actual_src, "ok", latency_ms=latency
                 )
-                self._last_fetched[group] = dt.datetime.now(tz=dt.timezone.utc)
+                self._last_fetched[group] = dt.datetime.now(tz=dt.UTC)
                 summary[group.value] = count
                 log.info(
                     "fetched %s via %s: %d rows in %dms",
@@ -191,7 +195,7 @@ class StockDataOrchestrator:
     def close(self) -> None:
         self._storage.close()
 
-    def __enter__(self) -> "StockDataOrchestrator":
+    def __enter__(self) -> StockDataOrchestrator:
         return self
 
     def __exit__(self, *_) -> None:

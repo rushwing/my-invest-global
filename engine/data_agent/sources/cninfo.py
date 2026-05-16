@@ -100,7 +100,7 @@ class CNINFOSource(AbstractSource):
             ann_time_ms = ann.get("announcementTime")
             if ann_time_ms:
                 ann_dt = dt.datetime.fromtimestamp(
-                    ann_time_ms / 1000, tz=dt.timezone.utc
+                    ann_time_ms / 1000, tz=dt.UTC
                 )
             else:
                 ann_dt = None

@@ -68,9 +68,11 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--groups",
         metavar="GROUP,...",
-        help="Comma-separated FieldGroup names to fetch "
-             "(quote,kline,kline_min,fundamental,segment,fund_flow,shareholder,announcement,index). "
-             "Default: all due groups per schedule.",
+        help=(
+            "Comma-separated FieldGroup names to fetch "
+            "(quote,kline,kline_min,fundamental,segment,fund_flow,shareholder,"
+            "announcement,index). Default: all due groups per schedule."
+        ),
     )
     p.add_argument(
         "--once",

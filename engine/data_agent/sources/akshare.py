@@ -72,7 +72,7 @@ class AKShareSource(AbstractSource):
                 continue
             results.append({
                 "code": code,
-                "quote_time": dt.datetime.now(tz=dt.timezone.utc),
+                "quote_time": dt.datetime.now(tz=dt.UTC),
                 "price": row.get("最新价"),
                 "pct_change": row.get("涨跌幅"),
                 "volume": row.get("成交量"),

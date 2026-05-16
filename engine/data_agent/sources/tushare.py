@@ -27,7 +27,7 @@ class TushareSource(AbstractSource):
         super().__init__(rate_limiter)
         token = os.environ.get("TUSHARE_TOKEN") or os.environ.get("TSPRO_TOKEN")
         if not token:
-            raise EnvironmentError(
+            raise OSError(
                 "TUSHARE_TOKEN is not set. Add it to ~/.zshrc and run: source ~/.zshrc"
             )
         try:
@@ -43,7 +43,9 @@ class TushareSource(AbstractSource):
 
     def fetch_quotes(self, codes: list[str]) -> list[dict[str, Any]]:
         """Tushare real-time quotes via pro.realtime_list (requires >= 2000 points)."""
-        raise SourceError("TushareSource does not support real-time quotes; use Tencent/Eastmoney/Sina")
+        raise SourceError(
+            "TushareSource does not support real-time quotes; use Tencent/Eastmoney/Sina"
+        )
 
     # ── Fundamentals ──────────────────────────────────────────────────────────
 
@@ -116,7 +118,7 @@ class TushareSource(AbstractSource):
             "report_date": report_date,
             "period_type": "annual" if period.endswith("1231") else "quarterly",
             "source": "tushare",
-            "fetched_at": dt.datetime.now(tz=dt.timezone.utc),
+            "fetched_at": dt.datetime.now(tz=dt.UTC),
         }
 
         if inc is not None and not inc.empty:

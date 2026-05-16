@@ -18,7 +18,6 @@ import duckdb
 
 from engine.data_agent.fields import FieldGroup
 
-
 # ── Path resolution ───────────────────────────────────────────────────────────
 
 def _find_project_root() -> Path:
@@ -374,7 +373,7 @@ class Storage:
         """Upsert OHLCV daily price rows."""
         if not rows:
             return 0
-        now = dt.datetime.now(tz=dt.timezone.utc)
+        now = dt.datetime.now(tz=dt.UTC)
         params = [
             (
                 r["code"], r["trade_date"], r.get("open"), r.get("high"),
@@ -391,7 +390,7 @@ class Storage:
         """Upsert quarterly/annual fundamental rows."""
         if not rows:
             return 0
-        now = dt.datetime.now(tz=dt.timezone.utc)
+        now = dt.datetime.now(tz=dt.UTC)
         params = [
             (
                 r["code"], r["report_date"], r.get("period_type", "Q"),
@@ -520,7 +519,7 @@ class Storage:
                 code,
                 field_group.value if isinstance(field_group, FieldGroup) else field_group,
                 source,
-                dt.datetime.now(tz=dt.timezone.utc),
+                dt.datetime.now(tz=dt.UTC),
                 latency_ms,
                 status,
                 error_msg,
@@ -534,7 +533,10 @@ class Storage:
         group: FieldGroup,
         code: str | None = None,
     ) -> dt.datetime | None:
-        """Return the most recent started_at timestamp for a field group (and optionally a stock code)."""
+        """Return the most recent started_at timestamp for a field group.
+
+        Optionally narrows the lookup to a stock code.
+        """
         where = "WHERE field_group = ?"
         params: list[Any] = [group.value]
         if code is not None:
@@ -552,7 +554,7 @@ class Storage:
     def close(self) -> None:
         self._conn.close()
 
-    def __enter__(self) -> "Storage":
+    def __enter__(self) -> Storage:
         return self
 
     def __exit__(self, *_) -> None:

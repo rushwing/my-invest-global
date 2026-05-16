@@ -1,7 +1,7 @@
 """Tests for engine.data_agent.sources.tencent — mock HTTP, batch splitting, field normalization."""
 
 import datetime as dt
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 

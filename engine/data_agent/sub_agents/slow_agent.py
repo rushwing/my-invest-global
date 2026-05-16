@@ -120,7 +120,7 @@ class SlowAgent:
         The RateLimiter.acquire() already handles request-level pacing;
         this adds an extra per-code buffer to further reduce detection risk.
         """
-        from engine.data_agent.rate_limiter import DOMAIN_CONFIGS, _DEFAULT_CONFIG
+        from engine.data_agent.rate_limiter import _DEFAULT_CONFIG, DOMAIN_CONFIGS
         cfg = DOMAIN_CONFIGS.get(domain, _DEFAULT_CONFIG)
         base = cfg.get("min_delay", 2.0) * 0.5  # half the min_delay as inter-code buffer
         jitter = base * 0.2 * (2 * random.random() - 1)

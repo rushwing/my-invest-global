@@ -6,10 +6,10 @@ SourcePolicy that declares which source to try first and which to fall back to.
 """
 
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 
 
-class FieldGroup(str, Enum):
+class FieldGroup(StrEnum):
     QUOTE        = "quote"        # real-time price, volume, PE, market cap
     KLINE        = "kline"        # daily/weekly/monthly OHLCV + adj_factor
     KLINE_MIN    = "kline_min"    # 1-min intraday OHLCV
