@@ -26,10 +26,11 @@ TARGET_ELASTIC_BY_MACRO_STATE: dict[MacroState, float] = {
 
 def get_macro_state() -> MacroState:
     try:
-        data: dict[str, object] = json.loads(_CACHE_FILE.read_text())
-        value = data.get("state")
-        if isinstance(value, str):
-            return MacroState(value)
+        raw = json.loads(_CACHE_FILE.read_text())
+        if isinstance(raw, dict):
+            value = raw.get("state")
+            if isinstance(value, str):
+                return MacroState(value)
     except (OSError, ValueError):
         pass
     return MacroState.YELLOW

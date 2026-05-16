@@ -17,9 +17,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-import engine.macro_gate as _mg
 import pandas as pd
 import pytest
+
+import engine.macro_gate as _mg
 from engine.macro_gate import (
     TARGET_ELASTIC_BY_MACRO_STATE,
     MacroState,
@@ -106,6 +107,16 @@ def test_invalid_state_string_falls_back_to_yellow(cache_file: Path) -> None:
 
 def test_null_state_falls_back_to_yellow(cache_file: Path) -> None:
     cache_file.write_text(json.dumps({"state": None}))
+    assert get_macro_state() == MacroState.YELLOW
+
+
+def test_json_null_top_level_falls_back_to_yellow(cache_file: Path) -> None:
+    cache_file.write_text("null")
+    assert get_macro_state() == MacroState.YELLOW
+
+
+def test_json_array_top_level_falls_back_to_yellow(cache_file: Path) -> None:
+    cache_file.write_text("[]")
     assert get_macro_state() == MacroState.YELLOW
 
 
