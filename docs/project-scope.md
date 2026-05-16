@@ -12,7 +12,8 @@
 |---|---|
 | Data collection (news / reports / KOL digests) | Codex Daily/Weekly Agent |
 | Holdings OCR (screenshot → structured CSV) | Codex OCR Agent |
-| Price history fetch (AkShare / yfinance) | This tool (engine/data/) |
+| Price history fetch (AkShare / yfinance) | This tool (engine/data_agent/) |
+| Macro indicator collection (FRED / SEC EDGAR / Yahoo global / AKShare macro) | This tool (engine/macro_agent/) |
 | Three-signal scoring | This tool (engine/signals/) |
 | LLM strategy brief synthesis | This tool (engine/synthesis/) |
 | Dashboard visualization | This tool (app/) |
@@ -271,7 +272,7 @@ See `docs/adr/` for full decision rationale on each selection.
 ## Out of Scope (v1)
 
 - Automated order execution or brokerage API integration
-- Real-time tick data or intraday signals (daily batch only)
+- Real-time tick data for A-shares (macro indicators use 5–60 min intraday polling — in scope via engine/macro_agent/)
 - Web search or live data scraping (delegated to Codex agents)
 - Multi-user authentication or remote deployment
 - US stock holdings (A-share focus; US tickers only as leading indicators)
