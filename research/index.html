@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AIDC 产业研究知识库 · 首页</title>
+<style>
+  :root{--bg:#07101f;--bg2:#0c1830;--bg3:#111e38;--border:#1e2d50;--gold:#c9a227;--text:#e2e8f0;--text2:#94a3b8;--accent:#FFEAA7}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'SF Pro Text','PingFang SC','Helvetica Neue',sans-serif;padding:2rem;max-width:1180px;margin:0 auto}
+  h1{color:var(--gold);font-size:1.45rem;margin-bottom:.35rem}
+  .subtitle{color:var(--text2);font-size:.86rem;margin-bottom:1.2rem;line-height:1.7}
+  .toolbar{display:flex;gap:.7rem;flex-wrap:wrap;margin:1.1rem 0 1.4rem}
+  button{background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.28);color:var(--gold);border-radius:6px;padding:.42rem .72rem;font-size:.78rem;cursor:pointer}
+  button:hover{border-color:#e8c040}
+  .domain{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin:.8rem 0;overflow:hidden}
+  .domain-head{width:100%;display:flex;align-items:center;gap:.75rem;background:transparent;border:none;border-radius:0;color:var(--text);padding:1rem 1.1rem;text-align:left}
+  .domain-head .arrow{display:inline-block;color:var(--gold);transition:transform .16s ease;font-size:.86rem}
+  .domain.open .domain-head .arrow{transform:rotate(90deg)}
+  .domain-title{color:var(--accent);font-size:.98rem;font-weight:650;min-width:9rem}
+  .domain-desc{color:var(--text2);font-size:.82rem;line-height:1.6}
+  .domain-body{display:none;border-top:1px solid var(--border);padding:1rem 1.1rem 1.15rem;background:rgba(17,30,56,.55)}
+  .domain.open .domain-body{display:block}
+  .links{display:flex;gap:.8rem;flex-wrap:wrap}
+  .link-card{display:block;min-width:220px;flex:1;background:#07101f;border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:8px;padding:.9rem 1rem;text-decoration:none;color:inherit}
+  .link-card:hover{border-color:#2a3d60;border-left-color:#e8c040}
+  .link-title{color:var(--gold);font-size:.88rem;font-weight:650;margin-bottom:.28rem}
+  .link-desc{color:var(--text2);font-size:.78rem;line-height:1.6}
+  .footer{margin-top:2.4rem;color:var(--text2);font-size:.78rem;border-top:1px solid var(--border);padding-top:1rem}
+</style>
+</head>
+<body>
+<h1>AIDC 产业研究知识库</h1>
+<p class="subtitle">按 AIDC 产业链 9 大领域组织。每个领域下分为“产业基础知识”和“研报”：前者沉淀主流产品、基础架构和前沿技术路线，后者按月份归档高时效券商/行业资料。</p>
+
+<div class="toolbar">
+  <button type="button" data-action="expand">全部展开</button>
+  <button type="button" data-action="collapse">全部收起</button>
+</div>
+
+<section class="domain open" id="optical-communications">
+  <button class="domain-head" type="button" aria-expanded="true"><span class="arrow">▶</span><span class="domain-title">1. 光通信与互连</span><span class="domain-desc">800G/1.6T 光模块、CPO、LPO、OCS、HCF、相干光与短距互连。</span></button>
+  <div class="domain-body">
+    <div class="links">
+      <a class="link-card" href="optical-communications/knowledge/index.html"><div class="link-title">产业基础知识</div><div class="link-desc">长期技术路线、架构图、产业链和关键玩家。</div></a>
+      <a class="link-card" href="optical-communications/reports/index.html"><div class="link-title">研报</div><div class="link-desc">按月份归档，保留报告时点、预测口径与核心结论。</div></a>
+    </div>
+  </div>
+</section>
+
+<section class="domain" id="memory-semiconductors">
+  <button class="domain-head" type="button" aria-expanded="false"><span class="arrow">▶</span><span class="domain-title">2. 内存与半导体</span><span class="domain-desc">HBM、DDR5/RCD、企业级 SSD、存储周期与国产替代。</span></button>
+  <div class="domain-body"><div class="links"><a class="link-card" href="pending.html?domain=memory-semiconductors&type=knowledge"><div class="link-title">产业基础知识</div><div class="link-desc">待补充。</div></a><a class="link-card" href="pending.html?domain=memory-semiconductors&type=reports"><div class="link-title">研报</div><div class="link-desc">待归档。</div></a></div></div>
+</section>
+
+<section class="domain" id="compute-chips">
+  <button class="domain-head" type="button" aria-expanded="false"><span class="arrow">▶</span><span class="domain-title">3. 算力与芯片</span><span class="domain-desc">GPU、ASIC、国产训练芯片、网络 ASIC 与主权算力。</span></button>
+  <div class="domain-body"><div class="links"><a class="link-card" href="pending.html?domain=compute-chips&type=knowledge"><div class="link-title">产业基础知识</div><div class="link-desc">待补充。</div></a><a class="link-card" href="pending.html?domain=compute-chips&type=reports"><div class="link-title">研报</div><div class="link-desc">待归档。</div></a></div></div>
+</section>
+
+<section class="domain" id="pcb">
+  <button class="domain-head" type="button" aria-expanded="false"><span class="arrow">▶</span><span class="domain-title">4. PCB 与高速互连</span><span class="domain-desc">AI 服务器 PCB、高速背板、铜箔、连接器与精密互联。</span></button>
+  <div class="domain-body"><div class="links"><a class="link-card" href="pending.html?domain=pcb&type=knowledge"><div class="link-title">产业基础知识</div><div class="link-desc">待补充。</div></a><a class="link-card" href="pending.html?domain=pcb&type=reports"><div class="link-title">研报</div><div class="link-desc">待归档。</div></a></div></div>
+</section>
+
+<section class="domain" id="upstream-materials">
+  <button class="domain-head" type="button" aria-expanded="false"><span class="arrow">▶</span><span class="domain-title">5. 上游材料</span><span class="domain-desc">电子铜箔、基板材料、光电材料、散热材料与供应约束。</span></button>
+  <div class="domain-body"><div class="links"><a class="link-card" href="pending.html?domain=upstream-materials&type=knowledge"><div class="link-title">产业基础知识</div><div class="link-desc">待补充。</div></a><a class="link-card" href="pending.html?domain=upstream-materials&type=reports"><div class="link-title">研报</div><div class="link-desc">待归档。</div></a></div></div>
+</section>
+
+<section class="domain" id="ai-servers">
+  <button class="domain-head" type="button" aria-expanded="false"><span class="arrow">▶</span><span class="domain-title">6. AI 服务器与算力租赁</span><span class="domain-desc">整机 ODM、rack-scale、算力运营、云服务商与交付节奏。</span></button>
+  <div class="domain-body"><div class="links"><a class="link-card" href="pending.html?domain=ai-servers&type=knowledge"><div class="link-title">产业基础知识</div><div class="link-desc">待补充。</div></a><a class="link-card" href="pending.html?domain=ai-servers&type=reports"><div class="link-title">研报</div><div class="link-desc">待归档。</div></a></div></div>
+</section>
+
+<section class="domain" id="semiconductor-equipment-packaging">
+  <button class="domain-head" type="button" aria-expanded="false"><span class="arrow">▶</span><span class="domain-title">7. 半导体设备与封测</span><span class="domain-desc">先进封装、硅光封装、测试设备、封测产能与良率。</span></button>
+  <div class="domain-body"><div class="links"><a class="link-card" href="pending.html?domain=semiconductor-equipment-packaging&type=knowledge"><div class="link-title">产业基础知识</div><div class="link-desc">待补充。</div></a><a class="link-card" href="pending.html?domain=semiconductor-equipment-packaging&type=reports"><div class="link-title">研报</div><div class="link-desc">待归档。</div></a></div></div>
+</section>
+
+<section class="domain" id="cooling-liquid-cooling">
+  <button class="domain-head" type="button" aria-expanded="false"><span class="arrow">▶</span><span class="domain-title">8. 散热与液冷</span><span class="domain-desc">冷板、浸没式液冷、精密空调、冷源系统与高热流密度散热。</span></button>
+  <div class="domain-body"><div class="links"><a class="link-card" href="pending.html?domain=cooling-liquid-cooling&type=knowledge"><div class="link-title">产业基础知识</div><div class="link-desc">待补充。</div></a><a class="link-card" href="pending.html?domain=cooling-liquid-cooling&type=reports"><div class="link-title">研报</div><div class="link-desc">待归档。</div></a></div></div>
+</section>
+
+<section class="domain" id="power-systems">
+  <button class="domain-head" type="button" aria-expanded="false"><span class="arrow">▶</span><span class="domain-title">9. 电源与机房基础设施</span><span class="domain-desc">UPS、HVDC、SST、变压器、机柜、布线和园区供配电。</span></button>
+  <div class="domain-body"><div class="links"><a class="link-card" href="pending.html?domain=power-systems&type=knowledge"><div class="link-title">产业基础知识</div><div class="link-desc">待补充。</div></a><a class="link-card" href="pending.html?domain=power-systems&type=reports"><div class="link-title">研报</div><div class="link-desc">待归档。</div></a></div></div>
+</section>
+
+<div class="footer">说明：基础知识用于沉淀长期技术理解；研报用于记录特定时间点的预测、分歧和市场预期变化。</div>
+
+<script>
+  const domains = Array.from(document.querySelectorAll('.domain'));
+  function setOpen(section, open){
+    section.classList.toggle('open', open);
+    const head = section.querySelector('.domain-head');
+    if(head) head.setAttribute('aria-expanded', String(open));
+  }
+  domains.forEach(section => {
+    section.querySelector('.domain-head').addEventListener('click', () => setOpen(section, !section.classList.contains('open')));
+  });
+  document.querySelector('[data-action="expand"]').addEventListener('click', () => domains.forEach(d => setOpen(d, true)));
+  document.querySelector('[data-action="collapse"]').addEventListener('click', () => domains.forEach(d => setOpen(d, false)));
+</script>
+</body>
+</html>
