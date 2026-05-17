@@ -3,6 +3,7 @@
 from datetime import UTC, date, datetime
 
 import pytest
+
 from engine.macro_agent.storage import MacroStorage
 
 
