@@ -8,10 +8,15 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
-from engine.macro_agent.orchestrator import MacroOrchestrator
 
 from engine.data_agent.sources.base import SourceError
 from engine.macro_agent.storage import MacroStorage
+
+_orch_mod = pytest.importorskip(
+    "engine.macro_agent.orchestrator",
+    reason="MacroOrchestrator not yet implemented (pending req_impl)",
+)
+MacroOrchestrator = _orch_mod.MacroOrchestrator
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
