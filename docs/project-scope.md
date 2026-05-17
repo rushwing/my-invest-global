@@ -12,13 +12,14 @@
 |---|---|
 | Data collection (news / reports / KOL digests) | Codex Daily/Weekly Agent |
 | Holdings OCR (screenshot → structured CSV) | Codex OCR Agent |
+| Holdings manual entry (sidebar editor) | This tool (app/dashboard.py) |
 | Price history fetch (AkShare / yfinance) | This tool (engine/data_agent/) |
 | Macro indicator collection (FRED / SEC EDGAR / Yahoo global / AKShare macro) | This tool (engine/macro_agent/) |
 | Three-signal scoring | This tool (engine/signals/) |
 | LLM strategy brief synthesis | This tool (engine/synthesis/) |
 | Dashboard visualization | This tool (app/) |
 
-**Personal use only** — no multi-user auth, no SaaS deployment, no real-time tick data.
+**Personal use only** — no multi-user SaaS deployment, no real-time tick data. Single-user local passphrase auth is in scope.
 
 ---
 
@@ -48,7 +49,7 @@
 
 ### UC-2 仓位检查 (Portfolio Balance Check)
 
-**Trigger:** User uploads a new holdings screenshot; Codex OCR agent produces `holdings_{date}.csv`.
+**Trigger:** User uploads a new holdings screenshot and Codex OCR agent produces `holdings_{date}.csv`, or user enters/edits holdings directly via the sidebar editor (UC-4).
 
 **Pipeline:**
 1. Load holdings CSV → compute 白马股/弹性股 market value split
@@ -58,6 +59,27 @@
 5. Flag any single elastic stock exceeding 8% of total portfolio
 
 **Output:** Streamlit Tab 1 — pie chart + deviation table + rebalance prompt
+
+---
+
+### UC-4 持仓手动录入 (Holdings Manual Entry)
+
+**Trigger:** User opens the sidebar editor (passphrase gate must be unlocked) and edits holdings inline or uploads a CSV.
+
+**Pipeline:**
+1. User unlocks the dashboard via local passphrase (bcrypt-verified, stored as `DASHBOARD_PASSPHRASE_HASH` in `.env`)
+2. Sidebar expands to 420px; user edits rows in `st.data_editor` or uploads a CSV via the dropzone
+3. Dirty-cell tracking flags unsaved changes with a badge on the collapsed avatar
+4. `market_value` column is read-only and auto-computes as `current_price × quantity`
+5. User clicks Save → writes `data/agent_input/cn/holdings_{YYYYMMDD}.csv` → `st.rerun()`
+6. Dashboard reloads with new holdings data; Tab 1 Treemap and DeviationTable reflect updated values
+
+**Output:** Updated HoldingsFile; all tabs recompute from new data on next rerun.
+
+**Constraints:**
+- Passphrase gate must be unlocked before edits are accepted
+- `market_value` is always auto-computed — never entered manually
+- Source badge tracks provenance: 手动编辑 / CSV导入 / OCR待校正
 
 ---
 
@@ -274,7 +296,7 @@ See `docs/adr/` for full decision rationale on each selection.
 - Automated order execution or brokerage API integration
 - Real-time tick data for A-shares (macro indicators use 5–60 min intraday polling — in scope via engine/macro_agent/)
 - Web search or live data scraping (delegated to Codex agents)
-- Multi-user authentication or remote deployment
+- Multi-user authentication or remote SaaS deployment (single-user local passphrase is in scope)
 - US stock holdings (A-share focus; US tickers only as leading indicators)
 - ML model training (LightGBM factor model deferred until 2+ years of labeled data)
 - Backtesting framework (advisory tool, not trading system)
