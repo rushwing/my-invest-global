@@ -11,6 +11,7 @@ from zoneinfo import ZoneInfo
 from engine.data_agent.sources.base import SourceError
 from engine.macro_agent.indicator_groups import IndicatorConfig
 from engine.macro_agent.scheduler import MacroScheduler
+from engine.macro_agent.sec_cik_map import cik_for_indicator
 from engine.macro_agent.storage import MacroStorage
 
 log = logging.getLogger(__name__)
@@ -49,7 +50,9 @@ def _dispatch_source(source: Any, source_name: str, cfg: Any) -> Any:
     if group == _CAPEX_GROUP:
         if source_name == "yahoo_global":
             return source.fetch_quote_summary(iid)
-        return source.fetch_capex_quarterly(iid)
+        # SEC EDGAR requires a 10-digit CIK, not the indicator_id ticker suffix
+        cik, ticker = cik_for_indicator(iid)
+        return source.fetch_capex_quarterly(cik, company=ticker)
 
     # ── All other groups ──────────────────────────────────────────────────────
     if source_name == "fred":
@@ -63,7 +66,10 @@ def _dispatch_source(source: Any, source_name: str, cfg: Any) -> Any:
     if source_name in ("tushare_macro", "tushare"):
         return source.fetch_quote(iid)
     if source_name == "alpha_vantage":
-        return source.fetch_news_sentiment(iid)
+        # AV sentiment covers the five hyper-scaler tickers (REQ-011)
+        return source.fetch_news_sentiment(
+            tickers=["NVDA", "MSFT", "AVGO", "ANET", "VRT"]
+        )
     return source.fetch_series(iid)
 
 
@@ -99,13 +105,25 @@ class MacroOrchestrator:
         from engine.macro_agent.sources.akshare_macro import AKShareMacroSource
         from engine.macro_agent.sources.fred import FREDSource
         from engine.macro_agent.sources.yahoo_global import YahooGlobalSource
+        from engine.shared.sources.alpha_vantage import AlphaVantageSource
+        from engine.shared.sources.sec_edgar import SECEdgarSource
+        from engine.shared.sources.tushare_macro import TushareMacroSource
 
         storage = MacroStorage()
         rate_limiter = RateLimiter()
+
+        today = dt.date.today()
         sources: dict[str, Any] = {
             "fred": FREDSource(rate_limiter),
             "yahoo_global": YahooGlobalSource(rate_limiter),
             "akshare_macro": AKShareMacroSource(rate_limiter),
+            "sec_edgar": SECEdgarSource(rate_limiter),
+            "alpha_vantage": AlphaVantageSource(
+                rate_limiter,
+                get_budget=lambda: storage.get_av_budget(today),
+                inc_budget=lambda: storage.increment_av_budget(today),
+            ),
+            "tushare_macro": TushareMacroSource(rate_limiter),
         }
         release_cal = ReleaseCalendar(storage)
         scheduler = MacroScheduler(storage=storage, release_calendar=release_cal)
@@ -196,6 +214,13 @@ class MacroOrchestrator:
                 )
 
         self._compute_t10y2y(dgs_latest, now)
+
+        # Recompute macro regime gate after each full collection pass (REQ-011)
+        try:
+            from engine.macro_agent.regime import MacroRegime  # avoid circular at module level
+            MacroRegime(self._storage).compute(today_date)
+        except Exception as exc:
+            log.warning("regime compute failed (non-fatal): %s", exc)
 
     def run_loop(self, poll_s: int = 60) -> None:
         """Block forever, running run_once() every poll_s seconds."""
