@@ -21,29 +21,29 @@ class AKShareMacroSource:
     def __init__(self, rate_limiter: Any = None) -> None:
         self._rl = rate_limiter
 
-    def fetch_us_cpi(self) -> list[dict]:
+    def fetch_us_cpi(self) -> list[dict[str, Any]]:
         """Fetch US CPI data via AKShare."""
         return self._fetch_macro_series("CPIAUCSL", "macro_usa_cpi")
 
-    def fetch_us_ppi(self) -> list[dict]:
+    def fetch_us_ppi(self) -> list[dict[str, Any]]:
         """Fetch US PPI data via AKShare."""
         return self._fetch_macro_series("PPIACO", "macro_usa_ppi")
 
-    def fetch_china_cpi(self) -> list[dict]:
+    def fetch_china_cpi(self) -> list[dict[str, Any]]:
         """Fetch China CPI data via AKShare."""
         return self._fetch_macro_series("CPI_CHINA", "macro_china_cpi")
 
-    def fetch_china_ppi(self) -> list[dict]:
+    def fetch_china_ppi(self) -> list[dict[str, Any]]:
         """Fetch China PPI data via AKShare."""
         return self._fetch_macro_series("PPI_CHINA", "macro_china_ppi")
 
-    def fetch_quote(self, indicator_id: str) -> list[dict]:
+    def fetch_quote(self, indicator_id: str) -> list[dict[str, Any]]:
         """Generic quote fetch fallback."""
         return self._fetch_macro_series(indicator_id, indicator_id.lower())
 
-    def _fetch_macro_series(self, indicator_id: str, ak_func: str) -> list[dict]:
+    def _fetch_macro_series(self, indicator_id: str, ak_func: str) -> list[dict[str, Any]]:
         try:
-            import akshare as ak  # type: ignore[import]
+            import akshare as ak
         except ImportError as exc:
             raise SourceError("akshare not installed") from exc
 

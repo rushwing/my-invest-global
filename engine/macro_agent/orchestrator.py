@@ -5,7 +5,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import time as _time
-from typing import Any
+from typing import Any, cast
 from zoneinfo import ZoneInfo
 
 from engine.data_agent.sources.base import SourceError
@@ -40,15 +40,13 @@ _AKSHARE_NOARG: dict[str, str] = {
 }
 
 
-def _call_source(source: Any, source_name: str, cfg: Any) -> list[dict]:
-    """Dispatch the correct fetch method based on source name, group and indicator."""
-    iid = cfg.indicator_id
-    group = cfg.group_code
+def _dispatch_source(source: Any, source_name: str, cfg: Any) -> Any:
+    """Invoke the correct fetch method; returns Any (source type is dynamic)."""
+    iid: str = cfg.indicator_id
+    group: str = cfg.group_code
 
     # ── Group L: CapEx (returns capex-format records, not macro_indicators) ──
     if group == _CAPEX_GROUP:
-        if source_name == "sec_edgar":
-            return source.fetch_capex_quarterly(iid)
         if source_name == "yahoo_global":
             return source.fetch_quote_summary(iid)
         return source.fetch_capex_quarterly(iid)
@@ -67,6 +65,11 @@ def _call_source(source: Any, source_name: str, cfg: Any) -> list[dict]:
     if source_name == "alpha_vantage":
         return source.fetch_news_sentiment(iid)
     return source.fetch_series(iid)
+
+
+def _call_source(source: Any, source_name: str, cfg: Any) -> list[Any]:
+    """Dispatch the correct fetch method; casts result to list."""
+    return cast(list[Any], _dispatch_source(source, source_name, cfg))
 
 
 class MacroOrchestrator:
@@ -137,7 +140,7 @@ class MacroOrchestrator:
                     continue
 
             t0 = _time.perf_counter()
-            records: list[dict] | None = None
+            records: list[Any] | None = None
             succeeded_source = cfg.primary_source
             last_error: Exception | None = None
 

@@ -190,7 +190,7 @@ class MacroStorage:
 
     # ── Helpers ───────────────────────────────────────────────────────────────
 
-    def _fetchone_as_dict(self, sql: str, params: list[Any]) -> dict | None:
+    def _fetchone_as_dict(self, sql: str, params: list[Any]) -> dict[str, Any] | None:
         cur = self._conn.execute(sql, params)
         row = cur.fetchone()
         if row is None:
@@ -198,14 +198,14 @@ class MacroStorage:
         cols = [d[0] for d in cur.description]
         return dict(zip(cols, row))
 
-    def _fetchall_as_dicts(self, sql: str, params: list[Any]) -> list[dict]:
+    def _fetchall_as_dicts(self, sql: str, params: list[Any]) -> list[dict[str, Any]]:
         cur = self._conn.execute(sql, params)
         cols = [d[0] for d in cur.description]
         return [dict(zip(cols, row)) for row in cur.fetchall()]
 
     # ── Write API ─────────────────────────────────────────────────────────────
 
-    def upsert_indicators(self, records: list[dict]) -> int:
+    def upsert_indicators(self, records: list[dict[str, Any]]) -> int:
         if not records:
             return 0
         params = [
@@ -219,7 +219,7 @@ class MacroStorage:
         self._conn.executemany(_UPSERT_INDICATORS, params)
         return len(params)
 
-    def upsert_capex(self, records: list[dict]) -> int:
+    def upsert_capex(self, records: list[dict[str, Any]]) -> int:
         if not records:
             return 0
         count = 0
@@ -274,7 +274,7 @@ class MacroStorage:
             [yoy_pct, company, fiscal_quarter],
         )
 
-    def upsert_fomc(self, records: list[dict]) -> int:
+    def upsert_fomc(self, records: list[dict[str, Any]]) -> int:
         if not records:
             return 0
         params = [
@@ -288,7 +288,7 @@ class MacroStorage:
         self._conn.executemany(_UPSERT_FOMC, params)
         return len(params)
 
-    def upsert_regime(self, record: dict) -> None:
+    def upsert_regime(self, record: dict[str, Any]) -> None:
         self._conn.execute(
             _UPSERT_REGIME,
             (
@@ -313,7 +313,7 @@ class MacroStorage:
 
     def get_latest_indicator(
         self, indicator_id: str, source: str | None = None
-    ) -> dict | None:
+    ) -> dict[str, Any] | None:
         if source is None:
             return self._fetchone_as_dict(
                 "SELECT * FROM macro_indicators WHERE indicator_id = ?"
@@ -326,14 +326,14 @@ class MacroStorage:
             [indicator_id, source],
         )
 
-    def get_capex_quarters(self, company: str, n: int = 4) -> list[dict]:
+    def get_capex_quarters(self, company: str, n: int = 4) -> list[dict[str, Any]]:
         return self._fetchall_as_dicts(
             "SELECT * FROM capex_quarterly WHERE company = ?"
             " ORDER BY period_end DESC LIMIT ?",
             [company, n],
         )
 
-    def get_fomc_upcoming(self, from_date: date, lookahead_days: int = 90) -> list[dict]:
+    def get_fomc_upcoming(self, from_date: date, lookahead_days: int = 90) -> list[dict[str, Any]]:
         end_date = from_date + timedelta(days=lookahead_days)
         return self._fetchall_as_dicts(
             "SELECT * FROM fomc_calendar"
@@ -342,7 +342,7 @@ class MacroStorage:
             [from_date, end_date],
         )
 
-    def get_regime_latest(self) -> dict | None:
+    def get_regime_latest(self) -> dict[str, Any] | None:
         return self._fetchone_as_dict(
             "SELECT * FROM macro_regime ORDER BY as_of_date DESC LIMIT 1",
             [],
@@ -386,5 +386,5 @@ class MacroStorage:
     def __enter__(self) -> MacroStorage:
         return self
 
-    def __exit__(self, *_) -> None:
+    def __exit__(self, *_: object) -> None:
         self.close()

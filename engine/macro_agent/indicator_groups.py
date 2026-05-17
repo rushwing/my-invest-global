@@ -60,7 +60,7 @@ def _cfg(
     tz: str = _NY,
     hours: tuple[dt.time, dt.time] | None = _NYSE_HOURS,
     poll: int = 900,
-    **kwargs,
+    **kwargs: int,
 ) -> IndicatorConfig:
     return IndicatorConfig(
         indicator_id=iid,

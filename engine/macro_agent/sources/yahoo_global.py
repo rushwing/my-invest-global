@@ -21,14 +21,14 @@ class YahooGlobalSource:
     def __init__(self, rate_limiter: Any = None) -> None:
         self._rl = rate_limiter
 
-    def fetch_ohlcv(self, ticker: str) -> list[dict]:
-        """Fetch latest OHLCV for a ticker symbol.
+    def fetch_ohlcv(self, ticker: str | list[str]) -> list[dict[str, Any]]:
+        """Fetch latest OHLCV for a ticker symbol (or list of symbols).
 
         Returns a list of macro_indicators-compatible dicts.
         Raises SourceError on failure.
         """
         try:
-            import yfinance as yf  # type: ignore[import]
+            import yfinance as yf
         except ImportError as exc:
             raise SourceError("yfinance not installed") from exc
 

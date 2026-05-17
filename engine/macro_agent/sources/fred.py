@@ -23,7 +23,7 @@ class FREDSource:
     def __init__(self, rate_limiter: Any = None) -> None:
         self._rl = rate_limiter
 
-    def fetch_series(self, series_id: str) -> list[dict]:
+    def fetch_series(self, series_id: str) -> list[dict[str, Any]]:
         """Fetch latest observations for a FRED series.
 
         Returns a list of macro_indicators-compatible dicts.
