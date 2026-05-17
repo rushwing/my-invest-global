@@ -20,33 +20,50 @@ _UTC = ZoneInfo("UTC")
 # Derived indicator: 10Y-2Y yield spread
 _T10Y2Y_COMPONENTS = {"DGS10", "DGS2"}
 
-# AKShare method dispatch by indicator_id
-_AKSHARE_DISPATCH: dict[str, str] = {
-    "CPIAUCSL": "fetch_us_cpi",
-    "PPIACO":   "fetch_us_ppi",
-    "CPI_CHINA": "fetch_china_cpi",
-    "PPI_CHINA": "fetch_china_ppi",
+# Group L = cloud CapEx (routes to capex table, not macro_indicators)
+_CAPEX_GROUP = "L"
+
+# AKShare no-arg methods keyed by indicator_id
+_AKSHARE_NOARG: dict[str, str] = {
+    "CPIAUCSL":    "fetch_us_cpi",
+    "PPIACO":      "fetch_us_ppi",
+    "CPI_CHINA":   "fetch_china_cpi",
+    "PPI_CHINA":   "fetch_china_ppi",
+    "SGX_A50":     "fetch_sgx_a50",
+    "000688.SH":   "fetch_science_innovation_index",
+    "GREEN_ENERGY":  "fetch_green_energy_index",
+    "A_SHARE_TURNOVER": "fetch_a_share_turnover",
+    "CLS_NEWS":    "fetch_cls_news",
 }
 
 
-def _call_source(source: Any, source_name: str, indicator_id: str) -> list[dict]:
-    """Dispatch the correct fetch method based on source name and indicator."""
+def _call_source(source: Any, source_name: str, cfg: Any) -> list[dict]:
+    """Dispatch the correct fetch method based on source name, group and indicator."""
+    iid = cfg.indicator_id
+    group = cfg.group_code
+
+    # ── Group L: CapEx (returns capex-format records, not macro_indicators) ──
+    if group == _CAPEX_GROUP:
+        if source_name == "sec_edgar":
+            return source.fetch_capex_quarterly(iid)
+        if source_name == "yahoo_global":
+            return source.fetch_quote_summary(iid)
+        return source.fetch_capex_quarterly(iid)
+
+    # ── All other groups ──────────────────────────────────────────────────────
     if source_name == "fred":
-        return source.fetch_series(indicator_id)
+        return source.fetch_series(iid)
     if source_name == "yahoo_global":
-        return source.fetch_ohlcv(indicator_id)
+        return source.fetch_ohlcv([iid])
     if source_name in ("akshare_macro", "akshare"):
-        method_name = _AKSHARE_DISPATCH.get(indicator_id, "fetch_quote")
-        method = getattr(source, method_name)
-        if method_name == "fetch_quote":
-            return method(indicator_id)
-        return method()
+        if iid in _AKSHARE_NOARG:
+            return getattr(source, _AKSHARE_NOARG[iid])()
+        return source.fetch_quote(iid)
     if source_name in ("tushare_macro", "tushare"):
-        return source.fetch_quote(indicator_id)
+        return source.fetch_quote(iid)
     if source_name == "alpha_vantage":
-        return source.fetch_sentiment(indicator_id)
-    # Generic fallback
-    return source.fetch_series(indicator_id)
+        return source.fetch_sentiment(iid)
+    return source.fetch_series(iid)
 
 
 class MacroOrchestrator:
@@ -115,7 +132,7 @@ class MacroOrchestrator:
                 if source is None:
                     continue
                 try:
-                    records = _call_source(source, source_name, cfg.indicator_id)
+                    records = _call_source(source, source_name, cfg)
                     succeeded_source = source_name
                     last_error = None
                     break
@@ -126,7 +143,15 @@ class MacroOrchestrator:
             latency_ms = int((_time.perf_counter() - t0) * 1000)
 
             if records is not None and last_error is None:
-                self._storage.upsert_indicators(records)
+                if cfg.group_code == _CAPEX_GROUP:
+                    count = self._storage.upsert_capex(records)
+                    if count > 0:
+                        for rec in records:
+                            self._storage.update_capex_yoy(
+                                rec["company"], rec["fiscal_quarter"]
+                            )
+                else:
+                    self._storage.upsert_indicators(records)
                 self._storage.log_retrieval(
                     group_code=cfg.group_code,
                     indicator_id=cfg.indicator_id,

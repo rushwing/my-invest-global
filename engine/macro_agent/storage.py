@@ -222,16 +222,57 @@ class MacroStorage:
     def upsert_capex(self, records: list[dict]) -> int:
         if not records:
             return 0
-        params = [
-            (
-                r["company"], r["cik"], r["fiscal_quarter"], r["period_end"],
-                r.get("capex_usd"), r.get("capex_yoy_pct"), r.get("filing_form"),
-                r.get("source"), r.get("source_hash"), r["fetched_at"],
+        count = 0
+        for r in records:
+            existing = self._conn.execute(
+                "SELECT source_hash FROM capex_quarterly"
+                " WHERE company=? AND fiscal_quarter=? AND source=?",
+                [r["company"], r["fiscal_quarter"], r.get("source")],
+            ).fetchone()
+            if existing and existing[0] == r.get("source_hash"):
+                continue  # unchanged — skip to preserve fetched_at
+            self._conn.execute(
+                _UPSERT_CAPEX,
+                (
+                    r["company"], r["cik"], r["fiscal_quarter"], r["period_end"],
+                    r.get("capex_usd"), r.get("capex_yoy_pct"), r.get("filing_form"),
+                    r.get("source"), r.get("source_hash"), r["fetched_at"],
+                ),
             )
-            for r in records
-        ]
-        self._conn.executemany(_UPSERT_CAPEX, params)
-        return len(params)
+            count += 1
+        return count
+
+    def update_capex_yoy(self, company: str, fiscal_quarter: str) -> None:
+        """Compute YoY% against same quarter last year and write back in-place."""
+        year = int(fiscal_quarter[:4])
+        qtr = fiscal_quarter[4:]  # "Q1" / "Q2" etc.
+        prior_quarter = f"{year - 1}{qtr}"
+
+        current_row = self._conn.execute(
+            "SELECT capex_usd FROM capex_quarterly"
+            " WHERE company=? AND fiscal_quarter=? LIMIT 1",
+            [company, fiscal_quarter],
+        ).fetchone()
+        prior_row = self._conn.execute(
+            "SELECT capex_usd FROM capex_quarterly"
+            " WHERE company=? AND fiscal_quarter=? LIMIT 1",
+            [company, prior_quarter],
+        ).fetchone()
+
+        if (
+            current_row is None
+            or prior_row is None
+            or prior_row[0] is None
+            or prior_row[0] == 0
+        ):
+            return
+
+        yoy_pct = (current_row[0] - prior_row[0]) / prior_row[0] * 100
+        self._conn.execute(
+            "UPDATE capex_quarterly SET capex_yoy_pct=?"
+            " WHERE company=? AND fiscal_quarter=?",
+            [yoy_pct, company, fiscal_quarter],
+        )
 
     def upsert_fomc(self, records: list[dict]) -> int:
         if not records:
