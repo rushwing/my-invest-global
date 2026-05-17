@@ -23,6 +23,9 @@ _T10Y2Y_COMPONENTS = {"DGS10", "DGS2"}
 # Group L = cloud CapEx (routes to capex table, not macro_indicators)
 _CAPEX_GROUP = "L"
 
+# AlphaVantage daily request budget ceiling
+_AV_DAILY_LIMIT = 22
+
 # AKShare no-arg methods keyed by indicator_id
 _AKSHARE_NOARG: dict[str, str] = {
     "CPIAUCSL":    "fetch_us_cpi",
@@ -62,7 +65,7 @@ def _call_source(source: Any, source_name: str, cfg: Any) -> list[dict]:
     if source_name in ("tushare_macro", "tushare"):
         return source.fetch_quote(iid)
     if source_name == "alpha_vantage":
-        return source.fetch_sentiment(iid)
+        return source.fetch_news_sentiment(iid)
     return source.fetch_series(iid)
 
 
@@ -120,8 +123,19 @@ class MacroOrchestrator:
             now=now, groups_filter=groups
         )
         dgs_latest: dict[str, tuple[dt.date, float]] = {}
+        today_date = now.date() if now else dt.datetime.now(tz=_UTC).date()
 
         for cfg in due:
+            # AlphaVantage daily budget gate (≤ 22 requests/day)
+            if cfg.primary_source == "alpha_vantage":
+                used = self._storage.get_av_budget(today_date)
+                if used >= _AV_DAILY_LIMIT:
+                    log.info(
+                        "AV daily limit reached (%d), skipping %s",
+                        used, cfg.indicator_id,
+                    )
+                    continue
+
             t0 = _time.perf_counter()
             records: list[dict] | None = None
             succeeded_source = cfg.primary_source
