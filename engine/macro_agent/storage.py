@@ -73,6 +73,26 @@ CREATE TABLE IF NOT EXISTS alpha_vantage_budget (
     date            DATE        PRIMARY KEY,
     requests_used   INT         NOT NULL DEFAULT 0
 );
+
+CREATE TABLE IF NOT EXISTS release_dates (
+    indicator_id    TEXT        NOT NULL,
+    release_date    DATE        NOT NULL,
+    source          TEXT,
+    PRIMARY KEY (indicator_id, release_date)
+);
+
+CREATE SEQUENCE IF NOT EXISTS retrieval_log_id_seq;
+
+CREATE TABLE IF NOT EXISTS retrieval_log (
+    id          BIGINT      DEFAULT nextval('retrieval_log_id_seq') PRIMARY KEY,
+    code        TEXT,
+    field_group TEXT,
+    source      TEXT,
+    started_at  TIMESTAMPTZ,
+    latency_ms  INTEGER,
+    status      TEXT,
+    error_msg   TEXT
+);
 """
 
 # ── Upsert SQL ────────────────────────────────────────────────────────────────

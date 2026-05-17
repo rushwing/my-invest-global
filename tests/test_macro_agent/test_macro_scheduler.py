@@ -81,8 +81,8 @@ class TestIntradayFastOutsideNYSE:
                 if cfg.session_hours:
                     open_t, close_t = cfg.session_hours
                     in_session = open_t <= now_local.time() < close_t
-                    assert not in_session, (
-                        f"{cfg.indicator_id} INTRADAY_FAST returned outside session"
+                    assert in_session, (
+                        f"{cfg.indicator_id} INTRADAY_FAST returned outside its session"
                     )
 
 
@@ -318,6 +318,7 @@ class TestMonthlyFixedCalendarMissingFallback:
     """TC-008-07: MONTHLY_FIXED falls back to once-per-day when no calendar rows."""
 
     def test_cpiaucsl_due_first_call_without_calendar(self, mem_store, mock_calendar):
+        mock_calendar.has_any_dates.return_value = False
         mock_calendar.is_release_day.return_value = False
         sched = MacroScheduler(storage=mem_store, release_calendar=mock_calendar)
         t_0900 = dt.datetime(2026, 5, 15, 9, 0, tzinfo=_ET)
@@ -328,6 +329,7 @@ class TestMonthlyFixedCalendarMissingFallback:
     def test_cpiaucsl_not_due_after_same_day_fetch_no_calendar(
         self, mem_store, mock_calendar
     ):
+        mock_calendar.has_any_dates.return_value = False
         mock_calendar.is_release_day.return_value = False
         sched = MacroScheduler(storage=mem_store, release_calendar=mock_calendar)
         t_0900 = dt.datetime(2026, 5, 15, 9, 0, tzinfo=_ET)
