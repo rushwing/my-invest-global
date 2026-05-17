@@ -195,7 +195,8 @@ class TestRetrievalLogCleanDB:
     def test_retrieval_log_table_exists(self, mem_store: MacroStorage) -> None:
         self._run(mem_store)
         rows = mem_store._conn.execute(
-            "SELECT name FROM information_schema.tables WHERE table_name = 'retrieval_log'"
+            "SELECT table_name FROM information_schema.tables"
+            " WHERE table_name = 'retrieval_log'"
         ).fetchall()
         assert rows, "retrieval_log table must exist after run_once()"
 

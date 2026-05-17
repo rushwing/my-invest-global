@@ -58,6 +58,7 @@ data = [
 advisor = "app.dashboard:main"
 refresh-aidc-data = "scripts.refresh_aidc_data:main"
 refresh-data-agent = "scripts.refresh_data_agent:main"
+refresh-macro-agent = "scripts.refresh_macro_agent:main"
 
 [project.urls]
 Repository = "https://github.com/rushwing/my-invest-global"

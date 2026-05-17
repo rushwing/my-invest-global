@@ -6,13 +6,17 @@ Pass db_path=":memory:" in tests; pass None to use the default project path.
 
 from __future__ import annotations
 
+import datetime as dt
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import duckdb
 
 from engine.data_agent.storage import _find_project_root
+
+_UTC = ZoneInfo("UTC")
 
 # ── Schema DDL ────────────────────────────────────────────────────────────────
 
@@ -308,6 +312,32 @@ class MacroStorage:
             "SELECT requests_used FROM alpha_vantage_budget WHERE date = ?", [d]
         ).fetchone()
         return row[0] if row is not None else 0
+
+    def log_retrieval(
+        self,
+        group_code: str,
+        indicator_id: str,
+        source: str,
+        status: str,
+        latency_ms: int = 0,
+        error_msg: str | None = None,
+    ) -> None:
+        self._conn.execute(
+            """
+            INSERT INTO retrieval_log
+                (code, field_group, source, started_at, latency_ms, status, error_msg)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                indicator_id,
+                group_code,
+                source,
+                dt.datetime.now(tz=_UTC),
+                latency_ms,
+                status,
+                error_msg,
+            ),
+        )
 
     def close(self) -> None:
         self._conn.close()
