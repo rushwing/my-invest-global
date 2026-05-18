@@ -1,0 +1,34 @@
+# Investment theme concepts for Neo4j KG — manually maintained
+concepts:
+  - id: cpo
+    name: CPO共封装光学
+    description: 共封装光学技术，将光收发器与交换芯片集成，减少铜互联损耗
+    theme: optical_interconnect
+  - id: 800g
+    name: 800G光模块
+    description: 800Gbps高速光互联模块，AI数据中心训练集群主力规格
+    theme: optical_interconnect
+  - id: hbm
+    name: HBM高带宽内存
+    description: 高带宽存储器，AI训练加速卡（GPU/NPU）核心组件
+    theme: memory
+  - id: liquid_cooling
+    name: 液冷散热
+    description: 数据中心液体冷却系统，解决高密度算力散热瓶颈
+    theme: datacenter_infra
+  - id: ai_server
+    name: AI服务器
+    description: 专为AI训练/推理工作负载优化的服务器整机及主板
+    theme: datacenter_infra
+  - id: domestic_substitution
+    name: 国产替代
+    description: 国产芯片/元器件替代进口，受政策支持的长期投资主题
+    theme: policy
+  - id: kunpeng_ascend
+    name: 鲲鹏昇腾生态
+    description: 华为鲲鹏CPU和昇腾NPU生态链相关标的
+    theme: domestic_substitution
+  - id: ai_ethernet
+    name: AI以太网
+    description: 专为AI集群设计的高性能以太网（Ultra Ethernet Consortium）
+    theme: network
