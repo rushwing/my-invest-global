@@ -6,13 +6,17 @@ Pass db_path=":memory:" in tests; pass None to use the default project path.
 
 from __future__ import annotations
 
+import datetime as dt
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import duckdb
 
 from engine.data_agent.storage import _find_project_root
+
+_UTC = ZoneInfo("UTC")
 
 # ── Schema DDL ────────────────────────────────────────────────────────────────
 
@@ -72,6 +76,26 @@ CREATE TABLE IF NOT EXISTS macro_regime (
 CREATE TABLE IF NOT EXISTS alpha_vantage_budget (
     date            DATE        PRIMARY KEY,
     requests_used   INT         NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS release_dates (
+    indicator_id    TEXT        NOT NULL,
+    release_date    DATE        NOT NULL,
+    source          TEXT,
+    PRIMARY KEY (indicator_id, release_date)
+);
+
+CREATE SEQUENCE IF NOT EXISTS retrieval_log_id_seq;
+
+CREATE TABLE IF NOT EXISTS retrieval_log (
+    id          BIGINT      DEFAULT nextval('retrieval_log_id_seq') PRIMARY KEY,
+    code        TEXT,
+    field_group TEXT,
+    source      TEXT,
+    started_at  TIMESTAMPTZ,
+    latency_ms  INTEGER,
+    status      TEXT,
+    error_msg   TEXT
 );
 """
 
@@ -166,7 +190,7 @@ class MacroStorage:
 
     # ── Helpers ───────────────────────────────────────────────────────────────
 
-    def _fetchone_as_dict(self, sql: str, params: list[Any]) -> dict | None:
+    def _fetchone_as_dict(self, sql: str, params: list[Any]) -> dict[str, Any] | None:
         cur = self._conn.execute(sql, params)
         row = cur.fetchone()
         if row is None:
@@ -174,14 +198,14 @@ class MacroStorage:
         cols = [d[0] for d in cur.description]
         return dict(zip(cols, row))
 
-    def _fetchall_as_dicts(self, sql: str, params: list[Any]) -> list[dict]:
+    def _fetchall_as_dicts(self, sql: str, params: list[Any]) -> list[dict[str, Any]]:
         cur = self._conn.execute(sql, params)
         cols = [d[0] for d in cur.description]
         return [dict(zip(cols, row)) for row in cur.fetchall()]
 
     # ── Write API ─────────────────────────────────────────────────────────────
 
-    def upsert_indicators(self, records: list[dict]) -> int:
+    def upsert_indicators(self, records: list[dict[str, Any]]) -> int:
         if not records:
             return 0
         params = [
@@ -195,21 +219,62 @@ class MacroStorage:
         self._conn.executemany(_UPSERT_INDICATORS, params)
         return len(params)
 
-    def upsert_capex(self, records: list[dict]) -> int:
+    def upsert_capex(self, records: list[dict[str, Any]]) -> int:
         if not records:
             return 0
-        params = [
-            (
-                r["company"], r["cik"], r["fiscal_quarter"], r["period_end"],
-                r.get("capex_usd"), r.get("capex_yoy_pct"), r.get("filing_form"),
-                r.get("source"), r.get("source_hash"), r["fetched_at"],
+        count = 0
+        for r in records:
+            existing = self._conn.execute(
+                "SELECT source_hash FROM capex_quarterly"
+                " WHERE company=? AND fiscal_quarter=? AND source=?",
+                [r["company"], r["fiscal_quarter"], r.get("source")],
+            ).fetchone()
+            if existing and existing[0] == r.get("source_hash"):
+                continue  # unchanged — skip to preserve fetched_at
+            self._conn.execute(
+                _UPSERT_CAPEX,
+                (
+                    r["company"], r["cik"], r["fiscal_quarter"], r["period_end"],
+                    r.get("capex_usd"), r.get("capex_yoy_pct"), r.get("filing_form"),
+                    r.get("source"), r.get("source_hash"), r["fetched_at"],
+                ),
             )
-            for r in records
-        ]
-        self._conn.executemany(_UPSERT_CAPEX, params)
-        return len(params)
+            count += 1
+        return count
 
-    def upsert_fomc(self, records: list[dict]) -> int:
+    def update_capex_yoy(self, company: str, fiscal_quarter: str) -> None:
+        """Compute YoY% against same quarter last year and write back in-place."""
+        year = int(fiscal_quarter[:4])
+        qtr = fiscal_quarter[4:]  # "Q1" / "Q2" etc.
+        prior_quarter = f"{year - 1}{qtr}"
+
+        current_row = self._conn.execute(
+            "SELECT capex_usd FROM capex_quarterly"
+            " WHERE company=? AND fiscal_quarter=? LIMIT 1",
+            [company, fiscal_quarter],
+        ).fetchone()
+        prior_row = self._conn.execute(
+            "SELECT capex_usd FROM capex_quarterly"
+            " WHERE company=? AND fiscal_quarter=? LIMIT 1",
+            [company, prior_quarter],
+        ).fetchone()
+
+        if (
+            current_row is None
+            or prior_row is None
+            or prior_row[0] is None
+            or prior_row[0] == 0
+        ):
+            return
+
+        yoy_pct = (current_row[0] - prior_row[0]) / prior_row[0] * 100
+        self._conn.execute(
+            "UPDATE capex_quarterly SET capex_yoy_pct=?"
+            " WHERE company=? AND fiscal_quarter=?",
+            [yoy_pct, company, fiscal_quarter],
+        )
+
+    def upsert_fomc(self, records: list[dict[str, Any]]) -> int:
         if not records:
             return 0
         params = [
@@ -223,7 +288,7 @@ class MacroStorage:
         self._conn.executemany(_UPSERT_FOMC, params)
         return len(params)
 
-    def upsert_regime(self, record: dict) -> None:
+    def upsert_regime(self, record: dict[str, Any]) -> None:
         self._conn.execute(
             _UPSERT_REGIME,
             (
@@ -248,7 +313,7 @@ class MacroStorage:
 
     def get_latest_indicator(
         self, indicator_id: str, source: str | None = None
-    ) -> dict | None:
+    ) -> dict[str, Any] | None:
         if source is None:
             return self._fetchone_as_dict(
                 "SELECT * FROM macro_indicators WHERE indicator_id = ?"
@@ -261,14 +326,14 @@ class MacroStorage:
             [indicator_id, source],
         )
 
-    def get_capex_quarters(self, company: str, n: int = 4) -> list[dict]:
+    def get_capex_quarters(self, company: str, n: int = 4) -> list[dict[str, Any]]:
         return self._fetchall_as_dicts(
             "SELECT * FROM capex_quarterly WHERE company = ?"
             " ORDER BY period_end DESC LIMIT ?",
             [company, n],
         )
 
-    def get_fomc_upcoming(self, from_date: date, lookahead_days: int = 90) -> list[dict]:
+    def get_fomc_upcoming(self, from_date: date, lookahead_days: int = 90) -> list[dict[str, Any]]:
         end_date = from_date + timedelta(days=lookahead_days)
         return self._fetchall_as_dicts(
             "SELECT * FROM fomc_calendar"
@@ -277,7 +342,7 @@ class MacroStorage:
             [from_date, end_date],
         )
 
-    def get_regime_latest(self) -> dict | None:
+    def get_regime_latest(self) -> dict[str, Any] | None:
         return self._fetchone_as_dict(
             "SELECT * FROM macro_regime ORDER BY as_of_date DESC LIMIT 1",
             [],
@@ -289,11 +354,37 @@ class MacroStorage:
         ).fetchone()
         return row[0] if row is not None else 0
 
+    def log_retrieval(
+        self,
+        group_code: str,
+        indicator_id: str,
+        source: str,
+        status: str,
+        latency_ms: int = 0,
+        error_msg: str | None = None,
+    ) -> None:
+        self._conn.execute(
+            """
+            INSERT INTO retrieval_log
+                (code, field_group, source, started_at, latency_ms, status, error_msg)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                indicator_id,
+                group_code,
+                source,
+                dt.datetime.now(tz=_UTC),
+                latency_ms,
+                status,
+                error_msg,
+            ),
+        )
+
     def close(self) -> None:
         self._conn.close()
 
     def __enter__(self) -> MacroStorage:
         return self
 
-    def __exit__(self, *_) -> None:
+    def __exit__(self, *_: object) -> None:
         self.close()
