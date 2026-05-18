@@ -121,20 +121,20 @@ class TestIngestPdf:
             for i in range(n)
         ]
 
-    def test_returns_correct_count(self):
-        db = lancedb.connect(":memory:")
+    def test_returns_correct_count(self, tmp_path):
+        db = lancedb.connect(str(tmp_path))
         result = ingest_pdf(_meta(), self._chunks(3), db, _mock_embedder())
         assert result == 3
 
-    def test_table_row_count_matches(self):
-        db = lancedb.connect(":memory:")
+    def test_table_row_count_matches(self, tmp_path):
+        db = lancedb.connect(str(tmp_path))
         ingest_pdf(_meta(), self._chunks(3), db, _mock_embedder())
         from engine.rag.schema import RAGSchema
         rows = db.open_table(RAGSchema.TABLE_NAME).to_pandas()
         assert len(rows) == 3
 
-    def test_chunk_total_field_correct(self):
-        db = lancedb.connect(":memory:")
+    def test_chunk_total_field_correct(self, tmp_path):
+        db = lancedb.connect(str(tmp_path))
         ingest_pdf(_meta(), self._chunks(3), db, _mock_embedder())
         from engine.rag.schema import RAGSchema
         rows = db.open_table(RAGSchema.TABLE_NAME).to_pandas()
@@ -154,23 +154,23 @@ class TestRetrieve:
         ]
         ingest_pdf(_meta(), chunks, db, _mock_embedder())
 
-    def test_returns_list_of_retrieve_results(self):
-        db = lancedb.connect(":memory:")
+    def test_returns_list_of_retrieve_results(self, tmp_path):
+        db = lancedb.connect(str(tmp_path))
         self._ingest_3_chunks(db)
         results = retrieve("液冷散热收入", db, _mock_embedder(), top_k_ann=3, top_k_final=2)
         assert isinstance(results, list)
         assert len(results) >= 1
         assert all(isinstance(r, RetrieveResult) for r in results)
 
-    def test_chunk_id_format(self):
-        db = lancedb.connect(":memory:")
+    def test_chunk_id_format(self, tmp_path):
+        db = lancedb.connect(str(tmp_path))
         self._ingest_3_chunks(db)
         results = retrieve("液冷散热", db, _mock_embedder(), top_k_ann=3, top_k_final=3)
         for r in results:
             assert _CHUNK_ID_RE.match(r.chunk_id), f"Bad chunk_id: {r.chunk_id!r}"
 
-    def test_text_nonempty(self):
-        db = lancedb.connect(":memory:")
+    def test_text_nonempty(self, tmp_path):
+        db = lancedb.connect(str(tmp_path))
         self._ingest_3_chunks(db)
         results = retrieve("散热", db, _mock_embedder())
         for r in results:
@@ -183,8 +183,8 @@ class TestRetrieve:
 class TestIngestPdfSingleEmbedCall:
     """TC-026-04: ingest_pdf calls embedder.embed exactly once with all texts."""
 
-    def test_single_embed_call(self):
-        db = lancedb.connect(":memory:")
+    def test_single_embed_call(self, tmp_path):
+        db = lancedb.connect(str(tmp_path))
         embedder = _mock_embedder()
         chunks = [
             ParsedChunk(text=f"text {i}", chunk_index=i, page_start=0, page_end=0)
@@ -193,8 +193,8 @@ class TestIngestPdfSingleEmbedCall:
         ingest_pdf(_meta(), chunks, db, embedder)
         assert embedder.embed.call_count == 1
 
-    def test_embed_receives_all_texts_in_order(self):
-        db = lancedb.connect(":memory:")
+    def test_embed_receives_all_texts_in_order(self, tmp_path):
+        db = lancedb.connect(str(tmp_path))
         embedder = _mock_embedder()
         chunks = [
             ParsedChunk(text=f"text {i}", chunk_index=i, page_start=0, page_end=0)

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -26,7 +25,9 @@ _MERGE_EXPOSED_TO = _seed_mod._MERGE_EXPOSED_TO
 _ALL_STMTS = [_MERGE_SECTOR, _MERGE_SUBSECTOR, _MERGE_STOCK, _MERGE_CONCEPT, _MERGE_EXPOSED_TO]
 
 
-def _stock(code: str, name: str, sector_id: str, sub_id: str, concepts: list[str] | None = None) -> StockSeedRow:
+def _stock(
+    code: str, name: str, sector_id: str, sub_id: str, concepts: list[str] | None = None
+) -> StockSeedRow:
     return StockSeedRow(
         code=code, name=name, exchange="SZSE", board="创业板",
         scarcity="Tier-1", rating="A", active=True,

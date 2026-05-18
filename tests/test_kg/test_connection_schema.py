@@ -72,7 +72,7 @@ class TestPingFalse:
 
 
 class TestRunSchemaInit:
-    """TC-021-03: run_schema_init calls session.run for every CONSTRAINT + INDEX with IF NOT EXISTS."""
+    """TC-021-03: run_schema_init issues all CONSTRAINTS + INDEXES, each with IF NOT EXISTS."""
 
     def _make_conn_with_session(self):
         mock_session = MagicMock()
