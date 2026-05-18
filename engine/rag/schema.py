@@ -4,7 +4,7 @@ import lancedb
 from lancedb.pydantic import LanceModel, Vector
 
 
-class DocChunk(LanceModel):
+class DocChunk(LanceModel):  # type: ignore[misc]
     chunk_id: str        # "{doc_id}_{chunk_index:04d}"
     doc_id: str
     title: str

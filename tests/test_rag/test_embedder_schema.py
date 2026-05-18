@@ -62,15 +62,15 @@ class TestEmbedShape:
 
 
 class TestCreateTable:
-    """TC-025-02: create_table on a memory LanceDB connection returns a usable table."""
+    """TC-025-02: create_table on a LanceDB connection returns a usable table."""
 
-    def test_returns_table_with_add(self):
-        db = lancedb.connect(":memory:")
+    def test_returns_table_with_add(self, tmp_path):
+        db = lancedb.connect(str(tmp_path))
         table = RAGSchema.create_table(db)
         assert hasattr(table, "add")
 
-    def test_table_name_matches_constant(self):
-        db = lancedb.connect(":memory:")
+    def test_table_name_matches_constant(self, tmp_path):
+        db = lancedb.connect(str(tmp_path))
         table = RAGSchema.create_table(db)
         assert table.name == RAGSchema.TABLE_NAME
 
@@ -106,8 +106,8 @@ class TestDocChunkValidation:
 class TestCreateTableIdempotent:
     """TC-025-04: calling create_table twice on the same db does not raise."""
 
-    def test_double_create_ok(self):
-        db = lancedb.connect(":memory:")
+    def test_double_create_ok(self, tmp_path):
+        db = lancedb.connect(str(tmp_path))
         t1 = RAGSchema.create_table(db)
         t2 = RAGSchema.create_table(db)
         assert hasattr(t1, "add")
