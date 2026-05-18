@@ -62,6 +62,7 @@ macro = [
 kg = [
     "neo4j>=5.28",
     "pydantic-settings>=2.0",
+    "pyyaml>=6.0",
     "langchain-core>=0.3",
     "langchain-anthropic>=0.3",
     "langchain-neo4j>=0.3",

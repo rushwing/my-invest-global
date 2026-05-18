@@ -37,9 +37,9 @@ def _make_querier() -> KGQuerier:
 
 
 def _mock_llm(*contents: str) -> MagicMock:
-    """Mock LLM whose invoke() returns each content in sequence."""
+    """Mock LLM called as a callable by LangChain's RunnableLambda wrapper."""
     mock_llm = MagicMock()
-    mock_llm.invoke.side_effect = [MagicMock(content=c) for c in contents]
+    mock_llm.side_effect = [MagicMock(content=c) for c in contents]
     return mock_llm
 
 
@@ -86,7 +86,7 @@ class TestQueryLlmException:
     def _call(self):
         querier = _make_querier()
         mock_llm = MagicMock()
-        mock_llm.invoke.side_effect = ValueError("timeout")
+        mock_llm.side_effect = ValueError("timeout")
         runner = MagicMock()
         result = querier.query("问题", llm=mock_llm, schema=_SCHEMA, session_runner=runner)
         return result, runner
@@ -110,7 +110,7 @@ class TestQueryLlmException:
     def test_no_exception_propagated(self):
         querier = _make_querier()
         mock_llm = MagicMock()
-        mock_llm.invoke.side_effect = ValueError("timeout")
+        mock_llm.side_effect = ValueError("timeout")
         try:
             querier.query("问题", llm=mock_llm, schema=_SCHEMA, session_runner=MagicMock())
         except Exception:
