@@ -48,10 +48,10 @@ def _dispatch_source(source: Any, source_name: str, cfg: Any) -> Any:
 
     # ── Group L: CapEx (returns capex-format records, not macro_indicators) ──
     if group == _CAPEX_GROUP:
-        if source_name == "yahoo_global":
-            return source.fetch_quote_summary(iid)
-        # SEC EDGAR requires a 10-digit CIK, not the indicator_id ticker suffix
         cik, ticker = cik_for_indicator(iid)
+        if source_name == "yahoo_global":
+            return source.fetch_capex_quarterly(ticker, cik=cik)
+        # SEC EDGAR requires a 10-digit CIK
         return source.fetch_capex_quarterly(cik, company=ticker)
 
     # ── All other groups ──────────────────────────────────────────────────────

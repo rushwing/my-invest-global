@@ -184,7 +184,7 @@ class TestCapExYahooFallback:
 
         yahoo_mock = MagicMock()
         yahoo_mock.name = "yahoo_global"
-        yahoo_mock.fetch_quote_summary.return_value = [{
+        yahoo_mock.fetch_capex_quarterly.return_value = [{
             "company": "MSFT", "cik": "0000789019", "fiscal_quarter": "2026Q1",
             "period_end": dt.date(2026, 3, 31), "capex_usd": 3.9,
             "capex_yoy_pct": None, "filing_form": None,
@@ -196,7 +196,7 @@ class TestCapExYahooFallback:
         )
         orch.run_once(groups=["L"])
 
-        yahoo_mock.fetch_quote_summary.assert_called_once()
+        yahoo_mock.fetch_capex_quarterly.assert_called_once()
         orch_run_fine = True  # run_once() did not raise
         assert orch_run_fine
 
@@ -213,7 +213,7 @@ class TestCapExYahooFallback:
 
         yahoo_mock = MagicMock()
         yahoo_mock.name = "yahoo_global"
-        yahoo_mock.fetch_quote_summary.return_value = [{
+        yahoo_mock.fetch_capex_quarterly.return_value = [{
             "company": "MSFT", "cik": "0000789019", "fiscal_quarter": "2026Q1",
             "period_end": dt.date(2026, 3, 31), "capex_usd": 3.9,
             "capex_yoy_pct": None, "filing_form": None,

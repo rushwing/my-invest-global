@@ -9,6 +9,8 @@ matching macro_indicators DDL (BP-5).
 from __future__ import annotations
 
 import datetime as dt
+import hashlib
+import json
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -191,6 +193,52 @@ class YahooGlobalSource(MacroAbstractSource):
             self._crumb = None  # force cache expiry
             params["crumb"] = self._refresh_crumb()
             return self._quote_summary_request(url, params)
+
+    def fetch_capex_quarterly(
+        self,
+        ticker: str,
+        cik: str = "",
+    ) -> list[dict[str, Any]]:
+        """Parse Yahoo cashflowStatementHistoryQuarterly into capex_quarterly rows.
+
+        Backup for Group L when SEC EDGAR is unavailable. Returns records
+        compatible with MacroStorage.upsert_capex().
+        """
+        raw = self.fetch_quote_summary(ticker, ["cashflowStatementHistoryQuarterly"])
+        if not raw:
+            return []
+
+        raw_bytes = json.dumps(raw, sort_keys=True).encode()
+        source_hash = hashlib.sha256(raw_bytes).hexdigest()
+
+        statements: list[dict[str, Any]] = (
+            raw.get("cashflowStatementHistoryQuarterly", {})
+               .get("cashflowStatements", [])
+        )
+
+        now_utc = dt.datetime.now(tz=ZoneInfo("UTC"))
+        records: list[dict[str, Any]] = []
+        for stmt in statements:
+            end_raw = stmt.get("endDate", {}).get("raw")
+            capex_raw = stmt.get("capitalExpenditures", {}).get("raw")
+            if end_raw is None or capex_raw is None:
+                continue
+            period_end = dt.datetime.fromtimestamp(int(end_raw), tz=ZoneInfo("UTC")).date()
+            quarter = (period_end.month - 1) // 3 + 1
+            fiscal_quarter = f"{period_end.year}Q{quarter}"
+            records.append({
+                "company":        ticker,
+                "cik":            cik,
+                "fiscal_quarter": fiscal_quarter,
+                "period_end":     period_end,
+                "capex_usd":      abs(float(capex_raw)),
+                "capex_yoy_pct":  None,
+                "filing_form":    "10-Q",
+                "source":         self.name,
+                "source_hash":    source_hash,
+                "fetched_at":     now_utc,
+            })
+        return records
 
     # ── Internal ──────────────────────────────────────────────────────────────
 
