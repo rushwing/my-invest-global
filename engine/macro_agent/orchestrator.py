@@ -104,10 +104,10 @@ class MacroOrchestrator:
         from engine.macro_agent.release_calendar import ReleaseCalendar
         from engine.macro_agent.sources.akshare_macro import AKShareMacroSource
         from engine.macro_agent.sources.fred import FREDSource
-        from engine.macro_agent.sources.yahoo_global import YahooGlobalSource
         from engine.shared.sources.alpha_vantage import AlphaVantageSource
         from engine.shared.sources.sec_edgar import SECEdgarSource
         from engine.shared.sources.tushare_macro import TushareMacroSource
+        from engine.shared.sources.yahoo_global import YahooGlobalSource
 
         storage = MacroStorage()
         rate_limiter = RateLimiter()
@@ -144,7 +144,7 @@ class MacroOrchestrator:
             now=now, groups_filter=groups
         )
         dgs_latest: dict[str, tuple[dt.date, float]] = {}
-        today_date = now.date() if now else dt.datetime.now(tz=_UTC).date()
+        today_date = now.date() if now else dt.date.today()
 
         for cfg in due:
             # AlphaVantage daily budget gate (≤ 22 requests/day)
