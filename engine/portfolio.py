@@ -94,7 +94,7 @@ def check_portfolio_balance(
 _HOLDINGS_YAML = Path("data/agent_input/cn/holdings.yaml")
 
 
-def load_holdings(db_path: str = "") -> list:
+def load_holdings(db_path: str = "") -> list[HoldingRow]:
     """Load current holdings from data/agent_input/cn/holdings.yaml.
 
     Returns list[HoldingRow]. Returns [] if the file doesn't exist yet.
