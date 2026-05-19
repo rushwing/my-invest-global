@@ -1,180 +1,72 @@
-"""Phase 9 Streamlit Dashboard — Holdings | Analysis | KG."""
+"""REQ-020: My Invest Global — Phase 7 Dashboard entry point."""
 from __future__ import annotations
 
-import subprocess
+import streamlit as st
+from dotenv import load_dotenv
 
-DB_PATH = "data/db/aidc.duckdb"
+from app.auth import is_unlocked
+from app.components.tab1_overview import render_tab1
+from app.components.tab2_brief import render_tab2
+from app.components.tab3_stock import render_tab3
+from app.components.tab4_signals import render_tab4
+from app.data_loader import DB_PATH
+from app.sidebar import render_sidebar
+from app.styles import inject_global_css
+
+
+def render_locked_mask() -> None:
+    st.markdown(
+        """<div style="position:fixed;inset:0;z-index:999;backdrop-filter:blur(8px);
+                        display:flex;align-items:center;justify-content:center;">
+             <div style="background:#1C1C2E;border:1px solid #2A2A3E;border-radius:12px;
+                         padding:32px;text-align:center;">
+               <div style="font-size:32px;">🔒</div>
+               <div style="color:#9AA0AC;margin-top:8px;">点击左侧解锁持仓数据</div>
+             </div>
+           </div>""",
+        unsafe_allow_html=True,
+    )
+
+
+def render_header() -> None:
+    st.markdown(
+        '<span style="color:#00C47A;font-size:12px;">● 已解锁</span>',
+        unsafe_allow_html=True,
+    )
 
 
 def main() -> None:
-    import streamlit as st
-
-    st.set_page_config(page_title="AI 基建股持仓顾问", layout="wide")
-    st.title("AI 基建股持仓顾问")
-
-    tab_holdings, tab_analysis, tab_kg, tab_backtest = st.tabs(
-        ["持仓", "AI 分析", "知识图谱", "回测"]
+    load_dotenv()
+    st.set_page_config(
+        page_title="My Invest Global · A股 AI 基建",
+        page_icon="📊",
+        layout="wide",
+        initial_sidebar_state="collapsed",
     )
+    inject_global_css()
 
-    # ── Holdings tab ──────────────────────────────────────────────────────────
-    with tab_holdings:
-        st.subheader("当前持仓")
-        try:
-            import pandas as pd
+    if not is_unlocked():
+        render_sidebar(locked=True)
+        render_locked_mask()
+        st.stop()
 
-            from engine.macro_gate import get_macro_state
-            from engine.portfolio import (
-                check_portfolio_balance,
-                load_holdings,
-                load_holdings_raw,
-            )
+    render_sidebar(locked=False)
+    render_header()
 
-            sub_merged, sub_huaxi, sub_xinan = st.tabs(["合并视图", "华西证券", "西南证券"])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(
+        ["持仓总览", "每日策略简报", "个股深度分析", "信号仪表盘", "回测"]
+    )
+    with tab1:
+        render_tab1()
+    with tab2:
+        render_tab2()
+    with tab3:
+        render_tab3()
+    with tab4:
+        render_tab4()
 
-            _DISPLAY_COLS = [
-                "code", "name", "account", "cost_price", "current_price",
-                "market_value", "pnl_pct", "category",
-            ]
-
-            with sub_merged:
-                holdings = load_holdings(DB_PATH)
-                if not holdings:
-                    st.info("暂无持仓数据（请在 data/agent_input/cn/holdings.yaml 中维护）")
-                else:
-                    macro = get_macro_state()
-                    df = pd.DataFrame([h.model_dump() for h in holdings])
-                    balance = check_portfolio_balance(df, macro_state=macro.value)
-                    if balance["rebalance_needed"]:
-                        st.warning(
-                            f"持仓比例需要再平衡（弹性股 {balance['elastic_ratio']:.1%}"
-                            f" vs 目标 {balance['target_elastic']:.1%}）"
-                        )
-                    else:
-                        st.success("持仓比例正常")
-                    st.dataframe(df[_DISPLAY_COLS], use_container_width=True, hide_index=True)
-
-            def _account_tab(account_name: str) -> None:
-                raw = load_holdings_raw(DB_PATH)
-                rows = [h for h in raw if h.account == account_name]
-                if not rows:
-                    st.info(f"{account_name} 暂无持仓")
-                    return
-                df_raw = pd.DataFrame([h.model_dump() for h in rows])
-                total_mv = df_raw["market_value"].sum()
-                total_pnl = df_raw["pnl_amount"].sum()
-                col_mv, col_pnl = st.columns(2)
-                col_mv.metric("账户总市值", f"¥{total_mv:,.0f}")
-                col_pnl.metric("账户总盈亏", f"¥{total_pnl:+,.2f}")
-                cols = [c for c in _DISPLAY_COLS if c != "account"]
-                st.dataframe(df_raw[cols], use_container_width=True, hide_index=True)
-
-            with sub_huaxi:
-                _account_tab("华西证券")
-
-            with sub_xinan:
-                _account_tab("西南证券")
-
-        except Exception as exc:
-            st.error(f"持仓加载失败: {exc}")
-
-    # ── Analysis tab ──────────────────────────────────────────────────────────
-    with tab_analysis:
-        from app.pages.analysis import format_signals_df, load_latest_for_ui
-
-        col1, col2 = st.columns([3, 1])
-        data = load_latest_for_ui(DB_PATH)
-        if data:
-            col1.caption(
-                f"上次分析: {data['captured_at'].strftime('%Y-%m-%d %H:%M HKT')}"
-            )
-        else:
-            col1.caption("暂无分析数据")
-
-        if col2.button("Refresh 分析", type="primary"):
-            with st.spinner("正在运行 AI 分析（约 30-60 秒）..."):
-                result = subprocess.run(
-                    [
-                        "uv", "run", "python", "-m", "scripts.run_analysis",
-                        "--once", "--db", DB_PATH,
-                    ],
-                    capture_output=True,
-                    text=True,
-                )
-            if result.returncode == 0:
-                st.success("分析完成，请刷新页面查看结果")
-            else:
-                st.error(f"分析失败: {result.stderr[-500:]}")
-            data = load_latest_for_ui(DB_PATH)
-
-        if data and data["signals"]:
-            df = format_signals_df(data["signals"], data["change_pct_snapshot"])
-            st.dataframe(df, use_container_width=True, hide_index=True)
-
-            st.divider()
-            st.subheader("推理卡片")
-            source_index = data.get("source_index", {})
-            for sig in data["signals"]:
-                action_icon = {
-                    "strong_add": "🟢", "hold_add": "🟢", "hold": "🟡",
-                    "reduce": "🔴", "stop_loss": "🔴", "take_profit_alert": "🟠",
-                }.get(sig.action_code, "⚪")
-                with st.expander(
-                    f"{action_icon} {sig.code} {sig.name}"
-                    f" — 综合 {sig.composite_score:.0f}分  {sig.action}"
-                ):
-                    # Sub-score breakdown
-                    col_t, col_f, col_s = st.columns(3)
-                    with col_t:
-                        st.metric("技术面", f"{sig.technical_score:.0f}")
-                        st.progress(sig.technical_score / 100)
-                        if sig.technical_reasoning:
-                            st.caption(sig.technical_reasoning)
-                    with col_f:
-                        st.metric("基本面", f"{sig.fundamental_score:.0f}")
-                        st.progress(sig.fundamental_score / 100)
-                        if sig.fundamental_reasoning:
-                            st.caption(sig.fundamental_reasoning)
-                    with col_s:
-                        st.metric("情绪面", f"{sig.sentiment_score:.0f}")
-                        st.progress(sig.sentiment_score / 100)
-                        if sig.sentiment_reasoning:
-                            st.caption(sig.sentiment_reasoning)
-
-                    # Source traceability panel
-                    idx = source_index.get(sig.code, {})
-                    cited = sig.sources_cited or list(idx.keys())
-                    visible = {ref: idx[ref] for ref in cited if ref in idx}
-                    if not visible:
-                        visible = idx  # fallback: show all sources
-                    if visible:
-                        with st.expander("原始数据来源"):
-                            for ref, content in visible.items():
-                                tag = (
-                                    "🔵" if ref.startswith("S") else
-                                    "🟢" if ref.startswith("T") else
-                                    "🟣" if ref.startswith("K") else
-                                    "🟤" if ref.startswith("R") else
-                                    "⬛" if ref.startswith("M") else "⚪"
-                                )
-                                st.markdown(f"`{ref}` {tag} {content}")
-
-                    st.caption(
-                        f"数据快照: {data['captured_at'].strftime('%Y-%m-%d %H:%M HKT')}"
-                    )
-        elif data:
-            st.info("分析完成但暂无信号输出")
-            if data["errors"]:
-                with st.expander("错误详情"):
-                    for e in data["errors"]:
-                        st.text(e)
-
-    # ── KG tab ────────────────────────────────────────────────────────────────
-    with tab_kg:
-        st.subheader("Neo4j 知识图谱")
-        st.components.v1.iframe("http://localhost:7474", height=600, scrolling=True)
-
-    # ── Backtest tab ──────────────────────────────────────────────────────────
-    with tab_backtest:
+    # ── Backtest tab (REQ-035) ────────────────────────────────────────────────
+    with tab5:
         st.subheader("策略回测")
         try:
             from engine.portfolio import load_holdings
