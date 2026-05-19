@@ -70,10 +70,10 @@ class TestDashboardEntrypoint:
             "streamlit.set_page_config": MagicMock(),
             "streamlit.stop": MagicMock(side_effect=_Stop),
             "streamlit.tabs": MagicMock(return_value=[mock_col] * 4),
-            "app.auth.is_unlocked": MagicMock(return_value=False),
-            "app.sidebar.render_sidebar": MagicMock(),
+            "app.dashboard.is_unlocked": MagicMock(return_value=False),
+            "app.dashboard.render_sidebar": MagicMock(),
             "app.dashboard.render_locked_mask": MagicMock(),
-            "app.styles.inject_global_css": MagicMock(),
+            "app.dashboard.inject_global_css": MagicMock(),
             **overrides,
         }
 
@@ -88,10 +88,10 @@ class TestDashboardEntrypoint:
         with patch("streamlit.set_page_config"), \
              patch("streamlit.stop", side_effect=_Stop), \
              patch("streamlit.tabs", return_value=[col] * 4), \
-             patch("app.auth.is_unlocked", return_value=False), \
-             patch("app.sidebar.render_sidebar"), \
+             patch("app.dashboard.is_unlocked", return_value=False), \
+             patch("app.dashboard.render_sidebar"), \
              patch("app.dashboard.render_locked_mask"), \
-             patch("app.styles.inject_global_css"), \
+             patch("app.dashboard.inject_global_css"), \
              pytest.raises(_Stop):
             main()
 
@@ -101,10 +101,10 @@ class TestDashboardEntrypoint:
         with patch("streamlit.set_page_config"), \
              patch("streamlit.stop", side_effect=_Stop), \
              patch("streamlit.tabs", return_value=[col] * 4), \
-             patch("app.auth.is_unlocked", return_value=False), \
-             patch("app.sidebar.render_sidebar"), \
+             patch("app.dashboard.is_unlocked", return_value=False), \
+             patch("app.dashboard.render_sidebar"), \
              patch("app.dashboard.render_locked_mask") as mock_locked, \
-             patch("app.styles.inject_global_css"), \
+             patch("app.dashboard.inject_global_css"), \
              pytest.raises(_Stop):
             main()
         mock_locked.assert_called()
@@ -115,10 +115,10 @@ class TestDashboardEntrypoint:
         with patch("streamlit.set_page_config"), \
              patch("streamlit.stop", side_effect=_Stop), \
              patch("streamlit.tabs", return_value=[col] * 4), \
-             patch("app.auth.is_unlocked", return_value=False), \
-             patch("app.sidebar.render_sidebar") as mock_sidebar, \
+             patch("app.dashboard.is_unlocked", return_value=False), \
+             patch("app.dashboard.render_sidebar") as mock_sidebar, \
              patch("app.dashboard.render_locked_mask"), \
-             patch("app.styles.inject_global_css"), \
+             patch("app.dashboard.inject_global_css"), \
              pytest.raises(_Stop):
             main()
         mock_sidebar.assert_called_once()
@@ -134,10 +134,10 @@ class TestDashboardEntrypoint:
         with patch("streamlit.set_page_config"), \
              patch("streamlit.stop", side_effect=_Stop), \
              patch("streamlit.tabs", return_value=[col] * 4), \
-             patch("app.auth.is_unlocked", return_value=False), \
-             patch("app.sidebar.render_sidebar"), \
+             patch("app.dashboard.is_unlocked", return_value=False), \
+             patch("app.dashboard.render_sidebar"), \
              patch("app.dashboard.render_locked_mask"), \
-             patch("app.styles.inject_global_css"):
+             patch("app.dashboard.inject_global_css"):
             pytest.raises(_Stop, main)
 
     def test_locked_state_does_not_render_tabs(self):
@@ -147,10 +147,10 @@ class TestDashboardEntrypoint:
         with patch("streamlit.set_page_config"), \
              patch("streamlit.stop", side_effect=_Stop), \
              patch("streamlit.tabs") as mock_tabs, \
-             patch("app.auth.is_unlocked", return_value=False), \
-             patch("app.sidebar.render_sidebar"), \
+             patch("app.dashboard.is_unlocked", return_value=False), \
+             patch("app.dashboard.render_sidebar"), \
              patch("app.dashboard.render_locked_mask"), \
-             patch("app.styles.inject_global_css"), \
+             patch("app.dashboard.inject_global_css"), \
              pytest.raises(_Stop):
             main()
         mock_tabs.assert_not_called()
