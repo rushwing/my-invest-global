@@ -10,7 +10,11 @@ import streamlit as st
 
 from engine.agent.chip_analysis import ChipAnalysis
 from engine.agent.chip_fetcher import ChipSummary
-from engine.agent.chip_screenshot_parser import parse_chip_screenshot
+
+try:
+    from engine.agent.chip_screenshot_parser import parse_chip_screenshot
+except ImportError:
+    parse_chip_screenshot = None  # type: ignore[assignment]
 
 
 def build_chip_chart(summary: ChipSummary, current_price: float):
@@ -91,6 +95,8 @@ def render_chip_panel(
 
     if summary is not None and summary.bars:
         st.plotly_chart(build_chip_chart(summary, current_price))
+    else:
+        st.info("暂无筹码直方图数据")
 
 
 def chip_panel_page() -> None:

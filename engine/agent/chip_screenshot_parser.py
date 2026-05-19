@@ -108,8 +108,21 @@ def parse_chip_screenshot(
             reason=f"Missing critical fields: {missing}"
         )
 
+    avg_cost_val = float(payload["avg_cost"])
+    profitable_pct_val = float(payload["profitable_pct"])
+    concentration_val = float(payload.get("concentration") or 0.0)
     r90lo = float(payload["range_90_lower"])
     r90hi = float(payload["range_90_upper"])
+
+    if not (0 < avg_cost_val < 100000):
+        raise ScreenshotParseError(reason=f"Invalid avg_cost: {avg_cost_val}")
+    if not (0 <= profitable_pct_val <= 1):
+        raise ScreenshotParseError(reason=f"Invalid profitable_pct: {profitable_pct_val}")
+    if not (0 <= concentration_val <= 100):
+        raise ScreenshotParseError(reason=f"Invalid concentration: {concentration_val}")
+    if not (r90lo < r90hi):
+        raise ScreenshotParseError(reason=f"Invalid range_90 bounds: {r90lo} >= {r90hi}")
+
     r70lo = float(payload["range_70_lower"]) if payload.get("range_70_lower") is not None else r90lo
     r70hi = float(payload["range_70_upper"]) if payload.get("range_70_upper") is not None else r90hi
 
@@ -119,9 +132,9 @@ def parse_chip_screenshot(
     summary = ChipSummary(
         code=resolved_code,
         date=payload.get("date") or "",
-        avg_cost=float(payload["avg_cost"]),
-        profitable_pct=float(payload["profitable_pct"]),
-        concentration=float(payload.get("concentration") or 0.0),
+        avg_cost=avg_cost_val,
+        profitable_pct=profitable_pct_val,
+        concentration=concentration_val,
         range_70_lower=r70lo,
         range_70_upper=r70hi,
         range_90_lower=r90lo,

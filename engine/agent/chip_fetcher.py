@@ -66,6 +66,28 @@ def fetch_chip_summary(code: str, date: str | None = None) -> ChipSummary:
     if missing:
         raise ChipDataUnavailable(f"Missing required columns for {code}: {missing}")
 
+    # Summary fields are identical across all rows; use first row.
+    # Price-sort only applies to bars (histogram ordering).
+    row0 = df.iloc[0]
+    avg_cost = float(row0[_COL_AVG_COST])
+    profitable_pct = float(row0[_COL_PROFITABLE]) / 100.0
+    range_90_lower = float(row0[_COL_R90_LO])
+    range_90_upper = float(row0[_COL_R90_HI])
+
+    if _COL_R70_LO in df.columns and _COL_R70_HI in df.columns:
+        range_70_lower = float(row0[_COL_R70_LO])
+        range_70_upper = float(row0[_COL_R70_HI])
+    else:
+        range_70_lower = range_90_lower
+        range_70_upper = range_90_upper
+
+    if _COL_CONCENTRATION in df.columns:
+        concentration = float(row0[_COL_CONCENTRATION])
+    else:
+        concentration = min(
+            100.0, max(0.0, (range_90_upper - range_90_lower) / avg_cost * 100)
+        )
+
     df_sorted = df.sort_values(_COL_PRICE).reset_index(drop=True)
     prices = df_sorted[_COL_PRICE].tolist()
     ratios = df_sorted[_COL_RATIO].tolist()
@@ -80,24 +102,6 @@ def fetch_chip_summary(code: str, date: str | None = None) -> ChipSummary:
         bars.append(ChipBar(
             price_lower=float(price), price_upper=float(upper), chip_ratio=float(ratio),
         ))
-
-    last = df_sorted.iloc[-1]
-    avg_cost = float(last[_COL_AVG_COST])
-    profitable_pct = float(last[_COL_PROFITABLE]) / 100.0
-    range_90_lower = float(last[_COL_R90_LO])
-    range_90_upper = float(last[_COL_R90_HI])
-
-    if _COL_R70_LO in df.columns and _COL_R70_HI in df.columns:
-        range_70_lower = float(last[_COL_R70_LO])
-        range_70_upper = float(last[_COL_R70_HI])
-    else:
-        range_70_lower = range_90_lower
-        range_70_upper = range_90_upper
-
-    if _COL_CONCENTRATION in df.columns:
-        concentration = float(last[_COL_CONCENTRATION])
-    else:
-        concentration = 50.0  # fallback — TC only requires value in [0, 100]
 
     result_date = date if date is not None else _date.today().isoformat()
 

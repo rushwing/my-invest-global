@@ -13,9 +13,9 @@ from pydantic import BaseModel
 
 
 class ChipLockLevel(StrEnum):
-    HIGH = "HIGH"      # concentration >= 60
-    MEDIUM = "MEDIUM"  # 40 <= concentration < 60
-    LOW = "LOW"        # concentration < 40
+    HIGH = "high"      # concentration >= 60
+    MEDIUM = "medium"  # 40 <= concentration < 60
+    LOW = "low"        # concentration < 40
 
 
 class ChipAnalysis(BaseModel):
@@ -55,21 +55,23 @@ def analyze_chip(code: str, current_price: float, summary: Any) -> ChipAnalysis:
 
     above_90_band = current_price > summary.range_90_upper
     below_90_band = current_price < summary.range_90_lower
-    cost_deviation_pct = (current_price - summary.avg_cost) / summary.avg_cost * 100
+    cost_deviation_pct = round(
+        (current_price - summary.avg_cost) / summary.avg_cost * 100, 1
+    )
     chip_spread_90 = summary.range_90_upper - summary.range_90_lower
 
-    if above_90_band:
-        signal = (
-            f"价格突破90%筹码上界，"
-            f"{summary.profitable_pct * 100:.1f}%筹码浮盈，获利兑现压力大"
-        )
+    if above_90_band and summary.profitable_pct >= 0.95:
+        signal = f"价格突破90%筹码上界，{summary.profitable_pct:.0%}筹码浮盈，获利兑现压力大"
+    elif above_90_band:
+        signal = "价格突破90%筹码上界，部分筹码仍在成本附近"
     elif below_90_band:
-        signal = (
-            f"价格跌破90%筹码下界，"
-            f"{(1 - summary.profitable_pct) * 100:.1f}%筹码套牢，支撑位关注"
-        )
+        signal = "价格低于90%筹码下界，处于历史套牢密集区"
+    elif cost_deviation_pct > 10:
+        signal = f"价格高于均成本{cost_deviation_pct:.1f}%，筹码整体盈利"
+    elif cost_deviation_pct <= 0:
+        signal = "价格低于均成本，整体套牢状态"
     else:
-        signal = f"价格在90%筹码区间内，均成本偏离{abs(cost_deviation_pct):.1f}%"
+        signal = f"价格在90%筹码区间内，均成本偏离{cost_deviation_pct:.1f}%"
 
     return ChipAnalysis(
         code=code,
