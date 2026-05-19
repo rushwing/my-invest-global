@@ -20,13 +20,17 @@ _skip_dl = pytest.mark.skipif(
 if _has_data_loader:
     from app.data_loader import (
         compute_portfolio_metrics,
+        load_cloud_capex,
         load_fund_flow_5d,
         load_latest_holdings,
         load_latest_signals,
         load_macro_state,
         load_market_breadth,
+        load_news_for_ticker,
         load_ohlcv,
+        load_rebalance_history,
         load_recommendations,
+        load_scarcity_matrix,
     )
 
 
@@ -45,17 +49,20 @@ def _clear_st_cache():
 class TestDashboardEntrypoint:
     """TC-020-01: app.dashboard.main 可调用，锁定状态下启动不抛异常。"""
 
+    def _locked_patches(self):
+        """Return a list of context managers for a locked-state main() call."""
+        mock_col = MagicMock()
+        mock_col.__enter__ = lambda s: mock_col
+        mock_col.__exit__ = MagicMock(return_value=False)
+        return mock_col
+
     def test_main_is_callable(self):
         from app.dashboard import main
         assert callable(main)
 
     def test_main_runs_locked_state_without_error(self):
         from app.dashboard import main
-
-        mock_col = MagicMock()
-        mock_col.__enter__ = lambda s: mock_col
-        mock_col.__exit__ = MagicMock(return_value=False)
-
+        mock_col = self._locked_patches()
         with patch("streamlit.set_page_config"), \
              patch("streamlit.stop"), \
              patch("streamlit.tabs", return_value=[mock_col] * 4), \
@@ -64,6 +71,62 @@ class TestDashboardEntrypoint:
              patch("app.dashboard.render_locked_mask"), \
              patch("app.styles.inject_global_css"):
             main()  # must not raise
+
+    def test_locked_state_calls_render_locked_mask(self):
+        from app.dashboard import main
+        mock_col = self._locked_patches()
+        with patch("streamlit.set_page_config"), \
+             patch("streamlit.stop"), \
+             patch("streamlit.tabs", return_value=[mock_col] * 4), \
+             patch("app.auth.is_unlocked", return_value=False), \
+             patch("app.sidebar.render_sidebar"), \
+             patch("app.dashboard.render_locked_mask") as mock_locked, \
+             patch("app.styles.inject_global_css"):
+            main()
+        mock_locked.assert_called()
+
+    def test_locked_state_sidebar_called_with_locked_true(self):
+        from app.dashboard import main
+        mock_col = self._locked_patches()
+        with patch("streamlit.set_page_config"), \
+             patch("streamlit.stop"), \
+             patch("streamlit.tabs", return_value=[mock_col] * 4), \
+             patch("app.auth.is_unlocked", return_value=False), \
+             patch("app.sidebar.render_sidebar") as mock_sidebar, \
+             patch("app.dashboard.render_locked_mask"), \
+             patch("app.styles.inject_global_css"):
+            main()
+        mock_sidebar.assert_called_once()
+        call_args, call_kwargs = mock_sidebar.call_args
+        locked_val = call_kwargs.get("locked", call_args[0] if call_args else None)
+        assert locked_val is True, \
+            f"render_sidebar must be called with locked=True, got: {mock_sidebar.call_args}"
+
+    def test_locked_state_calls_st_stop(self):
+        from app.dashboard import main
+        mock_col = self._locked_patches()
+        with patch("streamlit.set_page_config"), \
+             patch("streamlit.stop") as mock_stop, \
+             patch("streamlit.tabs", return_value=[mock_col] * 4), \
+             patch("app.auth.is_unlocked", return_value=False), \
+             patch("app.sidebar.render_sidebar"), \
+             patch("app.dashboard.render_locked_mask"), \
+             patch("app.styles.inject_global_css"):
+            main()
+        mock_stop.assert_called()
+
+    def test_locked_state_does_not_render_tabs(self):
+        from app.dashboard import main
+        mock_col = self._locked_patches()
+        with patch("streamlit.set_page_config"), \
+             patch("streamlit.stop"), \
+             patch("streamlit.tabs", return_value=[mock_col] * 4) as mock_tabs, \
+             patch("app.auth.is_unlocked", return_value=False), \
+             patch("app.sidebar.render_sidebar"), \
+             patch("app.dashboard.render_locked_mask"), \
+             patch("app.styles.inject_global_css"):
+            main()
+        mock_tabs.assert_not_called()
 
 
 # ── TC-020-02 ─────────────────────────────────────────────────────────────────
@@ -94,18 +157,40 @@ class TestDataRefresh:
 
 @_skip_dl
 class TestCacheTTL:
-    """TC-020-03: 所有 loader 函数带 @st.cache_data 装饰器（__wrapped__ 存在）。"""
+    """TC-020-03: 所有 loader 函数带 @st.cache_data 装饰器（__wrapped__ 存在）；缓存复用。"""
 
     def test_all_loaders_have_cache_decorator(self):
         for fn in (
             load_latest_holdings, load_latest_signals, load_recommendations,
             load_macro_state, load_fund_flow_5d, load_market_breadth,
+            load_news_for_ticker, load_cloud_capex,
+            load_scarcity_matrix, load_rebalance_history,
         ):
             assert hasattr(fn, "__wrapped__"), \
                 f"{fn.__name__} must be decorated with @st.cache_data"
 
     def test_load_ohlcv_has_cache_decorator(self):
         assert hasattr(load_ohlcv, "__wrapped__")
+
+    def test_cache_reuses_result_preventing_double_io(self, tmp_path):
+        """Second call with same args must NOT re-execute the function body (cache hit)."""
+        import json
+        import streamlit as st
+        st.cache_data.clear()
+
+        state_file = tmp_path / "macro_state.json"
+        state_file.write_text(json.dumps({"state": "green"}))
+
+        with patch("app.data_loader.Path", return_value=state_file):
+            result1 = load_macro_state()
+
+        # Now redirect Path to a non-existent file — if cache works, result2 still = green
+        with patch("app.data_loader.Path", return_value=tmp_path / "gone.json"):
+            result2 = load_macro_state()
+
+        assert result1["state"] == "green"
+        assert result2["state"] == "green", \
+            "second call should return cached value, not re-execute with new Path"
 
 
 # ── TC-020-04 ─────────────────────────────────────────────────────────────────
