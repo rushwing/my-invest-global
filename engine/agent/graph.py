@@ -6,7 +6,13 @@ from typing import Any
 from langchain_anthropic import ChatAnthropic
 from langgraph.graph import END, StateGraph
 
-from engine.agent.nodes import kg_retrieval, portfolio_analyzer, rag_retrieval, signal_ranker
+from engine.agent.nodes import (
+    kg_retrieval,
+    portfolio_analyzer,
+    rag_retrieval,
+    signal_ranker,
+    technical_fetcher,
+)
 from engine.agent.state import AnalysisState
 from engine.kg.query import KGQuerier
 
@@ -21,6 +27,7 @@ def build_graph(
     builder: StateGraph = StateGraph(AnalysisState)
 
     builder.add_node("portfolio_analyzer", portfolio_analyzer)
+    builder.add_node("technical_fetcher", technical_fetcher)
     builder.add_node(
         "kg_retrieval",
         lambda s: kg_retrieval(s, kg_querier=kg_querier),
@@ -35,7 +42,8 @@ def build_graph(
     )
 
     builder.set_entry_point("portfolio_analyzer")
-    builder.add_edge("portfolio_analyzer", "kg_retrieval")
+    builder.add_edge("portfolio_analyzer", "technical_fetcher")
+    builder.add_edge("technical_fetcher", "kg_retrieval")
     builder.add_edge("kg_retrieval", "rag_retrieval")
     builder.add_edge("rag_retrieval", "signal_ranker")
     builder.add_edge("signal_ranker", END)
