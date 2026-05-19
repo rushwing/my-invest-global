@@ -38,6 +38,7 @@ def save_session(db_path: str, state: AnalysisState) -> None:
             "kg_subgraph": state["kg_subgraph"],
             "rag_chunks": state["rag_chunks"],
             "reasoning": state["reasoning"],
+            "source_index": state.get("source_index", {}),
         },
         ensure_ascii=False,
     )
@@ -108,6 +109,7 @@ def load_latest_session(db_path: str) -> AnalysisState | None:
         snapshot=placeholder_snap,
         kg_subgraph=state_data.get("kg_subgraph", {}),
         rag_chunks=state_data.get("rag_chunks", {}),
+        source_index=state_data.get("source_index", {}),
         signals=signals,
         reasoning=state_data.get("reasoning", {}),
         errors=errors,

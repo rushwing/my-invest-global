@@ -80,26 +80,53 @@ def main() -> None:
             st.dataframe(df, use_container_width=True, hide_index=True)
 
             st.divider()
-            st.subheader("理由卡片")
+            st.subheader("推理卡片")
+            source_index = data.get("source_index", {})
             for sig in data["signals"]:
+                action_icon = {
+                    "strong_add": "🟢", "hold_add": "🟢", "hold": "🟡",
+                    "reduce": "🔴", "stop_loss": "🔴", "take_profit_alert": "🟠",
+                }.get(sig.action_code, "⚪")
                 with st.expander(
-                    f"{sig.code} {sig.name} — 综合评分 {sig.composite_score:.0f}"
+                    f"{action_icon} {sig.code} {sig.name}"
+                    f" — 综合 {sig.composite_score:.0f}分  {sig.action}"
                 ):
-                    kg_ctx = data.get("kg_subgraph", {}).get(sig.code, [])
-                    rag_ctx = data.get("rag_chunks", {}).get(sig.code, [])
-                    reasoning = data["reasoning"].get(sig.code, "")
-                    if kg_ctx:
-                        st.markdown("**KG 上下文**")
-                        for line in kg_ctx:
-                            st.markdown(f"- {line}")
-                    if rag_ctx:
-                        st.markdown("**RAG 证据**")
-                        for chunk in rag_ctx[:2]:
-                            st.markdown(f"> {chunk[:200]}...")
-                    if reasoning:
-                        st.markdown(f"**AI 判断**: {reasoning}")
+                    # Sub-score breakdown
+                    col_t, col_f, col_s = st.columns(3)
+                    with col_t:
+                        st.metric("技术面", f"{sig.technical_score:.0f}")
+                        st.progress(sig.technical_score / 100)
+                        if sig.technical_reasoning:
+                            st.caption(sig.technical_reasoning)
+                    with col_f:
+                        st.metric("基本面", f"{sig.fundamental_score:.0f}")
+                        st.progress(sig.fundamental_score / 100)
+                        if sig.fundamental_reasoning:
+                            st.caption(sig.fundamental_reasoning)
+                    with col_s:
+                        st.metric("情绪面", f"{sig.sentiment_score:.0f}")
+                        st.progress(sig.sentiment_score / 100)
+                        if sig.sentiment_reasoning:
+                            st.caption(sig.sentiment_reasoning)
+
+                    # Source traceability panel
+                    idx = source_index.get(sig.code, {})
+                    cited = sig.sources_cited or list(idx.keys())
+                    visible = {ref: idx[ref] for ref in cited if ref in idx}
+                    if not visible:
+                        visible = idx  # fallback: show all sources
+                    if visible:
+                        with st.expander("原始数据来源"):
+                            for ref, content in visible.items():
+                                tag = (
+                                    "🔵" if ref.startswith("S") else
+                                    "🟣" if ref.startswith("K") else
+                                    "🟤" if ref.startswith("R") else "⬛"
+                                )
+                                st.markdown(f"`{ref}` {tag} {content}")
+
                     st.caption(
-                        f"数据快照时间: {data['captured_at'].strftime('%Y-%m-%d %H:%M')}"
+                        f"数据快照: {data['captured_at'].strftime('%Y-%m-%d %H:%M HKT')}"
                     )
         elif data:
             st.info("分析完成但暂无信号输出")

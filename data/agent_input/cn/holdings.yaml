@@ -1,0 +1,122 @@
+# Combined active holdings — 华西证券 **8175 (Daniel) + 西南证券 **5426 (Wife)
+# Updated: 2026-05-18
+# Excluded: 美的集团 (华西, 消息票), 熙菱信息 (西南, 消息票)
+# Codes: 中际旭创/天孚通信/兆易创新/东山精密/盛合晶微 verified via stocks.yaml
+#        中国船舶 600150 SSE; 科瑞技术 002957 SZSE (verify if price drifts unexpectedly)
+
+holdings:
+  # === 华西证券 **8175 (Daniel) ===
+
+  - schema_version: "1.0"
+    date: "2026-05-18"
+    code: "603986"
+    name: "兆易创新"
+    cost_price: 402.156
+    current_price: 400.000
+    quantity: 200
+    market_value: 80000.00
+    pnl_pct: "-0.540%"
+    pnl_amount: -431.23
+    category: "白马股"
+    sector: "存储芯片/MCU"
+    notes: "华西证券; 长鑫存储同一实控人，兆易持长鑫1.8%股权，IPO预期约2026-07"
+
+  - schema_version: "1.0"
+    date: "2026-05-18"
+    code: "002384"
+    name: "东山精密"
+    cost_price: 222.737
+    current_price: 211.250
+    quantity: 300
+    market_value: 63375.00
+    pnl_pct: "-5.160%"
+    pnl_amount: -3446.00
+    category: "弹性股"
+    sector: "AI高速PCB/精密互联"
+    notes: "华西证券"
+
+  - schema_version: "1.0"
+    date: "2026-05-18"
+    code: "600150"
+    name: "中国船舶"
+    cost_price: 38.614
+    current_price: 38.170
+    quantity: 5100
+    market_value: 194667.00
+    pnl_pct: "-1.150%"
+    pnl_amount: -2265.97
+    category: "白马股"
+    sector: "船舶制造/军工"
+    notes: "华西证券; 周期白马，非AI主航道"
+
+  # === 西南证券 **5426 (Wife) ===
+
+  - schema_version: "1.0"
+    date: "2026-05-18"
+    code: "300308"
+    name: "中际旭创"
+    cost_price: 955.140
+    current_price: 1045.000
+    quantity: 200
+    market_value: 209000.00
+    pnl_pct: "+9.408%"
+    pnl_amount: 17961.53
+    category: "白马股"
+    sector: "光模块/CPO"
+    notes: "西南证券; 100股已锁定不可用"
+
+  - schema_version: "1.0"
+    date: "2026-05-18"
+    code: "603986"
+    name: "兆易创新"
+    cost_price: 405.203
+    current_price: 400.000
+    quantity: 400
+    market_value: 160000.00
+    pnl_pct: "-1.284%"
+    pnl_amount: -2079.98
+    category: "白马股"
+    sector: "存储芯片/MCU"
+    notes: "西南证券; 长鑫存储同一实控人，兆易持长鑫1.8%股权，IPO预期约2026-07"
+
+  - schema_version: "1.0"
+    date: "2026-05-18"
+    code: "300394"
+    name: "天孚通信"
+    cost_price: 400.692
+    current_price: 384.950
+    quantity: 300
+    market_value: 115485.00
+    pnl_pct: "-3.929%"
+    pnl_amount: -4719.92
+    category: "白马股"
+    sector: "CPO/光无源"
+    notes: "西南证券; 100股已锁定不可用"
+
+  - schema_version: "1.0"
+    date: "2026-05-18"
+    code: "688820"
+    name: "盛合晶微"
+    cost_price: 179.672
+    current_price: 188.100
+    quantity: 400
+    market_value: 75240.00
+    pnl_pct: "+4.691%"
+    pnl_amount: 3369.14
+    category: "弹性股"
+    sector: "先进封装/Chiplet"
+    notes: "西南证券"
+
+  - schema_version: "1.0"
+    date: "2026-05-18"
+    code: "002957"
+    name: "科瑞技术"
+    cost_price: 45.171
+    current_price: 47.250
+    quantity: 600
+    market_value: 28350.00
+    pnl_pct: "+4.602%"
+    pnl_amount: 1246.61
+    category: "弹性股"
+    sector: "精密制造/检测设备"
+    notes: "西南证券"
