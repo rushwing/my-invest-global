@@ -185,6 +185,28 @@ CREATE TABLE IF NOT EXISTS retrieval_log (
     status      TEXT,
     error_msg   TEXT
 );
+
+CREATE TABLE IF NOT EXISTS chip_distribution (
+    code        TEXT NOT NULL,
+    date        DATE NOT NULL,
+    price_lower REAL NOT NULL,
+    price_upper REAL NOT NULL,
+    chip_ratio  REAL NOT NULL,
+    PRIMARY KEY (code, date, price_lower)
+);
+
+CREATE TABLE IF NOT EXISTS chip_summary (
+    code           TEXT NOT NULL,
+    date           DATE NOT NULL,
+    avg_cost       REAL NOT NULL,
+    profitable_pct REAL NOT NULL,
+    concentration  REAL NOT NULL,
+    range_70_lower REAL NOT NULL,
+    range_70_upper REAL NOT NULL,
+    range_90_lower REAL NOT NULL,
+    range_90_upper REAL NOT NULL,
+    PRIMARY KEY (code, date)
+);
 """
 
 # ── Upsert helpers ────────────────────────────────────────────────────────────
