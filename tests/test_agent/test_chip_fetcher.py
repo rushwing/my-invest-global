@@ -9,13 +9,6 @@ from unittest.mock import MagicMock, patch
 import duckdb
 import pandas as pd
 import pytest
-from engine.agent.chip_fetcher import (
-    ChipBar,
-    ChipDataUnavailable,
-    ChipSummary,
-    fetch_chip_summary,
-    store_chip_data,
-)
 
 # ── DDL (mirrored from REQ-036 so tests are self-contained) ───────────────────
 
@@ -97,6 +90,7 @@ class TestFetchChipSummaryBasic:
     """TC-036-01: mock ak.stock_cyq_em → ChipSummary with correct field values."""
 
     def test_returns_chip_summary_instance(self):
+        from engine.agent.chip_fetcher import ChipSummary, fetch_chip_summary
         ak_stub = ModuleType("akshare")
         ak_stub.stock_cyq_em = MagicMock(return_value=_make_standard_df())
         with patch.dict(sys.modules, {"akshare": ak_stub}):
@@ -104,6 +98,7 @@ class TestFetchChipSummaryBasic:
         assert isinstance(result, ChipSummary)
 
     def test_avg_cost_positive(self):
+        from engine.agent.chip_fetcher import fetch_chip_summary
         ak_stub = ModuleType("akshare")
         ak_stub.stock_cyq_em = MagicMock(return_value=_make_standard_df())
         with patch.dict(sys.modules, {"akshare": ak_stub}):
@@ -111,6 +106,7 @@ class TestFetchChipSummaryBasic:
         assert result.avg_cost > 0
 
     def test_profitable_pct_in_range(self):
+        from engine.agent.chip_fetcher import fetch_chip_summary
         ak_stub = ModuleType("akshare")
         ak_stub.stock_cyq_em = MagicMock(return_value=_make_standard_df())
         with patch.dict(sys.modules, {"akshare": ak_stub}):
@@ -118,6 +114,7 @@ class TestFetchChipSummaryBasic:
         assert 0 < result.profitable_pct <= 1
 
     def test_bars_nonempty(self):
+        from engine.agent.chip_fetcher import fetch_chip_summary
         ak_stub = ModuleType("akshare")
         ak_stub.stock_cyq_em = MagicMock(return_value=_make_standard_df())
         with patch.dict(sys.modules, {"akshare": ak_stub}):
@@ -125,6 +122,7 @@ class TestFetchChipSummaryBasic:
         assert len(result.bars) > 0
 
     def test_field_values_match_mock(self):
+        from engine.agent.chip_fetcher import fetch_chip_summary
         ak_stub = ModuleType("akshare")
         ak_stub.stock_cyq_em = MagicMock(return_value=_make_standard_df())
         with patch.dict(sys.modules, {"akshare": ak_stub}):
@@ -135,6 +133,7 @@ class TestFetchChipSummaryBasic:
         assert abs(result.concentration - 33.92) < 0.01
 
     def test_code_set_correctly(self):
+        from engine.agent.chip_fetcher import fetch_chip_summary
         ak_stub = ModuleType("akshare")
         ak_stub.stock_cyq_em = MagicMock(return_value=_make_standard_df())
         with patch.dict(sys.modules, {"akshare": ak_stub}):
@@ -148,7 +147,8 @@ class TestFetchChipSummaryBasic:
 class TestStoreChipDataWrite:
     """TC-036-02: store_chip_data writes chip_summary and chip_distribution to DuckDB."""
 
-    def _make_summary(self) -> ChipSummary:
+    def _make_summary(self):
+        from engine.agent.chip_fetcher import ChipBar, ChipSummary
         return ChipSummary(
             code="688143",
             date="2026-05-20",
@@ -166,6 +166,7 @@ class TestStoreChipDataWrite:
         )
 
     def test_chip_summary_row_written(self, mem_conn):
+        from engine.agent.chip_fetcher import store_chip_data
         store_chip_data(mem_conn, self._make_summary())
         rows = mem_conn.execute(
             "SELECT * FROM chip_summary WHERE code='688143'"
@@ -173,6 +174,7 @@ class TestStoreChipDataWrite:
         assert len(rows) >= 1
 
     def test_chip_summary_fields_correct(self, mem_conn):
+        from engine.agent.chip_fetcher import store_chip_data
         store_chip_data(mem_conn, self._make_summary())
         row = mem_conn.execute(
             "SELECT avg_cost, profitable_pct, range_90_lower, range_90_upper "
@@ -186,6 +188,7 @@ class TestStoreChipDataWrite:
         assert abs(r90_hi - 128.24) < 0.01
 
     def test_chip_distribution_rows_written(self, mem_conn):
+        from engine.agent.chip_fetcher import store_chip_data
         store_chip_data(mem_conn, self._make_summary())
         rows = mem_conn.execute(
             "SELECT * FROM chip_distribution WHERE code='688143'"
@@ -199,7 +202,8 @@ class TestStoreChipDataWrite:
 class TestStoreChipDataUpsert:
     """TC-036-03: double write for same (code, date) does not raise (UPSERT)."""
 
-    def _make_summary(self, avg_cost: float = 99.96) -> ChipSummary:
+    def _make_summary(self, avg_cost: float = 99.96):
+        from engine.agent.chip_fetcher import ChipBar, ChipSummary
         return ChipSummary(
             code="688143",
             date="2026-05-20",
@@ -214,11 +218,13 @@ class TestStoreChipDataUpsert:
         )
 
     def test_second_write_does_not_raise(self, mem_conn):
+        from engine.agent.chip_fetcher import store_chip_data
         store_chip_data(mem_conn, self._make_summary(99.96))
         store_chip_data(mem_conn, self._make_summary(100.00))  # same (code, date)
         # should not raise
 
     def test_second_write_updates_value(self, mem_conn):
+        from engine.agent.chip_fetcher import store_chip_data
         store_chip_data(mem_conn, self._make_summary(99.96))
         store_chip_data(mem_conn, self._make_summary(100.00))
         row = mem_conn.execute(
@@ -235,6 +241,7 @@ class TestFetchChipSummaryEmpty:
     """TC-036-04: empty akshare DataFrame → ChipDataUnavailable raised."""
 
     def test_raises_chip_data_unavailable(self):
+        from engine.agent.chip_fetcher import ChipDataUnavailable, fetch_chip_summary
         ak_stub = ModuleType("akshare")
         ak_stub.stock_cyq_em = MagicMock(return_value=pd.DataFrame())
         with patch.dict(sys.modules, {"akshare": ak_stub}):
@@ -242,6 +249,7 @@ class TestFetchChipSummaryEmpty:
                 fetch_chip_summary("688143")
 
     def test_does_not_return_none(self):
+        from engine.agent.chip_fetcher import ChipDataUnavailable, fetch_chip_summary
         ak_stub = ModuleType("akshare")
         ak_stub.stock_cyq_em = MagicMock(return_value=pd.DataFrame())
         with patch.dict(sys.modules, {"akshare": ak_stub}):
@@ -260,6 +268,7 @@ class TestFetchChipSummaryFallback:
     """TC-036-05: missing optional columns → fallback values, no exception."""
 
     def test_no_exception_on_missing_optional_cols(self):
+        from engine.agent.chip_fetcher import ChipSummary, fetch_chip_summary
         ak_stub = ModuleType("akshare")
         ak_stub.stock_cyq_em = MagicMock(return_value=_make_no_optional_cols_df())
         with patch.dict(sys.modules, {"akshare": ak_stub}):
@@ -267,7 +276,7 @@ class TestFetchChipSummaryFallback:
         assert isinstance(result, ChipSummary)
 
     def test_range_70_fallback_equals_range_90(self):
-        """When 70成本 columns missing, range_70 should fall back to range_90."""
+        from engine.agent.chip_fetcher import fetch_chip_summary
         ak_stub = ModuleType("akshare")
         ak_stub.stock_cyq_em = MagicMock(return_value=_make_no_optional_cols_df())
         with patch.dict(sys.modules, {"akshare": ak_stub}):
@@ -276,7 +285,7 @@ class TestFetchChipSummaryFallback:
         assert result.range_70_upper == result.range_90_upper
 
     def test_concentration_fallback_is_valid_range(self):
-        """When 集中度 missing, computed fallback must be in [0, 100]."""
+        from engine.agent.chip_fetcher import fetch_chip_summary
         ak_stub = ModuleType("akshare")
         ak_stub.stock_cyq_em = MagicMock(return_value=_make_no_optional_cols_df())
         with patch.dict(sys.modules, {"akshare": ak_stub}):

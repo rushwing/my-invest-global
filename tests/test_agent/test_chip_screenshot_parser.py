@@ -7,11 +7,6 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-from engine.agent.chip_analysis import ChipAnalysis
-from engine.agent.chip_screenshot_parser import (
-    ScreenshotParseError,
-    parse_chip_screenshot,
-)
 
 # Fixture file — exists because TC-036 tc_impl copied the real 688143 screenshot
 FIXTURE_PATH = str(
@@ -67,6 +62,8 @@ class TestParseChipScreenshotHappyPath:
         assert Path(FIXTURE_PATH).exists(), f"Missing fixture: {FIXTURE_PATH}"
 
     def test_returns_chip_analysis(self):
+        from engine.agent.chip_analysis import ChipAnalysis
+        from engine.agent.chip_screenshot_parser import parse_chip_screenshot
         with patch(
             "engine.agent.chip_screenshot_parser._call_claude_vision",
             return_value=_STANDARD_PAYLOAD,
@@ -75,6 +72,7 @@ class TestParseChipScreenshotHappyPath:
         assert isinstance(result, ChipAnalysis)
 
     def test_avg_cost_accurate(self):
+        from engine.agent.chip_screenshot_parser import parse_chip_screenshot
         with patch(
             "engine.agent.chip_screenshot_parser._call_claude_vision",
             return_value=_STANDARD_PAYLOAD,
@@ -83,6 +81,7 @@ class TestParseChipScreenshotHappyPath:
         assert abs(result.avg_cost - 99.96) < 0.01
 
     def test_profitable_pct_above_99(self):
+        from engine.agent.chip_screenshot_parser import parse_chip_screenshot
         with patch(
             "engine.agent.chip_screenshot_parser._call_claude_vision",
             return_value=_STANDARD_PAYLOAD,
@@ -92,6 +91,7 @@ class TestParseChipScreenshotHappyPath:
 
     def test_range_70_fallback_equals_range_90(self):
         """When range_70 is None in OCR payload, fallback to range_90 values."""
+        from engine.agent.chip_screenshot_parser import parse_chip_screenshot
         with patch(
             "engine.agent.chip_screenshot_parser._call_claude_vision",
             return_value=_STANDARD_PAYLOAD,
@@ -121,6 +121,10 @@ class TestParseChipScreenshotNullCriticalFields:
     }
 
     def test_raises_screenshot_parse_error(self):
+        from engine.agent.chip_screenshot_parser import (
+            ScreenshotParseError,
+            parse_chip_screenshot,
+        )
         with patch(
             "engine.agent.chip_screenshot_parser._call_claude_vision",
             return_value=self._NULL_PAYLOAD,
@@ -129,6 +133,10 @@ class TestParseChipScreenshotNullCriticalFields:
                 parse_chip_screenshot(FIXTURE_PATH)
 
     def test_does_not_return_partial_model(self):
+        from engine.agent.chip_screenshot_parser import (
+            ScreenshotParseError,
+            parse_chip_screenshot,
+        )
         result = None
         with patch(
             "engine.agent.chip_screenshot_parser._call_claude_vision",
@@ -160,6 +168,7 @@ class TestParseChipScreenshotAnalyzeChipCalled:
     }
 
     def test_above_90_band_true(self):
+        from engine.agent.chip_screenshot_parser import parse_chip_screenshot
         with patch(
             "engine.agent.chip_screenshot_parser._call_claude_vision",
             return_value=self._ABOVE_BAND_PAYLOAD,
@@ -168,6 +177,7 @@ class TestParseChipScreenshotAnalyzeChipCalled:
         assert result.above_90_band is True
 
     def test_chip_analysis_has_signal_summary(self):
+        from engine.agent.chip_screenshot_parser import parse_chip_screenshot
         with patch(
             "engine.agent.chip_screenshot_parser._call_claude_vision",
             return_value=self._ABOVE_BAND_PAYLOAD,
@@ -184,6 +194,10 @@ class TestParseChipScreenshotInvalidJson:
     """TC-038-04: non-JSON Claude response → ScreenshotParseError with parse/JSON in reason."""
 
     def test_invalid_json_raises_parse_error(self):
+        from engine.agent.chip_screenshot_parser import (
+            ScreenshotParseError,
+            parse_chip_screenshot,
+        )
         with patch(
             "engine.agent.chip_screenshot_parser._call_claude_vision",
             side_effect=ScreenshotParseError(reason="JSON parse failed: invalid"),
@@ -195,6 +209,10 @@ class TestParseChipScreenshotInvalidJson:
 
     def test_non_json_string_from_api(self):
         """If _call_claude_vision returns a raw non-JSON string payload, parser raises."""
+        from engine.agent.chip_screenshot_parser import (
+            ScreenshotParseError,
+            parse_chip_screenshot,
+        )
         with patch(
             "engine.agent.chip_screenshot_parser._call_claude_vision",
             return_value="这不是JSON格式的响应，无法解析",

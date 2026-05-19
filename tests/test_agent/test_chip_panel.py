@@ -4,14 +4,11 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-from app.pages.chip_panel import build_chip_chart, chip_panel_page, render_chip_panel
-from engine.agent.chip_analysis import ChipAnalysis, ChipLockLevel
-from engine.agent.chip_fetcher import ChipBar, ChipSummary
-
 # ── Mock factories ─────────────────────────────────────────────────────────────
 
 
-def _analysis_above_90() -> ChipAnalysis:
+def _analysis_above_90():
+    from engine.agent.chip_analysis import ChipAnalysis, ChipLockLevel
     return ChipAnalysis(
         code="688143", date="2026-05-20", current_price=131.60,
         avg_cost=99.96, profitable_pct=0.9973, concentration=33.92,
@@ -24,7 +21,8 @@ def _analysis_above_90() -> ChipAnalysis:
     )
 
 
-def _analysis_in_band() -> ChipAnalysis:
+def _analysis_in_band():
+    from engine.agent.chip_analysis import ChipAnalysis, ChipLockLevel
     return ChipAnalysis(
         code="000001", date="2026-05-20", current_price=10.5,
         avg_cost=10.0, profitable_pct=0.9973, concentration=45.0,
@@ -37,7 +35,8 @@ def _analysis_in_band() -> ChipAnalysis:
     )
 
 
-def _summary() -> ChipSummary:
+def _summary():
+    from engine.agent.chip_fetcher import ChipBar, ChipSummary
     bars = [
         ChipBar(price_lower=60.0, price_upper=70.0, chip_ratio=0.05),
         ChipBar(price_lower=70.0, price_upper=80.0, chip_ratio=0.08),
@@ -60,12 +59,14 @@ class TestRenderChipPanelSignalCard:
     """TC-039-01: above_90_band=True → st.error called exactly once, no exception."""
 
     def test_no_exception_raised(self):
+        from app.pages.chip_panel import render_chip_panel
         with patch("streamlit.error"), patch("streamlit.metric"), \
              patch("streamlit.info"), patch("streamlit.plotly_chart"), \
              patch("streamlit.columns", return_value=[MagicMock()] * 4):
             render_chip_panel("688143", 131.60, _analysis_above_90(), _summary())
 
     def test_st_error_called_once_when_above_band(self):
+        from app.pages.chip_panel import render_chip_panel
         with patch("streamlit.error") as mock_err, \
              patch("streamlit.metric"), patch("streamlit.info"), \
              patch("streamlit.plotly_chart"), \
@@ -74,6 +75,7 @@ class TestRenderChipPanelSignalCard:
         assert mock_err.call_count == 1
 
     def test_st_warning_not_called_when_above_band(self):
+        from app.pages.chip_panel import render_chip_panel
         with patch("streamlit.error"), \
              patch("streamlit.warning") as mock_warn, \
              patch("streamlit.metric"), patch("streamlit.info"), \
@@ -94,10 +96,12 @@ class TestBuildChipChart:
 
     def test_returns_plotly_figure(self):
         import plotly.graph_objects as go
+        from app.pages.chip_panel import build_chip_chart
         fig = build_chip_chart(_summary(), current_price=131.60)
         assert isinstance(fig, go.Figure)
 
     def test_color_below_current_price_is_green(self):
+        from app.pages.chip_panel import build_chip_chart
         fig = build_chip_chart(_summary(), current_price=131.60)
         colors = fig.data[0].marker.color
         # bars with midpoint < 131.60: (60+70)/2=65, (70+80)/2=75, (120+130)/2=125
@@ -110,6 +114,7 @@ class TestBuildChipChart:
                 assert color == "#E84040", f"bar midpoint {mid} should be red"
 
     def test_shapes_contain_current_price_label(self):
+        from app.pages.chip_panel import build_chip_chart
         fig = build_chip_chart(_summary(), current_price=131.60)
         shape_labels = [
             s.get("label", {}).get("text", "") if isinstance(s, dict)
@@ -120,6 +125,7 @@ class TestBuildChipChart:
             f"'现价' not found in shapes: {shape_labels}"
 
     def test_shapes_contain_avg_cost_label(self):
+        from app.pages.chip_panel import build_chip_chart
         fig = build_chip_chart(_summary(), current_price=131.60)
         shape_labels = [
             s.get("label", {}).get("text", "") if isinstance(s, dict)
@@ -130,6 +136,7 @@ class TestBuildChipChart:
             f"'均成本' not found in shapes: {shape_labels}"
 
     def test_figure_has_dark_background(self):
+        from app.pages.chip_panel import build_chip_chart
         fig = build_chip_chart(_summary(), current_price=131.60)
         bg = fig.layout.plot_bgcolor or fig.layout.paper_bgcolor
         assert "#0E1117" in (bg or "").upper() or bg == "#0e1117"
@@ -142,6 +149,7 @@ class TestChipSummaryCardMetrics:
     """TC-039-03: profitable_pct=0.9973 displays '99.7%' and non-empty delta."""
 
     def test_profitable_pct_format_in_metric(self):
+        from app.pages.chip_panel import render_chip_panel
         captured_calls: list[tuple] = []
 
         def capture_metric(*args, **kwargs):
@@ -163,6 +171,7 @@ class TestChipSummaryCardMetrics:
 
     def test_delta_nonempty_for_profitable_pct_metric(self):
         """When profitable_pct >= 0.95, delta must be non-empty (warning indicator)."""
+        from app.pages.chip_panel import render_chip_panel
         captured_calls: list[tuple] = []
 
         def capture_metric(*args, **kwargs):
@@ -191,6 +200,7 @@ class TestChipPanelPageOCRGuard:
     """TC-039-04: radio=OCR, file_uploader=None, button=False → parse_chip_screenshot not called."""
 
     def test_parse_not_called_when_no_file_uploaded(self):
+        from app.pages.chip_panel import chip_panel_page
         with patch("streamlit.title"), \
              patch("streamlit.selectbox", return_value="688143"), \
              patch("streamlit.number_input", return_value=131.60), \
