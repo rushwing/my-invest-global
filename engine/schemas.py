@@ -211,6 +211,10 @@ class StockSignal(BaseModel):
         "take_profit_alert",
     ]
     signals: dict[str, object] = Field(default_factory=dict)
+    technical_reasoning: str = ""
+    fundamental_reasoning: str = ""
+    sentiment_reasoning: str = ""
+    sources_cited: list[str] = Field(default_factory=list)
     target_price_provenance: DataProvenance | None = None
 
 

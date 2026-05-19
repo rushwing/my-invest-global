@@ -69,6 +69,7 @@ def load_latest_for_ui(db_path: str) -> dict[str, Any] | None:
         "reasoning": state["reasoning"],
         "kg_subgraph": state["kg_subgraph"],
         "rag_chunks": state["rag_chunks"],
+        "source_index": state.get("source_index", {}),
         "errors": state["errors"],
         "change_pct_snapshot": state["snapshot"].change_pct_snapshot,
     }
