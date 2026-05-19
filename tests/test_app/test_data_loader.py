@@ -9,6 +9,11 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import pytest
 
+
+class _Stop(Exception):
+    """Sentinel raised by patched st.stop() to replicate Streamlit's StopException."""
+
+
 # Detect availability at collection time — tests are collected regardless,
 # but skipped at run-time when the module is not yet implemented.
 _has_data_loader = importlib.util.find_spec("app.data_loader") is not None
@@ -47,54 +52,74 @@ def _clear_st_cache():
 
 @_skip_dl
 class TestDashboardEntrypoint:
-    """TC-020-01: app.dashboard.main 可调用，锁定状态下启动不抛异常。"""
+    """TC-020-01: app.dashboard.main 可调用，锁定状态下行为正确。
 
-    def _locked_patches(self):
-        """Return a list of context managers for a locked-state main() call."""
-        mock_col = MagicMock()
-        mock_col.__enter__ = lambda s: mock_col
-        mock_col.__exit__ = MagicMock(return_value=False)
-        return mock_col
+    st.stop() 用 _Stop sentinel 模拟：确保依赖 st.stop() 中断的实现不会因
+    no-op patch 而继续执行 tabs 渲染路径，避免误判。
+    """
+
+    def _mock_col(self):
+        col = MagicMock()
+        col.__enter__ = lambda s: col
+        col.__exit__ = MagicMock(return_value=False)
+        return col
+
+    def _base_patches(self, mock_col, **overrides):
+        """Common patch set for locked-state main() calls with _Stop sentinel."""
+        return {
+            "streamlit.set_page_config": MagicMock(),
+            "streamlit.stop": MagicMock(side_effect=_Stop),
+            "streamlit.tabs": MagicMock(return_value=[mock_col] * 4),
+            "app.auth.is_unlocked": MagicMock(return_value=False),
+            "app.sidebar.render_sidebar": MagicMock(),
+            "app.dashboard.render_locked_mask": MagicMock(),
+            "app.styles.inject_global_css": MagicMock(),
+            **overrides,
+        }
 
     def test_main_is_callable(self):
         from app.dashboard import main
         assert callable(main)
 
-    def test_main_runs_locked_state_without_error(self):
+    def test_main_raises_only_stop_sentinel_when_locked(self):
+        """main() raises exactly _Stop (sentinel for st.stop()) — no unexpected errors."""
         from app.dashboard import main
-        mock_col = self._locked_patches()
+        col = self._mock_col()
         with patch("streamlit.set_page_config"), \
-             patch("streamlit.stop"), \
-             patch("streamlit.tabs", return_value=[mock_col] * 4), \
+             patch("streamlit.stop", side_effect=_Stop), \
+             patch("streamlit.tabs", return_value=[col] * 4), \
              patch("app.auth.is_unlocked", return_value=False), \
              patch("app.sidebar.render_sidebar"), \
              patch("app.dashboard.render_locked_mask"), \
-             patch("app.styles.inject_global_css"):
-            main()  # must not raise
+             patch("app.styles.inject_global_css"), \
+             pytest.raises(_Stop):
+            main()
 
     def test_locked_state_calls_render_locked_mask(self):
         from app.dashboard import main
-        mock_col = self._locked_patches()
+        col = self._mock_col()
         with patch("streamlit.set_page_config"), \
-             patch("streamlit.stop"), \
-             patch("streamlit.tabs", return_value=[mock_col] * 4), \
+             patch("streamlit.stop", side_effect=_Stop), \
+             patch("streamlit.tabs", return_value=[col] * 4), \
              patch("app.auth.is_unlocked", return_value=False), \
              patch("app.sidebar.render_sidebar"), \
              patch("app.dashboard.render_locked_mask") as mock_locked, \
-             patch("app.styles.inject_global_css"):
+             patch("app.styles.inject_global_css"), \
+             pytest.raises(_Stop):
             main()
         mock_locked.assert_called()
 
     def test_locked_state_sidebar_called_with_locked_true(self):
         from app.dashboard import main
-        mock_col = self._locked_patches()
+        col = self._mock_col()
         with patch("streamlit.set_page_config"), \
-             patch("streamlit.stop"), \
-             patch("streamlit.tabs", return_value=[mock_col] * 4), \
+             patch("streamlit.stop", side_effect=_Stop), \
+             patch("streamlit.tabs", return_value=[col] * 4), \
              patch("app.auth.is_unlocked", return_value=False), \
              patch("app.sidebar.render_sidebar") as mock_sidebar, \
              patch("app.dashboard.render_locked_mask"), \
-             patch("app.styles.inject_global_css"):
+             patch("app.styles.inject_global_css"), \
+             pytest.raises(_Stop):
             main()
         mock_sidebar.assert_called_once()
         call_args, call_kwargs = mock_sidebar.call_args
@@ -102,29 +127,31 @@ class TestDashboardEntrypoint:
         assert locked_val is True, \
             f"render_sidebar must be called with locked=True, got: {mock_sidebar.call_args}"
 
-    def test_locked_state_calls_st_stop(self):
+    def test_locked_state_raises_stop_sentinel(self):
+        """_Stop is raised ↔ st.stop() was invoked (sentinel proves the call happened)."""
         from app.dashboard import main
-        mock_col = self._locked_patches()
+        col = self._mock_col()
         with patch("streamlit.set_page_config"), \
-             patch("streamlit.stop") as mock_stop, \
-             patch("streamlit.tabs", return_value=[mock_col] * 4), \
+             patch("streamlit.stop", side_effect=_Stop), \
+             patch("streamlit.tabs", return_value=[col] * 4), \
              patch("app.auth.is_unlocked", return_value=False), \
              patch("app.sidebar.render_sidebar"), \
              patch("app.dashboard.render_locked_mask"), \
              patch("app.styles.inject_global_css"):
-            main()
-        mock_stop.assert_called()
+            pytest.raises(_Stop, main)
 
     def test_locked_state_does_not_render_tabs(self):
+        """st.tabs() must not be called when locked; sentinel prevents fall-through."""
         from app.dashboard import main
-        mock_col = self._locked_patches()
+        col = self._mock_col()
         with patch("streamlit.set_page_config"), \
-             patch("streamlit.stop"), \
-             patch("streamlit.tabs", return_value=[mock_col] * 4) as mock_tabs, \
+             patch("streamlit.stop", side_effect=_Stop), \
+             patch("streamlit.tabs") as mock_tabs, \
              patch("app.auth.is_unlocked", return_value=False), \
              patch("app.sidebar.render_sidebar"), \
              patch("app.dashboard.render_locked_mask"), \
-             patch("app.styles.inject_global_css"):
+             patch("app.styles.inject_global_css"), \
+             pytest.raises(_Stop):
             main()
         mock_tabs.assert_not_called()
 
@@ -172,8 +199,38 @@ class TestCacheTTL:
     def test_load_ohlcv_has_cache_decorator(self):
         assert hasattr(load_ohlcv, "__wrapped__")
 
+    def test_loaders_all_use_ttl_300(self):
+        """Re-import app.data_loader under a spy to verify every @st.cache_data uses ttl=300."""
+        import sys
+        import importlib
+        import streamlit as st
+
+        observed_ttls: list = []
+        _real = st.cache_data
+
+        def _spy(*args, **kwargs):
+            observed_ttls.append(kwargs.get("ttl"))
+            return _real(*args, **kwargs)
+
+        mod_key = "app.data_loader"
+        saved = sys.modules.pop(mod_key, None)
+        try:
+            with patch("streamlit.cache_data", new=_spy):
+                importlib.import_module(mod_key)
+        finally:
+            if saved is not None:
+                sys.modules[mod_key] = saved
+            else:
+                sys.modules.pop(mod_key, None)
+
+        assert len(observed_ttls) >= 8, \
+            f"expected ≥8 loaders with @st.cache_data(ttl=300); found {len(observed_ttls)}"
+        bad = [t for t in observed_ttls if t != 300]
+        assert not bad, \
+            f"all loaders must use ttl=300; found other ttl values: {observed_ttls}"
+
     def test_cache_reuses_result_preventing_double_io(self, tmp_path):
-        """Second call with same args must NOT re-execute the function body (cache hit)."""
+        """load_macro_state: second call with same args must NOT re-execute body (cache hit)."""
         import json
         import streamlit as st
         st.cache_data.clear()
@@ -184,13 +241,31 @@ class TestCacheTTL:
         with patch("app.data_loader.Path", return_value=state_file):
             result1 = load_macro_state()
 
-        # Now redirect Path to a non-existent file — if cache works, result2 still = green
+        # Redirect Path to non-existent — cache hit should return stale green, not yellow default
         with patch("app.data_loader.Path", return_value=tmp_path / "gone.json"):
             result2 = load_macro_state()
 
         assert result1["state"] == "green"
         assert result2["state"] == "green", \
             "second call should return cached value, not re-execute with new Path"
+
+    def test_duckdb_loader_cache_reuse(self):
+        """load_market_breadth: duckdb.connect called only once across two calls (cache hit)."""
+        import duckdb
+        import streamlit as st
+        st.cache_data.clear()
+
+        real_conn = duckdb.connect(":memory:")
+        try:
+            with patch("app.data_loader.duckdb.connect", return_value=real_conn) as mock_connect:
+                load_market_breadth(days=5)
+                load_market_breadth(days=5)
+            assert mock_connect.call_count == 1, (
+                f"duckdb.connect should be called only once (2nd call = cache hit); "
+                f"called {mock_connect.call_count}x"
+            )
+        finally:
+            real_conn.close()
 
 
 # ── TC-020-04 ─────────────────────────────────────────────────────────────────
