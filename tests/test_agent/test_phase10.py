@@ -116,7 +116,6 @@ class TestHoldingRowAccountField:
         assert row.account == "华西证券"
 
     def test_account_field_default_empty_string(self):
-        row = _holding()
         row2 = HoldingRow(
             schema_version="1.0",
             date=date(2026, 5, 18),
@@ -204,6 +203,7 @@ class TestFetchTechnicalsReturnShape:
         with patch.dict(sys.modules, {"akshare": ak_stub}):
             # Re-import to pick up stub
             import importlib
+
             import engine.agent.technical_fetcher as tf_mod
             importlib.reload(tf_mod)
             result = tf_mod.fetch_technicals(["300308"])
@@ -228,7 +228,8 @@ class TestFetchTechnicalsReturnShape:
         ak_stub.stock_zh_a_hist = MagicMock(return_value=mock_df)
 
         with patch.dict(sys.modules, {"akshare": ak_stub}):
-            import engine.agent.technical_fetcher as tf_mod
+            import engine.agent.technical_fetcher as tf_mod  # noqa: PLC0415
+
             importlib.reload(tf_mod)
             result = tf_mod.fetch_technicals(["300308"])
 
@@ -304,8 +305,6 @@ class TestSignalRankerTRefs:
         assert "RSI" in idx["T8"]
 
     def test_nan_indicators_excluded_from_source_index(self):
-        import math
-
         snap = _snapshot()
         state = _base_state(snap)
         state["technical_data"] = {
