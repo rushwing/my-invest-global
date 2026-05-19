@@ -46,6 +46,7 @@ _COL_R90_HI = "90成本-高"
 _COL_R70_LO = "70成本-低"
 _COL_R70_HI = "70成本-高"
 _COL_CONCENTRATION = "集中度"
+_COL_DATE = "日期"
 
 _REQUIRED_COLS = {_COL_PRICE, _COL_RATIO, _COL_PROFITABLE, _COL_AVG_COST, _COL_R90_LO, _COL_R90_HI}
 
@@ -53,6 +54,8 @@ _REQUIRED_COLS = {_COL_PRICE, _COL_RATIO, _COL_PROFITABLE, _COL_AVG_COST, _COL_R
 def fetch_chip_summary(code: str, date: str | None = None) -> ChipSummary:
     """Fetch chip distribution from akshare and return ChipSummary.
 
+    When date is provided, filter rows to that date.
+    When date is None, use the latest date present in the data.
     Raises ChipDataUnavailable if akshare returns empty data.
     """
     import akshare as ak
@@ -61,6 +64,21 @@ def fetch_chip_summary(code: str, date: str | None = None) -> ChipSummary:
 
     if df is None or df.empty:
         raise ChipDataUnavailable(f"No chip data for {code}")
+
+    # Date filtering / latest-row selection via 日期 column when present.
+    result_date: str
+    if _COL_DATE in df.columns:
+        if date is not None:
+            df = df[df[_COL_DATE].astype(str) == date]
+            if df.empty:
+                raise ChipDataUnavailable(f"No chip data for {code} on {date}")
+            result_date = date
+        else:
+            latest = df[_COL_DATE].max()
+            df = df[df[_COL_DATE] == latest]
+            result_date = str(latest)
+    else:
+        result_date = date if date is not None else _date.today().isoformat()
 
     missing = _REQUIRED_COLS - set(df.columns)
     if missing:
@@ -102,8 +120,6 @@ def fetch_chip_summary(code: str, date: str | None = None) -> ChipSummary:
         bars.append(ChipBar(
             price_lower=float(price), price_upper=float(upper), chip_ratio=float(ratio),
         ))
-
-    result_date = date if date is not None else _date.today().isoformat()
 
     return ChipSummary(
         code=code,

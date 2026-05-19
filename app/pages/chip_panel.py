@@ -53,15 +53,29 @@ def build_chip_chart(summary: ChipSummary, current_price: float):
         type="line",
         x0=0, x1=1, xref="paper",
         y0=current_price, y1=current_price, yref="y",
-        line={"color": "#ffffff", "width": 1, "dash": "dash"},
+        line={"color": "#F5A623", "width": 2},
         label={"text": f"现价 {current_price}"},
     )
     fig.add_shape(
         type="line",
         x0=0, x1=1, xref="paper",
         y0=summary.avg_cost, y1=summary.avg_cost, yref="y",
-        line={"color": "#ffdd57", "width": 1, "dash": "dot"},
+        line={"color": "#ffffff", "width": 1, "dash": "dash"},
         label={"text": f"均成本 {summary.avg_cost}"},
+    )
+    fig.add_shape(
+        type="line",
+        x0=0, x1=1, xref="paper",
+        y0=summary.range_90_lower, y1=summary.range_90_lower, yref="y",
+        line={"color": "#888888", "width": 1, "dash": "dash"},
+        label={"text": "90%区间"},
+    )
+    fig.add_shape(
+        type="line",
+        x0=0, x1=1, xref="paper",
+        y0=summary.range_90_upper, y1=summary.range_90_upper, yref="y",
+        line={"color": "#888888", "width": 1, "dash": "dash"},
+        label={"text": "90%区间"},
     )
 
     return fig
@@ -110,12 +124,15 @@ def chip_panel_page() -> None:
     if source == "截图解析（OCR）":
         uploaded = st.file_uploader("上传筹码截图（同花顺PC端）", type=["png", "jpg", "jpeg"])
         if st.button("解析") and uploaded is not None:
-            import tempfile
-            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
-                tmp.write(uploaded.read())
-                tmp_path = tmp.name
-            analysis = parse_chip_screenshot(tmp_path, code=str(code))
-            render_chip_panel(str(code), float(current_price), analysis)
+            if parse_chip_screenshot is None:
+                st.warning("OCR 功能尚未启用")
+            else:
+                import tempfile
+                with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+                    tmp.write(uploaded.read())
+                    tmp_path = tmp.name
+                analysis = parse_chip_screenshot(tmp_path, code=str(code))
+                render_chip_panel(str(code), float(current_price), analysis)
         elif uploaded is None:
             st.warning("请上传同花顺筹码分布截图（PC端）")
     else:
