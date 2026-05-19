@@ -77,7 +77,6 @@ class TestLoadLatestForUi:
 
     def _make_mock_state(self):
         from engine.agent.state import FrozenMarketSnapshot
-
         from engine.schemas import PortfolioSummary
 
         snap = FrozenMarketSnapshot(
