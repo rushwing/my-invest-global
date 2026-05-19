@@ -12,7 +12,9 @@ def main() -> None:
     st.set_page_config(page_title="AI 基建股持仓顾问", layout="wide")
     st.title("AI 基建股持仓顾问")
 
-    tab_holdings, tab_analysis, tab_kg = st.tabs(["持仓", "AI 分析", "知识图谱"])
+    tab_holdings, tab_analysis, tab_kg, tab_backtest = st.tabs(
+        ["持仓", "AI 分析", "知识图谱", "回测"]
+    )
 
     # ── Holdings tab ──────────────────────────────────────────────────────────
     with tab_holdings:
@@ -170,6 +172,49 @@ def main() -> None:
     with tab_kg:
         st.subheader("Neo4j 知识图谱")
         st.components.v1.iframe("http://localhost:7474", height=600, scrolling=True)
+
+    # ── Backtest tab ──────────────────────────────────────────────────────────
+    with tab_backtest:
+        st.subheader("策略回测")
+        try:
+            from engine.portfolio import load_holdings
+
+            holdings = load_holdings(DB_PATH)
+            code_options = (
+                [f"{h.code} {h.name}" for h in holdings] if holdings else ["300308 示例"]
+            )
+        except Exception:
+            code_options = ["300308 示例"]
+
+        col_code, col_strategy, col_run = st.columns([2, 2, 1])
+        selected = col_code.selectbox("股票", code_options, key="bt_code")
+        strategy = col_strategy.selectbox("策略", ["ma_cross", "macd_cross"], key="bt_strategy")
+
+        if col_run.button("运行回测", type="primary"):
+            code = selected.split()[0]
+            with st.spinner("拉取数据并运行回测..."):
+                try:
+                    from app.pages.backtest import format_backtest_result
+                    from engine.agent.technical_fetcher import fetch_ohlcv
+                    from engine.backtest.runner import run_backtest
+
+                    df_ohlcv = fetch_ohlcv(code, start="2023-01-01")
+                    result = run_backtest(code=code, strategy=strategy, df=df_ohlcv)
+                    summary = format_backtest_result(result)
+
+                    m1, m2, m3 = st.columns(3)
+                    m1.metric("累计收益率", f"{result.total_return:.2%}")
+                    m2.metric("最大回撤", f"{result.max_drawdown:.2%}")
+                    m3.metric("胜率", f"{result.win_rate:.2%}")
+
+                    st.caption(
+                        f"基准收益（买入持有）: {result.benchmark_return:.2%}"
+                        f"  |  交易次数: {result.num_trades}"
+                    )
+                    st.line_chart(result.equity_curve, use_container_width=True)
+                    st.dataframe(summary, use_container_width=True, hide_index=True)
+                except Exception as exc:
+                    st.error(f"回测失败: {exc}")
 
 
 if __name__ == "__main__":
