@@ -2,6 +2,7 @@
 
 import subprocess
 import sys
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -113,7 +114,7 @@ class TestRunBacktestMaCross:
         assert result.max_drawdown == pytest.approx(0.0)
         assert result.win_rate == pytest.approx(0.0)
         assert result.num_trades == 0
-        assert (result.equity_curve == pytest.approx(1.0)).all()
+        assert np.allclose(result.equity_curve.to_numpy(), 1.0)
 
 
 # ---------------------------------------------------------------------------
@@ -234,7 +235,7 @@ class TestRunBacktestCLI:
             capture_output=True,
             text=True,
             check=False,
-            cwd="/Users/danielwong/Dev/my-invest-global",
+            cwd=str(Path(__file__).resolve().parents[1]),
         )
         assert proc.returncode == 0, f"CLI failed:\nstdout: {proc.stdout}\nstderr: {proc.stderr}"
         assert "total_return" in proc.stdout
