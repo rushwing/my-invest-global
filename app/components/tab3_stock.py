@@ -30,6 +30,87 @@ def filter_by_date_range(df: pd.DataFrame, range_str: str) -> pd.DataFrame:
     return df[df["date"].astype(str) >= cutoff].copy()
 
 
+def render_fundamental_card(
+    ticker: str,
+    ohlcv_df: pd.DataFrame,
+    scarcity_row: pd.Series | None,
+) -> None:
+    rank_val = None
+    name = ticker
+    if scarcity_row is not None:
+        r = scarcity_row.get("rank")
+        if r is not None and pd.notna(r):
+            rank_val = int(r)
+        n = scarcity_row.get("name")
+        if n and pd.notna(n):
+            name = str(n)
+
+    tier_color = TIER_COLORS.get(rank_val, "#9AA0AC")
+    tier_label = f"Tier-{rank_val}" if rank_val else "Tier-?"
+
+    current_price = float(ohlcv_df["close"].iloc[-1]) if not ohlcv_df.empty else None
+    price_html = (
+        f'<div class="mono-num" style="font-size:22px;font-weight:700;">'
+        f'¥{current_price:,.2f}</div>'
+        if current_price is not None else
+        '<div style="font-size:22px;color:#9AA0AC;">—</div>'
+    )
+
+    upside_html = ""
+    if scarcity_row is not None and current_price is not None:
+        tp = scarcity_row.get("target_price")
+        if tp is not None and pd.notna(tp):
+            target = float(tp)
+            upside = (target - current_price) / current_price
+            up_color = "#00C47A" if upside >= 0 else "#E84040"
+            sign = "+" if upside >= 0 else ""
+            upside_html = (
+                f'<div style="font-size:12px;color:#9AA0AC;margin-top:4px;">'
+                f'目标价 <span class="mono-num">¥{target:,.2f}</span>'
+                f'&nbsp;<span style="color:{up_color};">{sign}{upside:.1%}</span></div>'
+            )
+
+    metrics: list[str] = []
+    if scarcity_row is not None:
+        for key, fmt in [("market_cap", "市值 {:.0f}亿"), ("pe", "PE {:.1f}x"), ("beta", "Beta {:.2f}")]:
+            v = scarcity_row.get(key)
+            if v is not None and pd.notna(v):
+                val = float(v) / 1e8 if key == "market_cap" else float(v)
+                metrics.append(fmt.format(val))
+    if not ohlcv_df.empty and len(ohlcv_df) >= 5:
+        avg_vol = ohlcv_df["volume"].tail(20).mean()
+        metrics.append(f"日均量 {avg_vol / 1e6:.0f}M")
+    metrics_html = (
+        '<div style="font-size:11px;color:#9AA0AC;margin-top:6px;">'
+        + "&nbsp;·&nbsp;".join(metrics)
+        + "</div>"
+    ) if metrics else ""
+
+    rating_html = ""
+    if scarcity_row is not None:
+        rating = scarcity_row.get("rating")
+        if rating is not None and pd.notna(rating) and str(rating):
+            rating_html = (
+                f'<div style="font-size:11px;color:#9AA0AC;margin-top:4px;">'
+                f'机构评级&nbsp;<span style="color:#E8EAED;">{rating}</span></div>'
+            )
+
+    tier_cls = f"tier-{rank_val}" if rank_val else ""
+    st.markdown(
+        f'<div style="border:1px solid #2A2A3E;border-radius:8px;'
+        f'background:#1C1C2E;padding:16px;margin-bottom:12px;">'
+        f'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'
+        f'<span class="tier-badge {tier_cls}" style="background:{tier_color};color:#fff;">'
+        f'{tier_label}</span>'
+        f'<span style="font-size:16px;font-weight:600;">{name}</span>'
+        f'<span style="font-size:12px;color:#9AA0AC;">{ticker}</span>'
+        f'</div>'
+        f'{price_html}{upside_html}{metrics_html}{rating_html}'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+
 def build_stock_chart(df: pd.DataFrame) -> go.Figure:
     fig = make_subplots(
         rows=4, cols=1,
@@ -185,10 +266,16 @@ def render_tab3() -> None:
     with col_range:
         date_range = st.selectbox("日期范围", ["1M", "3M", "6M", "1Y"], index=2, key="tab3_range")
 
+    scarcity_row = None
+    if not scarcity_df.empty and ticker in scarcity_df["code"].values:
+        scarcity_row = scarcity_df[scarcity_df["code"] == ticker].iloc[0]
+
     ohlcv_df = load_ohlcv(ticker, days=400)
     if ohlcv_df.empty:
         st.info(f"暂无 {ticker} 行情数据")
         return
+
+    render_fundamental_card(ticker, ohlcv_df, scarcity_row)
 
     df = compute_indicators(ohlcv_df)
     df_view = filter_by_date_range(df, date_range)

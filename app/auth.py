@@ -10,14 +10,14 @@ def is_unlocked() -> bool:
     return st.session_state.get("unlocked", False)
 
 
+def is_hash_configured() -> bool:
+    return bool(os.getenv("DASHBOARD_PASSPHRASE_HASH", ""))
+
+
 def try_unlock(passphrase: str) -> bool:
     stored = os.getenv("DASHBOARD_PASSPHRASE_HASH", "")
     if not stored:
-        # Dev mode: no hash configured → accept any non-empty passphrase
-        if passphrase:
-            st.session_state["unlocked"] = True
-            return True
-        return False
+        return False  # REQ-014: unconfigured hash must never unlock
     try:
         import bcrypt
         if bcrypt.checkpw(passphrase.encode(), stored.encode()):

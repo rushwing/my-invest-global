@@ -27,8 +27,11 @@ def render_sidebar(locked: bool = False) -> None:
 
 
 def _render_locked() -> None:
-    from app.auth import try_unlock
+    from app.auth import is_hash_configured, try_unlock
     st.markdown("### 🔒 持仓顾问")
+    if not is_hash_configured():
+        st.error("DASHBOARD_PASSPHRASE_HASH 未配置，无法解锁。请在 .env 中设置。")
+        return
     pw = st.text_input("口令", type="password", key="_sidebar_pw")
     if st.button("解锁", type="primary", key="_sidebar_unlock"):
         if try_unlock(pw):
