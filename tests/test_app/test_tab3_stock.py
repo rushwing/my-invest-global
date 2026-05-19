@@ -2,14 +2,35 @@
 
 from __future__ import annotations
 
+import importlib.util
+
 import numpy as np
 import pandas as pd
 import pytest
 
-# Skip entire file if data_loader (primary dependency) not yet implemented.
-pytest.importorskip("app.data_loader")
+try:
+    _has_data_loader = importlib.util.find_spec("app.data_loader") is not None
+except ModuleNotFoundError:
+    _has_data_loader = False
 
-from app.data_loader import compute_indicators  # noqa: E402
+try:
+    _has_tab3 = importlib.util.find_spec("app.components.tab3_stock") is not None
+except ModuleNotFoundError:
+    _has_tab3 = False
+
+_skip_dl = pytest.mark.skipif(
+    not _has_data_loader, reason="app.data_loader not yet implemented"
+)
+_skip_tab3 = pytest.mark.skipif(
+    not (_has_data_loader and _has_tab3),
+    reason="app.components.tab3_stock not yet implemented",
+)
+
+if _has_data_loader:
+    from app.data_loader import compute_indicators
+
+if _has_tab3:
+    import app.components.tab3_stock as tab3_mod
 
 
 # ── Synthetic OHLCV helper ────────────────────────────────────────────────────
@@ -35,6 +56,7 @@ def _make_ohlcv(n: int = 200, seed: int = 42) -> pd.DataFrame:
 # ── TC-018-01 ─────────────────────────────────────────────────────────────────
 
 
+@_skip_dl
 class TestComputeIndicatorsRSI:
     """TC-018-01: rsi14 all non-null values in [0,100]; warm-up NaN ≤ 13."""
 
@@ -60,6 +82,7 @@ class TestComputeIndicatorsRSI:
 # ── TC-018-02 ─────────────────────────────────────────────────────────────────
 
 
+@_skip_dl
 class TestComputeIndicatorsBollinger:
     """TC-018-02: bb_upper > bb_mid > bb_lower strictly from row 20 onwards."""
 
@@ -79,13 +102,13 @@ class TestComputeIndicatorsBollinger:
 # ── TC-018-03 ─────────────────────────────────────────────────────────────────
 
 
+@_skip_tab3
 class TestMacdGoldenCrossPlotly:
     """TC-018-03: 金叉 Plotly trace has green circle markers at crossover dates."""
 
     def test_golden_cross_trace_color_and_symbol(self):
-        tab3 = pytest.importorskip("app.components.tab3_stock")
         df = compute_indicators(_make_ohlcv(200))
-        fig = tab3.build_stock_chart(df)
+        fig = tab3_mod.build_stock_chart(df)
 
         golden_trace = next((t for t in fig.data if t.name == "金叉"), None)
         assert golden_trace is not None, "figure must contain a trace named '金叉'"
@@ -93,15 +116,13 @@ class TestMacdGoldenCrossPlotly:
         assert golden_trace.marker.symbol == "circle"
 
     def test_golden_cross_dates_are_actual_crossovers(self):
-        tab3 = pytest.importorskip("app.components.tab3_stock")
         df = compute_indicators(_make_ohlcv(200)).dropna(subset=["macd", "macd_signal"])
-        fig = tab3.build_stock_chart(df)
+        fig = tab3_mod.build_stock_chart(df)
 
         golden_trace = next((t for t in fig.data if t.name == "金叉"), None)
         if golden_trace is None or len(golden_trace.x) == 0:
             pytest.skip("no golden cross in test data")
 
-        # Every date in the golden trace must be a real crossover date
         expected_dates = set(
             df.loc[
                 (df["macd"] > df["macd_signal"])
@@ -114,9 +135,8 @@ class TestMacdGoldenCrossPlotly:
                 f"golden cross marker date {d} is not a real crossover"
 
     def test_golden_trace_has_at_least_one_marker(self):
-        tab3 = pytest.importorskip("app.components.tab3_stock")
         df = compute_indicators(_make_ohlcv(200))
-        fig = tab3.build_stock_chart(df)
+        fig = tab3_mod.build_stock_chart(df)
         golden_trace = next((t for t in fig.data if t.name == "金叉"), None)
         assert golden_trace is not None
         assert len(golden_trace.x) >= 1
@@ -125,13 +145,13 @@ class TestMacdGoldenCrossPlotly:
 # ── TC-018-04 ─────────────────────────────────────────────────────────────────
 
 
+@_skip_tab3
 class TestMacdDeathCrossPlotly:
     """TC-018-04: 死叉 Plotly trace has red circle markers at crossover dates."""
 
     def test_death_cross_trace_color_and_symbol(self):
-        tab3 = pytest.importorskip("app.components.tab3_stock")
         df = compute_indicators(_make_ohlcv(200))
-        fig = tab3.build_stock_chart(df)
+        fig = tab3_mod.build_stock_chart(df)
 
         death_trace = next((t for t in fig.data if t.name == "死叉"), None)
         assert death_trace is not None, "figure must contain a trace named '死叉'"
@@ -139,9 +159,8 @@ class TestMacdDeathCrossPlotly:
         assert death_trace.marker.symbol == "circle"
 
     def test_death_cross_dates_are_actual_crossovers(self):
-        tab3 = pytest.importorskip("app.components.tab3_stock")
         df = compute_indicators(_make_ohlcv(200)).dropna(subset=["macd", "macd_signal"])
-        fig = tab3.build_stock_chart(df)
+        fig = tab3_mod.build_stock_chart(df)
 
         death_trace = next((t for t in fig.data if t.name == "死叉"), None)
         if death_trace is None or len(death_trace.x) == 0:
@@ -162,25 +181,25 @@ class TestMacdDeathCrossPlotly:
 # ── TC-018-05 ─────────────────────────────────────────────────────────────────
 
 
+@_skip_tab3
 class TestTierColors:
     """TC-018-05: TIER_COLORS[2] == '#F5A623'."""
 
     def test_tier_colors(self):
-        tab3 = pytest.importorskip("app.components.tab3_stock")
-        assert tab3.TIER_COLORS[1] == "#FF7A1A"
-        assert tab3.TIER_COLORS[2] == "#F5A623"
-        assert tab3.TIER_COLORS[3] == "#9AA0AC"
-        assert tab3.TIER_COLORS[4] == "#4F8EF7"
+        assert tab3_mod.TIER_COLORS[1] == "#FF7A1A"
+        assert tab3_mod.TIER_COLORS[2] == "#F5A623"
+        assert tab3_mod.TIER_COLORS[3] == "#9AA0AC"
+        assert tab3_mod.TIER_COLORS[4] == "#4F8EF7"
 
 
 # ── TC-018-06 ─────────────────────────────────────────────────────────────────
 
 
+@_skip_tab3
 class TestNewsTimeline:
     """TC-018-06: news_df > 8 rows → at most 8 displayed."""
 
     def test_at_most_8_news_shown(self):
-        tab3 = pytest.importorskip("app.components.tab3_stock")
         from unittest.mock import patch as _patch
 
         news_df = pd.DataFrame([
@@ -192,23 +211,22 @@ class TestNewsTimeline:
             for i in range(12)
         ])
         with _patch("streamlit.markdown") as mock_md:
-            tab3.render_news_timeline(news_df)
+            tab3_mod.render_news_timeline(news_df)
         assert mock_md.call_count <= 8
 
 
 # ── TC-018-07 ─────────────────────────────────────────────────────────────────
 
 
+@_skip_tab3
 class TestSwitchTickerReloads:
     """TC-018-07: switching ticker rebuilds chart with no cross-contamination."""
 
     def test_different_ticker_different_chart(self):
-        tab3 = pytest.importorskip("app.components.tab3_stock")
         df_a = compute_indicators(_make_ohlcv(200, seed=1))
         df_b = compute_indicators(_make_ohlcv(200, seed=99))
-        fig_a = tab3.build_stock_chart(df_a)
-        fig_b = tab3.build_stock_chart(df_b)
-        # Different data → different candlestick trace y-values
+        fig_a = tab3_mod.build_stock_chart(df_a)
+        fig_b = tab3_mod.build_stock_chart(df_b)
         candle_a = next(t for t in fig_a.data if t.type == "candlestick")
         candle_b = next(t for t in fig_b.data if t.type == "candlestick")
         assert list(candle_a.close) != list(candle_b.close)
@@ -217,43 +235,41 @@ class TestSwitchTickerReloads:
 # ── TC-018-08 ─────────────────────────────────────────────────────────────────
 
 
+@_skip_tab3
 class TestDateRangeCutoff:
     """TC-018-08: 选择 1M → x轴显示最近 30 天。"""
 
     def test_1m_filter_returns_at_most_31_rows(self):
-        tab3 = pytest.importorskip("app.components.tab3_stock")
         df = _make_ohlcv(200)
-        result = tab3.filter_by_date_range(df, "1M")
+        result = tab3_mod.filter_by_date_range(df, "1M")
         assert len(result) <= 31
 
     def test_6m_filter_returns_more_than_1m(self):
-        tab3 = pytest.importorskip("app.components.tab3_stock")
         df = _make_ohlcv(200)
-        assert len(tab3.filter_by_date_range(df, "6M")) > len(tab3.filter_by_date_range(df, "1M"))
+        assert len(tab3_mod.filter_by_date_range(df, "6M")) > \
+               len(tab3_mod.filter_by_date_range(df, "1M"))
 
 
 # ── TC-018-09..10 ─────────────────────────────────────────────────────────────
 
 
+@_skip_tab3
 class TestSessionStatePreselect:
     """TC-018-09/10: tab3_code preselect consumed after render_tab3."""
 
     def test_get_preselect_code_reads_session_state(self):
-        tab3 = pytest.importorskip("app.components.tab3_stock")
         from unittest.mock import patch as _patch
         with _patch("streamlit.session_state", {"tab3_code": "300308"}):
-            code = tab3.get_preselect_code()
+            code = tab3_mod.get_preselect_code()
         assert code == "300308"
 
     def test_get_preselect_code_returns_none_when_absent(self):
-        tab3 = pytest.importorskip("app.components.tab3_stock")
         from unittest.mock import patch as _patch
         with _patch("streamlit.session_state", {}):
-            code = tab3.get_preselect_code()
+            code = tab3_mod.get_preselect_code()
         assert code is None
 
     def test_tab3_code_cleared_from_session_state(self):
-        tab3 = pytest.importorskip("app.components.tab3_stock")
         from unittest.mock import patch as _patch, MagicMock as _MM
 
         session = {"tab3_code": "300308"}
@@ -271,6 +287,6 @@ class TestSessionStatePreselect:
              _patch("app.data_loader.load_scarcity_matrix",
                     return_value=pd.DataFrame(columns=["code", "rank"])), \
              _patch("app.data_loader.compute_indicators", side_effect=lambda df: df):
-            tab3.render_tab3()
+            tab3_mod.render_tab3()
 
         assert "tab3_code" not in session

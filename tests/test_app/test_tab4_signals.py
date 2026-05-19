@@ -2,21 +2,29 @@
 
 from __future__ import annotations
 
+import importlib.util
 from datetime import date, timedelta
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pandas as pd
 import pytest
 
-# Skip entire file if module under test is not yet implemented.
-pytest.importorskip("app.components.tab4_signals")
+try:
+    _has_tab4 = importlib.util.find_spec("app.components.tab4_signals") is not None
+except ModuleNotFoundError:
+    _has_tab4 = False
+_skip_tab4 = pytest.mark.skipif(
+    not _has_tab4, reason="app.components.tab4_signals not yet implemented"
+)
 
-import app.components.tab4_signals as tab4  # noqa: E402
+if _has_tab4:
+    import app.components.tab4_signals as tab4
 
 
 # ── TC-019-01..02 ─────────────────────────────────────────────────────────────
 
 
+@_skip_tab4
 class TestElasticTargets:
     """TC-019-01/02: ELASTIC_TARGETS["green"]=38, ["red"]=20."""
 
@@ -37,6 +45,7 @@ class TestElasticTargets:
 # ── TC-019-03 ─────────────────────────────────────────────────────────────────
 
 
+@_skip_tab4
 class TestGaugeColorNeutral:
     """TC-019-03: deviation=6% → gauge_color=#F5A623 (neutral)."""
 
@@ -68,6 +77,7 @@ class TestGaugeColorNeutral:
 # ── TC-019-04 ─────────────────────────────────────────────────────────────────
 
 
+@_skip_tab4
 class TestGaugeColorTriggered:
     """TC-019-04: deviation=11% → gauge_color=#E84040 (bear); triggers show red background."""
 
@@ -90,7 +100,6 @@ class TestGaugeColorTriggered:
             "expected at least one 'triggered' when elastic deviation is 11%"
 
     def test_triggered_row_style_contains_red_background(self):
-        # The status→style mapping must give red background for "triggered"
         style = tab4.trigger_row_style("triggered")
         assert "#E84040" in style or "red" in style.lower() or "bear" in style.lower(), \
             f"'triggered' row style should include red background, got: {style}"
@@ -103,6 +112,7 @@ class TestGaugeColorTriggered:
 # ── TC-019-05..06 ─────────────────────────────────────────────────────────────
 
 
+@_skip_tab4
 class TestChipColor:
     """TC-019-05/06: chip_color thresholds."""
 
@@ -131,6 +141,7 @@ class TestChipColor:
 # ── TC-019-07 ─────────────────────────────────────────────────────────────────
 
 
+@_skip_tab4
 class TestOwnedSymbol:
     """TC-019-07: owned=True → ◉ prefix; warn=True → ⚠ symbol."""
 
@@ -184,7 +195,6 @@ class TestMacroOverride:
             set_macro_state_override(MacroState.RED)
 
         data = json.loads(cache_file.read_text())
-        # Implementation writes {"state": "<value>"} only, not override flag
         assert list(data.keys()) == ["state"], \
             f"expected only 'state' key, got {list(data.keys())}"
 
@@ -198,6 +208,7 @@ class TestMacroOverride:
 # ── TC-019-09..10 ─────────────────────────────────────────────────────────────
 
 
+@_skip_tab4
 class TestMiniFlowStrip:
     """TC-019-09/10: strip cell colors follow main_net_inflow sign; empty=gray."""
 
@@ -228,6 +239,7 @@ class TestMiniFlowStrip:
 # ── TC-019-11 ─────────────────────────────────────────────────────────────────
 
 
+@_skip_tab4
 class TestCTAButton:
     """TC-019-11: handle_enter_cta sets session_state["tab3_code"] + calls st.rerun."""
 
@@ -248,6 +260,7 @@ class TestCTAButton:
 # ── TC-019-12 ─────────────────────────────────────────────────────────────────
 
 
+@_skip_tab4
 class TestFundFlowBarChart:
     """TC-019-12: go.Bar chart from fund_flow df; no exception; x=date sequence."""
 
@@ -287,6 +300,7 @@ class TestFundFlowBarChart:
 # ── TC-019-13 ─────────────────────────────────────────────────────────────────
 
 
+@_skip_tab4
 class TestMarketBreadthScatter:
     """TC-019-13: go.Scatter chart; y-axis values in [0,1]; no exception on empty df."""
 
