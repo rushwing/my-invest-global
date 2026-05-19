@@ -2,22 +2,11 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
-import pytest
-
-chip_fetcher = pytest.importorskip("engine.agent.chip_fetcher")
-chip_analysis_mod = pytest.importorskip("engine.agent.chip_analysis")
-chip_panel_mod = pytest.importorskip("app.pages.chip_panel")
-
-ChipBar = chip_fetcher.ChipBar
-ChipSummary = chip_fetcher.ChipSummary
-ChipAnalysis = chip_analysis_mod.ChipAnalysis
-ChipLockLevel = chip_analysis_mod.ChipLockLevel
-
-render_chip_panel = chip_panel_mod.render_chip_panel
-build_chip_chart = chip_panel_mod.build_chip_chart
-chip_panel_page = chip_panel_mod.chip_panel_page
+from app.pages.chip_panel import build_chip_chart, chip_panel_page, render_chip_panel
+from engine.agent.chip_analysis import ChipAnalysis, ChipLockLevel
+from engine.agent.chip_fetcher import ChipBar, ChipSummary
 
 # ── Mock factories ─────────────────────────────────────────────────────────────
 

@@ -9,14 +9,13 @@ from unittest.mock import MagicMock, patch
 import duckdb
 import pandas as pd
 import pytest
-
-chip_fetcher = pytest.importorskip("engine.agent.chip_fetcher")
-
-ChipBar = chip_fetcher.ChipBar
-ChipSummary = chip_fetcher.ChipSummary
-ChipDataUnavailable = chip_fetcher.ChipDataUnavailable
-fetch_chip_summary = chip_fetcher.fetch_chip_summary
-store_chip_data = chip_fetcher.store_chip_data
+from engine.agent.chip_fetcher import (
+    ChipBar,
+    ChipDataUnavailable,
+    ChipSummary,
+    fetch_chip_summary,
+    store_chip_data,
+)
 
 # ── DDL (mirrored from REQ-036 so tests are self-contained) ───────────────────
 

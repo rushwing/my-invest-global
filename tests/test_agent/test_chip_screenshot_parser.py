@@ -7,14 +7,11 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-
-chip_fetcher = pytest.importorskip("engine.agent.chip_fetcher")
-chip_analysis_mod = pytest.importorskip("engine.agent.chip_analysis")
-chip_screenshot_parser = pytest.importorskip("engine.agent.chip_screenshot_parser")
-
-ChipAnalysis = chip_analysis_mod.ChipAnalysis
-ScreenshotParseError = chip_screenshot_parser.ScreenshotParseError
-parse_chip_screenshot = chip_screenshot_parser.parse_chip_screenshot
+from engine.agent.chip_analysis import ChipAnalysis
+from engine.agent.chip_screenshot_parser import (
+    ScreenshotParseError,
+    parse_chip_screenshot,
+)
 
 # Fixture file — exists because TC-036 tc_impl copied the real 688143 screenshot
 FIXTURE_PATH = str(
@@ -56,11 +53,12 @@ class TestParseChipScreenshotHappyPath:
 
     @pytest.fixture(autouse=True)
     def _mock_api(self):
+        def _create(**_):
+            return _mock_claude_response(_STANDARD_PAYLOAD)
+
         with patch(
             "anthropic.Anthropic.messages",
-            new_callable=lambda: type(
-                "M", (), {"create": staticmethod(lambda **_: _mock_claude_response(_STANDARD_PAYLOAD))}
-            ),
+            new_callable=lambda: type("M", (), {"create": staticmethod(_create)}),
         ):
             yield
 

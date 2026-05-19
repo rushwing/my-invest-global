@@ -4,18 +4,13 @@ from __future__ import annotations
 
 import duckdb
 import pytest
-
-chip_fetcher = pytest.importorskip("engine.agent.chip_fetcher")
-chip_analysis = pytest.importorskip("engine.agent.chip_analysis")
-
-ChipBar = chip_fetcher.ChipBar
-ChipSummary = chip_fetcher.ChipSummary
-ChipDataUnavailable = chip_fetcher.ChipDataUnavailable
-
-ChipAnalysis = chip_analysis.ChipAnalysis
-ChipLockLevel = chip_analysis.ChipLockLevel
-analyze_chip = chip_analysis.analyze_chip
-load_and_analyze = chip_analysis.load_and_analyze
+from engine.agent.chip_analysis import (
+    ChipAnalysis,
+    ChipLockLevel,
+    analyze_chip,
+    load_and_analyze,
+)
+from engine.agent.chip_fetcher import ChipBar, ChipDataUnavailable, ChipSummary
 
 # ── DDL ───────────────────────────────────────────────────────────────────────
 
