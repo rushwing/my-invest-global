@@ -10,16 +10,16 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-
-from dotenv import load_dotenv
-
-load_dotenv()
 import tempfile
 import textwrap
 import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 # ── ANSI colours ──────────────────────────────────────────────────────────────
@@ -104,7 +104,11 @@ def _step_holdings(res: _Result) -> Any:
     _section("Step 1 — holdings.yaml")
     from engine.portfolio import load_holdings
     holdings = load_holdings()
-    res.record(len(holdings) > 0, f"Loaded {len(holdings)} holdings", "holdings.yaml missing or empty")
+    res.record(
+        len(holdings) > 0,
+        f"Loaded {len(holdings)} holdings",
+        "holdings.yaml missing or empty",
+    )
     if holdings:
         for h in holdings:
             _ok(f"  {h.code}  {h.name:<8}  {h.category}  ¥{h.market_value:>10,.0f}")
@@ -120,8 +124,6 @@ def _step_snapshot(holdings: list[Any], res: _Result) -> Any:
         f"Snapshot built: session={snap.session_id[:8]}…  macro={snap.macro_state}",
         "build_snapshot failed or holding count mismatch",
     )
-    total_mv = sum(snap.price_snapshot[c] * 0 + v
-                   for c, v in snap.price_snapshot.items())
     _ok(f"  price_snapshot: {len(snap.price_snapshot)} codes")
     return snap
 
@@ -161,7 +163,9 @@ def _step_print_signals(state: Any) -> None:
                 f"{sig.composite_score:>4.0f}  {sig.action_code:<16}")
         print(line)
         if r and r != "dry-run mock — no real analysis performed":
-            wrapped = textwrap.fill(r, width=72, initial_indent="         ", subsequent_indent="         ")
+            wrapped = textwrap.fill(
+                r, width=72, initial_indent="         ", subsequent_indent="         "
+            )
             print(f"{_CYAN}{wrapped}{_RESET}")
 
 

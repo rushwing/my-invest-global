@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
+
+if TYPE_CHECKING:
+    from engine.schemas import HoldingRow
 
 import pandas as pd
 
@@ -94,12 +97,57 @@ def check_portfolio_balance(
 _HOLDINGS_YAML = Path("data/agent_input/cn/holdings.yaml")
 
 
+def _aggregate_holdings(holdings: list) -> list:
+    """Merge rows with identical code (e.g. same stock held in two accounts).
+
+    Quantities and market values are summed; cost_price is quantity-weighted;
+    pnl_amount is summed; notes are joined. Current price is taken from the
+    first occurrence (same ticker → same market price).
+    """
+    from collections import defaultdict
+
+    from engine.schemas import HoldingRow
+
+    groups: dict[str, list] = defaultdict(list)
+    for h in holdings:
+        groups[h.code].append(h)
+
+    result = []
+    for code, group in groups.items():
+        if len(group) == 1:
+            result.append(group[0])
+            continue
+        total_qty = sum(g.quantity for g in group)
+        total_mv = sum(g.market_value for g in group)
+        total_cost_basis = sum(g.cost_price * g.quantity for g in group)
+        weighted_cost = total_cost_basis / total_qty if total_qty else group[0].cost_price
+        total_pnl = sum(g.pnl_amount for g in group)
+        pnl_pct_val = total_pnl / total_cost_basis * 100 if total_cost_basis else 0.0
+        notes = "; ".join(g.notes for g in group if g.notes)
+        result.append(HoldingRow(
+            schema_version=group[0].schema_version,
+            date=group[0].date,
+            code=code,
+            name=group[0].name,
+            cost_price=round(weighted_cost, 3),
+            current_price=group[0].current_price,
+            quantity=total_qty,
+            market_value=total_mv,
+            pnl_pct=f"{pnl_pct_val:+.3f}%",
+            pnl_amount=round(total_pnl, 2),
+            category=group[0].category,
+            sector=group[0].sector,
+            notes=notes,
+        ))
+    return result
+
+
 def load_holdings(db_path: str = "") -> list[HoldingRow]:
     """Load current holdings from data/agent_input/cn/holdings.yaml.
 
-    Returns list[HoldingRow]. Returns [] if the file doesn't exist yet.
-    The db_path parameter is accepted for interface compatibility but unused;
-    holdings are maintained as a YAML file, not in DuckDB.
+    Rows with the same code (same stock across multiple accounts) are
+    aggregated into a single HoldingRow before returning. The db_path
+    parameter is accepted for interface compatibility but unused.
     """
     import yaml
 
@@ -108,7 +156,8 @@ def load_holdings(db_path: str = "") -> list[HoldingRow]:
     if not _HOLDINGS_YAML.exists():
         return []
     data = yaml.safe_load(_HOLDINGS_YAML.read_text())
-    return [HoldingRow(**row) for row in (data.get("holdings") or [])]
+    raw = [HoldingRow(**row) for row in (data.get("holdings") or [])]
+    return _aggregate_holdings(raw)
 
 
 def compute_portfolio_summary(holdings: list) -> Any:
