@@ -5,6 +5,41 @@ import math
 from datetime import date, timedelta
 from typing import Any
 
+import pandas as pd
+
+
+def fetch_ohlcv(code: str, start: str, end: str | None = None) -> pd.DataFrame:
+    """拉取日频 OHLCV，返回小写列名 open/high/low/close/volume，index 为 DatetimeIndex。
+
+    Args:
+        code: A 股代码，如 "300308"
+        start: 开始日期 "YYYY-MM-DD"
+        end: 结束日期 "YYYY-MM-DD"，默认今日
+
+    Returns:
+        DataFrame，列：open/high/low/close/volume，index 升序 DatetimeIndex
+    """
+    import akshare as ak
+
+    start_fmt = start.replace("-", "")
+    end_fmt = end.replace("-", "") if end else date.today().strftime("%Y%m%d")
+    df = ak.stock_zh_a_hist(
+        symbol=code, period="daily", start_date=start_fmt, end_date=end_fmt, adjust="qfq"
+    )
+    df = df.rename(
+        columns={
+            "日期": "date",
+            "开盘": "open",
+            "最高": "high",
+            "最低": "low",
+            "收盘": "close",
+            "成交量": "volume",
+        }
+    )
+    df["date"] = pd.to_datetime(df["date"])
+    df = df.set_index("date").sort_index()
+    return df[["open", "high", "low", "close", "volume"]]
+
 
 def fetch_technicals(
     codes: list[str],
