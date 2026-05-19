@@ -124,6 +124,8 @@ def _aggregate_holdings(holdings: list) -> list:
         total_pnl = sum(g.pnl_amount for g in group)
         pnl_pct_val = total_pnl / total_cost_basis * 100 if total_cost_basis else 0.0
         notes = "; ".join(g.notes for g in group if g.notes)
+        accounts = sorted({g.account for g in group if g.account})
+        account = "+".join(accounts) if accounts else ""
         result.append(HoldingRow(
             schema_version=group[0].schema_version,
             date=group[0].date,
@@ -138,6 +140,7 @@ def _aggregate_holdings(holdings: list) -> list:
             category=group[0].category,
             sector=group[0].sector,
             notes=notes,
+            account=account,
         ))
     return result
 
@@ -158,6 +161,22 @@ def load_holdings(db_path: str = "") -> list[HoldingRow]:
     data = yaml.safe_load(_HOLDINGS_YAML.read_text())
     raw = [HoldingRow(**row) for row in (data.get("holdings") or [])]
     return _aggregate_holdings(raw)
+
+
+def load_holdings_raw(db_path: str = "") -> list[HoldingRow]:
+    """Load holdings without deduplication — returns all raw rows from YAML.
+
+    Use this when you need per-account breakdown. Use load_holdings() for
+    the aggregated view (one row per stock code).
+    """
+    import yaml
+
+    from engine.schemas import HoldingRow
+
+    if not _HOLDINGS_YAML.exists():
+        return []
+    data = yaml.safe_load(_HOLDINGS_YAML.read_text())
+    return [HoldingRow(**row) for row in (data.get("holdings") or [])]
 
 
 def compute_portfolio_summary(holdings: list) -> Any:

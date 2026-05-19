@@ -18,31 +18,60 @@ def main() -> None:
     with tab_holdings:
         st.subheader("当前持仓")
         try:
-            from engine.portfolio import check_portfolio_balance, load_holdings
+            import pandas as pd
 
-            holdings = load_holdings(DB_PATH)
-            if not holdings:
-                st.info("暂无持仓数据（请在 data/agent_input/cn/holdings.yaml 中维护）")
-            else:
-                import pandas as pd
+            from engine.macro_gate import get_macro_state
+            from engine.portfolio import (
+                check_portfolio_balance,
+                load_holdings,
+                load_holdings_raw,
+            )
 
-                from engine.macro_gate import get_macro_state
+            sub_merged, sub_huaxi, sub_xinan = st.tabs(["合并视图", "华西证券", "西南证券"])
 
-                macro = get_macro_state()
-                df = pd.DataFrame([h.model_dump() for h in holdings])
-                balance = check_portfolio_balance(df, macro_state=macro.value)
-                if balance["rebalance_needed"]:
-                    st.warning(
-                        f"持仓比例需要再平衡（弹性股 {balance['elastic_ratio']:.1%}"
-                        f" vs 目标 {balance['target_elastic']:.1%}）"
-                    )
+            _DISPLAY_COLS = [
+                "code", "name", "account", "cost_price", "current_price",
+                "market_value", "pnl_pct", "category",
+            ]
+
+            with sub_merged:
+                holdings = load_holdings(DB_PATH)
+                if not holdings:
+                    st.info("暂无持仓数据（请在 data/agent_input/cn/holdings.yaml 中维护）")
                 else:
-                    st.success("持仓比例正常")
-                display_cols = [
-                    "code", "name", "cost_price", "current_price",
-                    "market_value", "pnl_pct", "category",
-                ]
-                st.dataframe(df[display_cols], use_container_width=True, hide_index=True)
+                    macro = get_macro_state()
+                    df = pd.DataFrame([h.model_dump() for h in holdings])
+                    balance = check_portfolio_balance(df, macro_state=macro.value)
+                    if balance["rebalance_needed"]:
+                        st.warning(
+                            f"持仓比例需要再平衡（弹性股 {balance['elastic_ratio']:.1%}"
+                            f" vs 目标 {balance['target_elastic']:.1%}）"
+                        )
+                    else:
+                        st.success("持仓比例正常")
+                    st.dataframe(df[_DISPLAY_COLS], use_container_width=True, hide_index=True)
+
+            def _account_tab(account_name: str) -> None:
+                raw = load_holdings_raw(DB_PATH)
+                rows = [h for h in raw if h.account == account_name]
+                if not rows:
+                    st.info(f"{account_name} 暂无持仓")
+                    return
+                df_raw = pd.DataFrame([h.model_dump() for h in rows])
+                total_mv = df_raw["market_value"].sum()
+                total_pnl = df_raw["pnl_amount"].sum()
+                col_mv, col_pnl = st.columns(2)
+                col_mv.metric("账户总市值", f"¥{total_mv:,.0f}")
+                col_pnl.metric("账户总盈亏", f"¥{total_pnl:+,.2f}")
+                cols = [c for c in _DISPLAY_COLS if c != "account"]
+                st.dataframe(df_raw[cols], use_container_width=True, hide_index=True)
+
+            with sub_huaxi:
+                _account_tab("华西证券")
+
+            with sub_xinan:
+                _account_tab("西南证券")
+
         except Exception as exc:
             st.error(f"持仓加载失败: {exc}")
 
@@ -120,8 +149,10 @@ def main() -> None:
                             for ref, content in visible.items():
                                 tag = (
                                     "🔵" if ref.startswith("S") else
+                                    "🟢" if ref.startswith("T") else
                                     "🟣" if ref.startswith("K") else
-                                    "🟤" if ref.startswith("R") else "⬛"
+                                    "🟤" if ref.startswith("R") else
+                                    "⬛" if ref.startswith("M") else "⚪"
                                 )
                                 st.markdown(f"`{ref}` {tag} {content}")
 

@@ -12,18 +12,26 @@ from engine.kg.query import KGQuerier
 from engine.schemas import StockSignal
 
 _SIGNAL_RANKER_SYSTEM = (
-    "你是一个专业的A股投资助手。根据持仓快照、KG知识图谱上下文和年报RAG检索结果，"
+    "你是一个专业的A股投资助手。根据持仓快照、技术指标、KG知识图谱和年报RAG检索结果，"
     "对每只股票生成投资信号。\n"
     "\n"
-    "每只股票的分析输入会附带带编号的数据源（S=快照数据, K=KG图谱, R=RAG年报, M=宏观）。\n"
+    "数据源编号规则（S=快照, T=技术指标, K=KG图谱, R=RAG年报, M=宏观）：\n"
+    "  S1-S4: 持仓成本/当前价格/市值/板块\n"
+    "  T1=MA5, T2=MA10, T3=MA20, T4=MA30\n"
+    "  T5=MACD DIF, T6=MACD DEA, T7=MACD柱, T8=RSI(14)\n"
+    "  M: 宏观状态  K1+: KG图谱  R1+: 年报RAG\n"
+    "\n"
+    "均线解读：MA5>MA10>MA20 看多排列；MA5<MA20 短期偏弱\n"
+    "MACD解读：DIF>DEA 且柱>0 为金叉（多头）；DIF<DEA 且柱<0 为死叉（空头）\n"
+    "\n"
     "在 technical_reasoning / fundamental_reasoning / sentiment_reasoning 中，"
-    "必须用 [Sn] [Kn] [Rn] [M] 标注推理依据的来源编号。\n"
+    "必须用 [Sn] [Tn] [Kn] [Rn] [M] 标注推理依据的来源编号。\n"
     "\n"
     "输出严格的JSON数组，每个元素包含：\n"
     "- code: 股票代码（6位数字）\n"
     "- name: 股票名称\n"
     "- category: 持仓类别（白马股 或 弹性股）\n"
-    "- technical_score: 技术面评分 0-100（基于价格、成本、涨跌幅）\n"
+    "- technical_score: 技术面评分 0-100（基于MA排列、MACD金叉/死叉、RSI）\n"
     "- fundamental_score: 基本面评分 0-100（基于板块景气、年报数据）\n"
     "- sentiment_score: 情绪面评分 0-100（基于KG机构持仓、宏观状态）\n"
     "- composite_score: 综合评分 0-100\n"
@@ -32,7 +40,7 @@ _SIGNAL_RANKER_SYSTEM = (
     "- technical_reasoning: 技术面推理（1-2句，引用数据源编号）\n"
     "- fundamental_reasoning: 基本面推理（1-2句，引用数据源编号）\n"
     "- sentiment_reasoning: 情绪面推理（1-2句，引用数据源编号）\n"
-    "- sources_cited: 本条信号实际引用的数据源编号列表，如 [\"S1\",\"S3\",\"M\"]\n"
+    "- sources_cited: 本条信号实际引用的数据源编号列表，如 [\"S1\",\"T1\",\"T5\",\"M\"]\n"
     "\n"
     "只输出JSON数组，不要包含任何解释文字。"
 )
@@ -77,7 +85,28 @@ def portfolio_analyzer(state: AnalysisState) -> dict[str, Any]:
             f"市值: {h.market_value:.0f}",
             f"板块: {h.sector}",
         ]
-    return {"kg_subgraph": context, "rag_chunks": {}, "source_index": {}, "errors": []}
+    return {
+        "kg_subgraph": context,
+        "rag_chunks": {},
+        "technical_data": {},
+        "source_index": {},
+        "errors": [],
+    }
+
+
+def technical_fetcher(state: AnalysisState) -> dict[str, Any]:
+    """Fetch A-share OHLCV and compute MA/MACD/RSI. Gracefully skips on failure."""
+    from engine.agent.technical_fetcher import fetch_technicals
+
+    snap = state["snapshot"]
+    errors: list[str] = list(state.get("errors", []))  # type: ignore[arg-type]
+    codes = [h.code for h in snap.holdings]
+    try:
+        data = fetch_technicals(codes)
+    except Exception as exc:
+        errors.append(f"technical_fetcher: {exc}")
+        return {"technical_data": {}, "errors": errors}
+    return {"technical_data": data, "errors": errors}
 
 
 def kg_retrieval(
@@ -146,6 +175,7 @@ def signal_ranker(
         llm = ChatAnthropic(**kwargs)  # type: ignore[call-arg]
 
     # Build per-stock source index and format for prompt
+    technical_data: dict[str, dict[str, float]] = state.get("technical_data", {})  # type: ignore[arg-type]
     source_index: dict[str, dict[str, str]] = {}
     stocks_section = ""
     for h in snap.holdings:
@@ -158,6 +188,18 @@ def signal_ranker(
         for i, item in enumerate(snap_items, 1):
             idx[f"S{i}"] = f"[快照] {item}"
         idx["M"] = f"[宏观] 宏观状态: {snap.macro_state}"
+        tech = technical_data.get(h.code, {})
+        for t_n, (key, label) in enumerate(
+            [
+                ("MA5", "MA5"), ("MA10", "MA10"), ("MA20", "MA20"), ("MA30", "MA30"),
+                ("MACD_DIF", "MACD DIF"), ("MACD_DEA", "MACD DEA"),
+                ("MACD_BAR", "MACD柱"), ("RSI14", "RSI(14)"),
+            ],
+            start=1,
+        ):
+            val = tech.get(key)
+            if val is not None and not (isinstance(val, float) and val != val):  # skip NaN
+                idx[f"T{t_n}"] = f"[技术] {label} = {val}"
         for i, item in enumerate(kg_extra, 1):
             idx[f"K{i}"] = f"[KG] {item}"
         for i, chunk in enumerate(rag_items, 1):

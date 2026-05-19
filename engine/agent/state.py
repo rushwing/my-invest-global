@@ -26,6 +26,7 @@ class AnalysisState(TypedDict):
     snapshot: FrozenMarketSnapshot
     kg_subgraph: dict[str, list[str]]
     rag_chunks: dict[str, list[str]]
+    technical_data: dict[str, dict[str, float]]  # code → {MA5, MACD_DIF, ...}
     source_index: dict[str, dict[str, str]]  # code → {ref → labelled content}
     signals: list[StockSignal]
     reasoning: dict[str, str]

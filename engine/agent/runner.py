@@ -22,6 +22,7 @@ def run_analysis(
         "snapshot": snapshot,
         "kg_subgraph": {},
         "rag_chunks": {},
+        "technical_data": {},
         "source_index": {},
         "signals": [],
         "reasoning": {},

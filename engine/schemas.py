@@ -174,6 +174,7 @@ class HoldingRow(BaseModel):
     category: HoldingCategory
     sector: str = Field(min_length=1)
     notes: str = ""
+    account: str = ""
 
 
 class PortfolioSummary(BaseModel):
