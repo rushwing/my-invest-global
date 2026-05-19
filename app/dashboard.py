@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import streamlit as st
+from dotenv import load_dotenv
 
 from app.auth import is_unlocked
 from app.components.tab1_overview import render_tab1
@@ -34,6 +35,7 @@ def render_header() -> None:
 
 
 def main() -> None:
+    load_dotenv()
     st.set_page_config(
         page_title="My Invest Global · A股 AI 基建",
         page_icon="📊",
