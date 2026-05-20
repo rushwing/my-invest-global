@@ -3,14 +3,13 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>my-invest-global · 设计规范 + 持仓总览</title>
+<title>my-invest-global · Dashboard Design v3</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 <style>
   html, body { margin: 0; padding: 0; background: #0a0a12; color: #E8EAED; font-family: "Noto Sans SC", system-ui, sans-serif; }
   *, *::before, *::after { box-sizing: border-box; }
-  /* override design-canvas chrome to dark */
   :root {
     --dc-bg: #0a0a12;
     --dc-fg: #E8EAED;
@@ -19,74 +18,87 @@
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<!-- canvas + design system foundations -->
 <script type="text/babel" src="design-canvas.jsx"></script>
 <script type="text/babel" src="design-system.jsx"></script>
+<!-- v3 components: GlobalActionBar first, then dependent tabs -->
+<script type="text/babel" src="global-action-bar.jsx"></script>
+<!-- legacy v1 tabs (still loaded — Tab 3 / Tab 4 reused; v1 Tab 1/2 referenced from auth artboards) -->
 <script type="text/babel" src="tab1-holdings.jsx"></script>
 <script type="text/babel" src="tab2-brief.jsx"></script>
 <script type="text/babel" src="tab3-stock-depth.jsx"></script>
 <script type="text/babel" src="tab4-signals.jsx"></script>
+<!-- v3 refactored tabs -->
+<script type="text/babel" src="tab1-holdings-v2.jsx"></script>
+<script type="text/babel" src="tab2-brief-v2.jsx"></script>
+<script type="text/babel" src="tab5-rebalance.jsx"></script>
+<!-- legacy auth artboards (deprecated — kept for login form spec reference) -->
 <script type="text/babel" src="holdings-editor.jsx"></script>
 <script type="text/babel" src="holdings-editor-auth.jsx"></script>
 </head>
 <body>
 <div id="root"></div>
 <script type="text/babel">
-  const { useEffect } = React;
-
   function App() {
     return (
       <DesignCanvas
-        title="my-invest-global · A股 AI 基建组合"
-        subtitle="设计规范 + 持仓总览 Tab"
+        title="my-invest-global · Dashboard v3"
+        subtitle="5-tab Streamlit dashboard · 中文 · 深色交易终端"
       >
+        {/* ============ FOUNDATIONS ============ */}
         <DCSection id="ds" title="01 — Design System Spec">
           <DCArtboard id="spec" label="设计规范 · 颜色 / 字体 / 组件" width={1280} height={1880}>
             <DesignSystem />
           </DCArtboard>
         </DCSection>
-        <DCSection id="tab1" title="02 — Tab 1 持仓总览">
-          <DCArtboard id="t1" label="持仓总览 Dashboard · 1280×1700" width={1280} height={1700}>
-            <Tab1Holdings />
+
+        <DCSection id="gab" title="02 — 全局 Header · GlobalActionBar (6 states)">
+          <DCArtboard id="gab-states" label="GAB · 跨 Tab 复用 · 替代每 tab 重复的 header strip" width={1280} height={780}>
+            <GabStatesArtboard />
           </DCArtboard>
         </DCSection>
-        <DCSection id="tab2" title="03 — Tab 2 每日策略简报">
-          <DCArtboard id="t2" label="每日策略简报 · 1280×2100" width={1280} height={2100}>
-            <Tab2DailyBrief />
+
+        {/* ============ V3 TABS (5-tab navigation via GlobalActionBar) ============ */}
+        <DCSection id="tab1v2" title="03 — Tab 1 持仓总览 · v3">
+          <DCArtboard id="t1-v2" label="持仓总览 · GAB + KPI + donut/heat + 内联编辑表 (含 T+1 列)" width={1280} height={1660}>
+            <Tab1HoldingsV2 />
           </DCArtboard>
         </DCSection>
-        <DCSection id="tab3" title="04 — Tab 3 个股深度分析">
-          <DCArtboard id="t3" label="个股深度分析 · 1280×1550" width={1280} height={1550}>
+
+        <DCSection id="tab2v2" title="04 — Tab 2 每日简报 · v3">
+          <DCArtboard id="t2-v2" label="每日简报 · 宏观 50/50 + 折叠简报 + 评分表 + T+1 调仓摘要条" width={1280} height={1660}>
+            <Tab2BriefV2 />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="tab3legacy" title="05 — Tab 3 个股深度分析 · 待整合 GAB">
+          <DCArtboard id="t3-legacy" label="个股深度 · 旧版 (含内置 tab bar) · TODO 替换为 GlobalActionBar" width={1280} height={1550}>
             <Tab3StockDepth />
           </DCArtboard>
         </DCSection>
-        <DCSection id="tab4" title="05 — Tab 4 信号仪表盘">
-          <DCArtboard id="t4" label="信号仪表盘 · 1280×2100" width={1280} height={2100}>
+
+        <DCSection id="tab4legacy" title="06 — Tab 4 信号仪表盘 · 待整合 GAB">
+          <DCArtboard id="t4-legacy" label="信号仪表盘 · 旧版 (含内置 tab bar) · TODO 替换为 GlobalActionBar" width={1280} height={2100}>
             <Tab4SignalDashboard />
           </DCArtboard>
         </DCSection>
-        <DCSection id="sidebar" title="06 — 可收起侧边栏 · 持仓编辑器">
-          <DCArtboard id="sb-a" label="A · 侧边栏收起 (32px) · 点击〈 展开" width={1280} height={900}>
-            <ArtboardSidebarCollapsed />
-          </DCArtboard>
-          <DCArtboard id="sb-b" label="B · 侧边栏展开 (420px) · 点击〉 收起" width={1280} height={900}>
-            <ArtboardSidebarExpanded />
+
+        <DCSection id="tab5" title="07 — Tab 5 调仓分析 · NEW">
+          <DCArtboard id="t5" label="调仓分析 · 标的选择 + 调仓卡片 + K线/筹码分布 + 今日清单 + 历史" width={1280} height={1980}>
+            <Tab5Rebalance />
           </DCArtboard>
         </DCSection>
-        <DCSection id="auth" title="07 — 账户登录 · 本地密语安全层">
-          <DCArtboard id="auth-a" label="A · 收起 + 已锁定 (56px 头像+锁点 · 主内容遮罩)" width={1280} height={900}>
-            <ArtboardA_CollapsedLocked />
-          </DCArtboard>
-          <DCArtboard id="auth-b" label="B · 展开 + 登录表单 (默认)" width={1280} height={900}>
+
+        {/* ============ AUTH (legacy — GAB owns indicator now; login form copy still applies) ============ */}
+        <DCSection id="auth" title="08 — 认证 · 登录安全层 · 部分退役">
+          <DCArtboard id="auth-b" label="登录表单 · 视觉参考 (复用 copy/输入框/安全说明 → 全屏 modal)" width={1280} height={900}>
             <ArtboardB_LoginDefault />
           </DCArtboard>
-          <DCArtboard id="auth-c" label="C · 展开 + 登录表单 (错误状态)" width={1280} height={900}>
+          <DCArtboard id="auth-c" label="登录表单 · 错误状态" width={1280} height={900}>
             <ArtboardC_LoginError />
           </DCArtboard>
-          <DCArtboard id="auth-d" label="D · 展开 + 已解锁 · 持仓编辑器" width={1280} height={900}>
-            <ArtboardD_Unlocked />
-          </DCArtboard>
-          <DCArtboard id="auth-e" label="E · 收起 + 已解锁 (56px 头像+绿点 · 主内容可见)" width={1280} height={900}>
-            <ArtboardE_CollapsedUnlocked />
+          <DCArtboard id="auth-a" label="已锁定 · 主内容遮罩 (沿用,锁状态由 GAB 触发)" width={1280} height={900}>
+            <ArtboardA_CollapsedLocked />
           </DCArtboard>
         </DCSection>
       </DesignCanvas>

@@ -76,4 +76,7 @@ def _render_editor() -> None:
     if st.button("保存", type="primary", key="_sidebar_save"):
         save_holdings(edited, date.today())
         st.cache_data.clear()
+        # Force Tab 1 editor to reload from the newly saved file
+        st.session_state.pop("t1_holdings_full", None)
+        st.session_state.pop("t1_holdings_saved", None)
         st.rerun()
