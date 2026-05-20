@@ -27,12 +27,24 @@ def _enrich(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def _normalize_codes(df: pd.DataFrame) -> pd.DataFrame:
+    """Ensure code column is string, A-share 6-digit codes are zero-padded."""
+    if "code" not in df.columns:
+        return df
+    df = df.copy()
+    df["code"] = (
+        df["code"].astype(str).str.strip()
+        .apply(lambda c: c.zfill(6) if c.isdigit() and len(c) <= 6 else c)
+    )
+    return df
+
+
 def _init_state() -> None:
     if "t1_holdings_full" not in st.session_state:
         from app.data_loader import load_latest_holdings
         raw = load_latest_holdings()
         df = (
-            raw.reindex(columns=_EDITOR_COLS).copy()
+            _normalize_codes(raw.reindex(columns=_EDITOR_COLS).copy())
             if raw is not None and not raw.empty
             else pd.DataFrame(columns=_EDITOR_COLS)
         )
@@ -239,7 +251,12 @@ def _render_editor_section() -> None:
         )
         if uploaded is not None:
             try:
-                csv_df = pd.read_csv(uploaded).reindex(columns=_EDITOR_COLS)
+                csv_df = pd.read_csv(uploaded, dtype={"code": str}).reindex(columns=_EDITOR_COLS)
+                if "code" in csv_df.columns:
+                    csv_df["code"] = (
+                        csv_df["code"].astype(str).str.strip()
+                        .apply(lambda c: c.zfill(6) if c.isdigit() and len(c) <= 6 else c)
+                    )
                 merged = (
                     pd.concat([full, csv_df], ignore_index=True)
                     .drop_duplicates(subset=["code"], keep="last")
@@ -279,7 +296,7 @@ def _render_editor_section() -> None:
             "category":      st.column_config.SelectboxColumn(
                                  "类别", options=["白马股", "弹性股", "自选"]),
             "cost_price":    st.column_config.NumberColumn("成本价", format="%.2f"),
-            "current_price": st.column_config.NumberColumn("现价", format="%.2f", disabled=True),
+            "current_price": st.column_config.NumberColumn("现价", format="%.2f"),
             "quantity":      st.column_config.NumberColumn("数量", step=1),
             "market_value":  st.column_config.NumberColumn("市值", format="%.0f", disabled=True),
             "pnl_pct":       st.column_config.NumberColumn("浮盈%", format="%.2f%%", disabled=True),
