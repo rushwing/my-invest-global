@@ -33,19 +33,94 @@ def load_latest_holdings() -> pd.DataFrame | None:
 
 
 @st.cache_data(ttl=300)
-def load_latest_signals() -> dict | None:
+def load_latest_signals() -> list | None:
+    # Flat-file fallback (legacy)
     files = sorted(Path("data/processed").glob("signals_*.json"), reverse=True)
-    if not files:
-        return None
-    return json.loads(files[0].read_text())
+    if files:
+        return json.loads(files[0].read_text())
+    # Primary: read from DuckDB analysis_sessions
+    try:
+        conn = duckdb.connect(DB_PATH, read_only=True)
+        row = conn.execute(
+            "SELECT signal_json FROM analysis_sessions ORDER BY captured_at DESC LIMIT 1"
+        ).fetchone()
+        conn.close()
+        if row:
+            return json.loads(row[0])
+    except Exception:
+        pass
+    return None
 
 
 @st.cache_data(ttl=300)
 def load_recommendations() -> str | None:
+    # Flat-file fallback (legacy)
     files = sorted(Path("data/processed").glob("recommendations_*.md"), reverse=True)
-    if not files:
+    if files:
+        return files[0].read_text(encoding="utf-8")
+    # Primary: read from DuckDB analysis_sessions and format as markdown
+    try:
+        conn = duckdb.connect(DB_PATH, read_only=True)
+        row = conn.execute(
+            "SELECT captured_at, signal_json, errors_json "
+            "FROM analysis_sessions ORDER BY captured_at DESC LIMIT 1"
+        ).fetchone()
+        conn.close()
+    except Exception:
         return None
-    return files[0].read_text(encoding="utf-8")
+    if not row:
+        return None
+    captured_at, signal_json_str, errors_json_str = row
+    signals: list[dict] = json.loads(signal_json_str)
+    errors: list[str] = json.loads(errors_json_str)
+    if not signals:
+        return None
+
+    action_emoji = {
+        "buy": "🟢 买入",
+        "add": "🟢 加仓",
+        "hold": "🔵 持仓",
+        "take_profit_alert": "🟡 止盈提示",
+        "reduce": "🟠 减仓",
+        "stop_loss": "🔴 止损",
+        "watch": "⚪ 观察",
+    }
+
+    lines = [
+        f"## 每日策略简报 · {str(captured_at)[:10]}",
+        "",
+    ]
+    for s in signals:
+        code = s.get("code", "")
+        name = s.get("name", code)
+        action_code = s.get("action_code", "hold")
+        action_label = action_emoji.get(action_code, action_code)
+        action_text = s.get("action", "")
+        composite = s.get("composite_score")
+        score_str = f"综合评分 {composite:.0f}" if composite is not None else ""
+
+        lines.append(f"### {name}（{code}）&nbsp;&nbsp;{action_label}")
+        if score_str:
+            lines.append(f"*{score_str}*")
+        lines.append("")
+        lines.append(f"**建议**：{action_text}")
+        lines.append("")
+        for key, label in [
+            ("technical_reasoning", "技术面"),
+            ("fundamental_reasoning", "基本面"),
+            ("sentiment_reasoning", "情绪面"),
+        ]:
+            txt = s.get(key, "")
+            if txt:
+                lines.append(f"- **{label}**：{txt}")
+        lines.append("")
+        lines.append("---")
+        lines.append("")
+
+    if errors:
+        lines.append(f"*数据注记：{'; '.join(errors)}*")
+
+    return "\n".join(lines)
 
 
 @st.cache_data(ttl=300)

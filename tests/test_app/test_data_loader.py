@@ -276,12 +276,18 @@ class TestMissingFileDegradation:
     """TC-020-04: 无 processed/ 文件 → 函数返回 None/空，不抛异常。"""
 
     def test_load_latest_signals_returns_none_when_no_files(self):
-        with patch("pathlib.Path.glob", return_value=iter([])):
+        with (
+            patch("pathlib.Path.glob", return_value=iter([])),
+            patch("app.data_loader.duckdb.connect", side_effect=Exception("no db")),
+        ):
             result = load_latest_signals()
         assert result is None
 
     def test_load_recommendations_returns_none_when_no_files(self):
-        with patch("pathlib.Path.glob", return_value=iter([])):
+        with (
+            patch("pathlib.Path.glob", return_value=iter([])),
+            patch("app.data_loader.duckdb.connect", side_effect=Exception("no db")),
+        ):
             result = load_recommendations()
         assert result is None
 
