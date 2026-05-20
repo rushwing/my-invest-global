@@ -1,4 +1,4 @@
-"""REQ-017 / REQ-022: Tab 2 每日策略简报."""
+"""REQ-017 / REQ-041: Tab 2 每日策略简报."""
 from __future__ import annotations
 
 import streamlit as st

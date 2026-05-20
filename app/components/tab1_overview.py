@@ -1,4 +1,4 @@
-"""REQ-023: Tab 1 持仓总览 + Holdings CRUD."""
+"""REQ-040: Tab 1 持仓总览 + Holdings CRUD."""
 from __future__ import annotations
 
 from datetime import date
