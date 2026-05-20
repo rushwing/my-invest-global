@@ -119,6 +119,8 @@ select = ["E", "F", "I", "UP"]
 
 [tool.ruff.lint.per-file-ignores]
 # HTML/CSS string literals make line-length enforcement impractical
+"app/dashboard.py" = ["E501"]
+"app/components/tab2_brief.py" = ["E501"]
 "app/components/tab3_stock.py" = ["E501"]
 "app/components/tab4_signals.py" = ["E501"]
 "app/styles.py" = ["E501"]
