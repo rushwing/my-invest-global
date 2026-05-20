@@ -28,14 +28,24 @@ def _enrich(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _normalize_codes(df: pd.DataFrame) -> pd.DataFrame:
-    """Ensure code column is string, A-share 6-digit codes are zero-padded."""
+    """Ensure code column is string, A-share 6-digit codes are zero-padded.
+
+    Missing / blank entries are kept as None (not the string "nan") so that
+    callers can filter with .dropna() or notna().
+    """
     if "code" not in df.columns:
         return df
     df = df.copy()
-    df["code"] = (
-        df["code"].astype(str).str.strip()
-        .apply(lambda c: c.zfill(6) if c.isdigit() and len(c) <= 6 else c)
-    )
+
+    def _fix(raw: object) -> str | None:
+        if pd.isna(raw):
+            return None
+        c = str(raw).strip()
+        if not c or c.lower() == "nan":
+            return None
+        return c.zfill(6) if c.isdigit() and len(c) <= 6 else c
+
+    df["code"] = df["code"].apply(_fix)
     return df
 
 
@@ -237,7 +247,9 @@ def _render_editor_section() -> None:
             lbl, type="primary" if dirty else "secondary",
             key="_t1_save_btn", use_container_width=True,
         ):
-            save_holdings(full[_EDITOR_COLS].copy(), date.today())
+            to_save = full[_EDITOR_COLS].copy()
+            to_save = to_save[to_save["code"].notna() & (to_save["code"].astype(str).str.strip() != "")]
+            save_holdings(to_save, date.today())
             st.cache_data.clear()
             st.session_state["t1_holdings_saved"] = full.copy()
             st.success("持仓已保存")
@@ -252,16 +264,12 @@ def _render_editor_section() -> None:
         if uploaded is not None:
             try:
                 csv_df = pd.read_csv(uploaded, dtype={"code": str}).reindex(columns=_EDITOR_COLS)
-                if "code" in csv_df.columns:
-                    csv_df["code"] = (
-                        csv_df["code"].astype(str).str.strip()
-                        .apply(lambda c: c.zfill(6) if c.isdigit() and len(c) <= 6 else c)
-                    )
-                merged = (
-                    pd.concat([full, csv_df], ignore_index=True)
-                    .drop_duplicates(subset=["code"], keep="last")
-                    .reset_index(drop=True)
-                )
+                csv_df = _normalize_codes(csv_df)
+                # Drop rows with no code (blank/header artefacts)
+                csv_df = csv_df[csv_df["code"].notna() & (csv_df["code"] != "")]
+                # Append all lots — no dedup; same code can legitimately appear
+                # multiple times (different cost basis / buy date batches).
+                merged = pd.concat([full, csv_df], ignore_index=True)
                 st.session_state["t1_holdings_full"] = merged
                 st.session_state["_t1_show_csv"] = False
                 st.success(f"已导入 {len(csv_df)} 行")
@@ -320,7 +328,7 @@ def _render_editor_section() -> None:
     # ── Tab 3 navigation shortcut ──────────────────────────────────────────────
     codes = [
         str(c) for c in st.session_state["t1_holdings_full"]["code"].dropna()
-        if str(c).strip()
+        if str(c).strip() and str(c).lower() != "nan"
     ]
     if codes:
         nav1, nav2, _ = st.columns([2, 1, 4])
