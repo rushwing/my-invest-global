@@ -1,52 +1,84 @@
-# Design Handoff: Streamlit Dashboard (4 Tabs)
+# Design Handoff: my-invest-global Dashboard · v3
 
 > **Target codebase**: `my-invest-global` · Streamlit 1.32+ · Plotly · Python 3.12
 > **Spec source**: `docs/adr/ADR-005-frontend-dashboard.md` · `methodology.md` · `engine/schemas.py`
 > **Suggested install location**: drop this folder at `docs/design/dashboard/` in the project repo.
+> **Version**: v3 — adds GlobalActionBar + 5-tab navigation + Tab 5 调仓分析 + T+1 settlement rules
+
+---
+
+## 0. What's new in v3
+
+This iteration restructures the dashboard around a **single GlobalActionBar** and adds a 5th tab for actionable rebalancing. Read this before §1 if you've seen v2.
+
+### Decisions resolved in this iteration
+
+| # | Decision | Choice |
+|---|---|---|
+| Q1 | Holdings editor surface | **Inline table in Tab 1** (sidebar retired) |
+| Q2 | Per-tab header vs global bar | **Single GlobalActionBar** owns refresh / run / timestamps / auth |
+| Q3 | Tab labels | **Shortened** (`持仓总览 / 每日简报 / 个股分析 / 信号仪表盘 / 调仓分析`) |
+| Q4 | Tab 3 vs new Tab 5 | **Coexist** — Tab 3 = single-stock research, Tab 5 = today's actionable decisions |
+| Q5 | Mock API behavior | **setTimeout simulation** in prototype; real `POST /api/*` endpoints documented below |
+
+### Major new pieces
+
+1. **`GlobalActionBar`** — 44px sticky top strip used by all 5 tabs. Holds logo, 5 tab pills, system status (LIVE / 盘后 / 数据异常), cache countdown, refresh button, run-analysis button, auth indicator + lock button. **6 documented states.** Replaces the per-tab "ROW 1 header strips" from v2.
+2. **Tab 1 持仓总览 v3** — inline 10-column editable holdings table with new `T+1 可用` column. KPI cards now include target-marker progress bars.
+3. **Tab 2 每日简报 v3** — adds **T+1 调仓摘要条** (4 cells + CTA to Tab 5) and `操作 → 进入分析` column on the score table.
+4. **Tab 5 调仓分析** — entirely new tab. Multi-stock selector → analysis cards → focused K-line + **筹码分布 (chip distribution histogram)** → today's executable operation list (T+1-aware) → collapsible history.
+5. **T+1 settlement rules** — first-class treatment everywhere stocks are listed. Three states: `bought_today` / `partial` / `all_available`.
+
+### Retired in v3
+
+- **Holdings editor sidebar** (collapsed 56px ↔ expanded 420px) — fully replaced by Tab 1's inline table. Auth indicator/lock now in GlobalActionBar.
+- **Per-tab `[↻ 刷新行情]` + `[▶ 运行分析]` buttons** — moved to GlobalActionBar (single source of truth).
+- **Old `Tab1Holdings` / `Tab2DailyBrief`** components — superseded by `Tab1HoldingsV2` / `Tab2BriefV2`.
+
+### Carry-overs (legacy in this drop)
+
+- **Tab 3 个股深度** + **Tab 4 信号仪表盘** still render with their internal tab bar. Marked as "待整合 GAB" in artboard 05/06 — next refactor pass should drop their internal `TabBar` and prepend `<GlobalActionBar activeTab={2|3} />` exactly like Tab 1/2/5.
+- **Login form spec** (auth artboards) — visual copy / inputs / security notes still apply, but should be reimplemented as a **full-screen centered modal** (not a sidebar). GlobalActionBar owns the unlock state indicator + lock button. See §6.6.
 
 ---
 
 ## 1. Overview
 
-This bundle is the **visual design reference** for the 4-tab personal stock advisor dashboard described in `ADR-005-frontend-dashboard.md`. It contains:
+This bundle is the **visual design reference** for the 5-tab personal stock advisor dashboard described in `ADR-005-frontend-dashboard.md`. It contains:
 
-- An HTML/React clickable canvas with 5 artboards (design system + 4 tabs)
-- All design tokens, type scale, and component specs the Streamlit implementation should match
-- Realistic content driven by the project's actual methodology and schemas
+- An HTML/React clickable canvas with 8 sections (design system + GAB spec + 5 tabs + auth ref)
+- All design tokens, type scale, component specs the Streamlit implementation should match
+- T+1 settlement business rules + chip distribution visualization
 
-### About these files (read first)
+### About these files
 
-The `.html` + `.jsx` files in this folder are **design mockups, not production code**. They are React prototypes using inline Babel — meant to communicate intent, not to be lifted into the codebase.
+The `.html` + `.jsx` files are **design mockups, not production code**. React prototypes via inline Babel. Re-implement in **Streamlit + Plotly** (per ADR-005). Where Streamlit defaults clash with the spec, **override via custom CSS** — don't water down the visual.
 
-**Your job**: re-implement these designs in the project's chosen environment — **Streamlit + Plotly** (per ADR-005). Use Streamlit's `st.dataframe`, `st.plotly_chart`, custom CSS via `st.markdown(unsafe_allow_html=True)`, and `streamlit.components.v1.html` for the more complex layouts. Where Streamlit's defaults clash with the look defined here, **override via custom CSS**; do not water down the visual spec to fit Streamlit's defaults.
+## 2. Fidelity
 
----
+**Hi-fi.** Pixel-perfect — match colors / typography / spacing / dimensions exactly. Specific guidance:
 
-## 2. Fidelity: **High-fidelity (hifi)**
+- **12px card padding** is intentional — do not loosen to Streamlit's default 1rem
+- **JetBrains Mono with tabular-nums** for every numeric value
+- **44px GlobalActionBar** height is fixed
+- **Status colors are semantic** — never reuse green for "click me" or red for "danger zone backgrounds"
 
-Pixel-perfect mockups with final colors, typography, spacing, dimensions, and interaction states. Match these exactly. Specific guidance:
+## 3. How to view
 
-- **Tight 12px card padding** is intentional — do not loosen to Streamlit's default 1rem.
-- **JetBrains Mono with tabular-nums** for every numeric value — required for column alignment in tables.
-- **Status colors are semantic** — never reuse green for "click me" or red for "danger zone" backgrounds.
+Open `index.html` in any modern browser. 8 sections on the dark canvas:
 
----
-
-## 3. How to view the mockups
-
-Open `index.html` in any modern browser. You'll see a dark canvas with 5 artboards:
-
-| # | Artboard | What it shows |
-|---|----------|---------------|
-| 1 | Design System Spec | All tokens (colors, type, spacing, radii) + component library |
-| 2 | Tab 1 持仓总览 | Allocation donut, KPIs, holdings treemap heatmap, deviation table |
-| 3 | Tab 2 每日策略简报 | Macro banner, LLM brief (3 collapsibles), signal score table, US leading chart |
-| 4 | Tab 3 个股深度分析 | 4-pane K-line/MACD/RSI chart, fundamental card, news timeline |
-| 5 | Tab 4 信号仪表盘 | 3-state macro traffic light, Big-4 capex, scarcity matrix, position gauges, 30-day history |
+| # | Section | Artboards |
+|---|---------|-----------|
+| 01 | Design System Spec | tokens, type, components |
+| 02 | GlobalActionBar (6 states) | Normal / Refreshing / Analyzing / Both / Error / Locked + live interactive |
+| 03 | Tab 1 持仓总览 v3 | full screen with GAB on top |
+| 04 | Tab 2 每日简报 v3 | full screen with GAB |
+| 05 | Tab 3 个股深度 (legacy) | TODO: replace internal tab bar with GAB |
+| 06 | Tab 4 信号仪表盘 (legacy) | TODO: replace internal tab bar with GAB |
+| 07 | Tab 5 调仓分析 (new) | full screen with GAB |
+| 08 | Auth (legacy reference) | login form spec — re-host as full-screen modal |
 
 Pan with click-drag, zoom with scroll, double-click any artboard for fullscreen focus, ←/→ to step between.
-
----
 
 ## 4. Design Tokens
 
@@ -54,9 +86,9 @@ Pan with click-drag, zoom with scroll, double-click any artboard for fullscreen 
 
 ```css
 /* Surfaces */
---bg:           #0E1117;   /* Streamlit default dark page bg */
---surface:      #1C1C2E;   /* card bg */
---surface-alt:  #161623;   /* nested bg (table headers, inner panels) */
+--bg:           #0E1117;
+--surface:      #1C1C2E;
+--surface-alt:  #161623;
 --border:       rgba(255,255,255,0.06);
 --border-strong:rgba(255,255,255,0.12);
 
@@ -66,26 +98,26 @@ Pan with click-drag, zoom with scroll, double-click any artboard for fullscreen 
 --text-dim:     #5C616E;
 
 /* Brand */
---accent:       #4F8EF7;   /* links, active tab underline, MA13W */
+--accent:       #4F8EF7;
 
 /* Status / signals */
---bull:         #00C47A;   /* bullish · 增长 · positive · strong_add */
---neutral:      #F5A623;   /* neutral · 平稳 · warning */
---bear:         #E84040;   /* bearish · 收缩 · reduce · negative */
---stop:         #FF0000;   /* hard stop_loss (pure red, distinct from --bear) */
+--bull:         #00C47A;
+--neutral:      #F5A623;
+--bear:         #E84040;
+--stop:         #FF0000;
 
-/* Signal action badges (engine/schemas.py StockSignal.action_code) */
---sig-strong-add: #00C47A
---sig-hold-add:   #4F8EF7
---sig-hold:       #888888
---sig-reduce:     #E84040
---sig-stop-loss:  #FF0000
+/* Signal action codes — engine/schemas.py StockSignal.action_code */
+--sig-strong-add: #00C47A;
+--sig-hold-add:   #4F8EF7;
+--sig-hold:       #888888;
+--sig-reduce:     #E84040;
+--sig-stop-loss:  #FF0000;
 
-/* Scarcity tier (methodology.md §2.1) */
---tier-1: #FF7A1A   /* 极高 · orange */
---tier-2: #F5A623   /* 高 · amber */
---tier-3: #9AA0AC   /* 中 · grey */
---tier-4: #4F8EF7   /* 低 · blue */
+/* Scarcity tier — methodology.md §2.1 */
+--tier-1: #FF7A1A;
+--tier-2: #F5A623;
+--tier-3: #9AA0AC;
+--tier-4: #4F8EF7;
 
 /* PnL heat gradient */
 /* linear-gradient(90deg, var(--bear) 0%, #2a2a3a 50%, var(--bull) 100%) */
@@ -96,357 +128,498 @@ Pan with click-drag, zoom with scroll, double-click any artboard for fullscreen 
 
 | Token | Family | Size / line-height | Weight | Use |
 |---|---|---|---|---|
-| Display | Noto Sans SC | 28/32 | 600 | Page titles (持仓总览, 每日策略简报) |
-| H1 | Noto Sans SC | 18/24 | 600 | Section titles inside cards |
-| H2 | Noto Sans SC | 15/20 | 600 | Card titles |
-| Body | Noto Sans SC | 13/18 | 400 | Default text |
-| Label | Noto Sans SC | 11/14 | 500 | Field labels above values |
-| Mono Big | JetBrains Mono | 22-26/28 | 600 | Hero KPIs, PnL%, large prices |
-| Mono | JetBrains Mono | 13/18 | 500 | All numeric cells, codes |
-| Mono Small | JetBrains Mono | 10-11/14 | 400-500 | Timestamps, axis ticks |
+| Display | Noto Sans SC | 22-28 / 32 | 600 | Page titles |
+| H1 | Noto Sans SC | 18 / 24 | 600 | Card section titles |
+| H2 | Noto Sans SC | 14-15 / 20 | 600 | Card titles |
+| Body | Noto Sans SC | 12-13 / 18 | 400 | Default text |
+| Label | Noto Sans SC / JetBrains Mono | 10-11 / 14 | 500 | Field labels (uppercase 0.06em) |
+| Mono Big | JetBrains Mono | 18-26 / 28 | 600-700 | KPIs, prices, PnL% |
+| Mono | JetBrains Mono | 12-13 / 18 | 500 | All numeric cells, codes |
 
-**Critical CSS rules for ALL numeric content** (KPIs, table cells, PnL%, percentages, codes):
-```css
-font-family: 'JetBrains Mono', ui-monospace, monospace;
-font-variant-numeric: tabular-nums;
-```
+**All numbers must have**: `font-variant-numeric: tabular-nums` for column alignment.
 
-Streamlit defaults to system fonts — inject both fonts via `<head>`:
+### 4.3 Spacing
 
-```python
-st.markdown("""
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-""", unsafe_allow_html=True)
-```
+Scale: 4 / 8 / 12 / 16 / 20 / 24 / 28 px. Card padding default **12px**, page padding **24-28px**, card gap **12px**, GAB padding-x **16-20px**.
 
-### 4.3 Spacing & radii
+### 4.4 Radii
 
-- Spacing scale: 4, 8, 12, 16, 20, 28 px
-- Card padding default: **12px** (some headers use 16px)
-- Card gap (between cards): **12px**
-- Page padding: **28px**
-- Radii: badge 4, tag 4-6, card 8, modal 12
-
-### 4.4 Shadows
-None on the page itself. The glowing macro traffic-light circle uses `box-shadow: 0 0 22px <color>88` only when active.
-
----
+| Element | Radius |
+|---|---|
+| Badge / tag / status pill | 3-4 px |
+| Card | 6-8 px |
+| Modal | 8-12 px |
+| Pill button | 999px (full round) |
 
 ## 5. Component Specs
 
-### 5.1 Tab bar (top of every page)
-- Row of pills with `01` `02` `03` `04` number prefixes (JetBrains Mono, dim) + Chinese label
-- Active: text bold 600, color `--text`, **2px bottom border `--accent`**, subtle 6% blue tint background
-- Inactive: text 400, color `--text-muted`, transparent border
-- Right side: live status chip (green dot + "LIVE · A股盘中" or "LLM · GPT-4 ready") + cache timestamp
+### 5.1 GlobalActionBar (44px sticky top)
 
-### 5.2 KPI Card
+Layout: `flex row, height 44px, surface bg, border-bottom 1px border, padding 0 16px 0 20px, gap 10px`
+
+**Left section** (logo + name):
+- 24×24 rounded-4 icon, dark teal bg `#1C3A3A` + 1px green border, white chart-line SVG glyph
+- `MY INVEST` JetBrains Mono 11px / 600 / accent + `GLOBAL` 11px / muted
+
+**Center section** (5 tab pills, gap 4):
+- Each pill: padding 5×11, radius 5, `01–05` mono number prefix (textDim or accent when active), Chinese label
+- Active: accent 15% bg + 1px accent 50% border + bold text + accent number prefix
+- Inactive: transparent bg + transparent border + muted text
+
+**Right section** (gap 8):
+- SystemStatus: 6px dot + 10px mono label
+  - `live`: bull, pulsing glow + `LIVE · A股盘中`
+  - `closed`: text-dim + `盘后`
+  - `error`: bear + `数据异常`
+- CacheCountdown: 10px mono `↻ MM:SS 前` in surfaceAlt pill, or `刷新中…` when refreshing
+- Refresh button: 28×28 ghost icon button (refresh SVG); spinner when loading; bear bg+border when errored
+- Run button: 28×28 primary accent icon button (play SVG); spinner when loading
+- Separator (1px × 20px)
+- AuthIndicator: 6px bull/bear dot + `已解锁`/`已锁定` 10px mono; locked variant hides the 锁定 button
+- Lock button (visible only when unlocked): 28px height ghost button with lock icon + `锁定`
+
+**Analyzing state**: 2px progress strip pinned to `bottom: -1` of the bar, accent 22% bg, animated 34% sliding sweep.
+
+**Props interface**:
+```ts
+interface GlobalActionBarProps {
+  activeTab: 0 | 1 | 2 | 3 | 4;
+  onTabChange: (tab: number) => void;
+  onRefresh: () => Promise<void>;
+  onRunAnalysis: () => Promise<void>;
+  onLock: () => void;
+  isRefreshing: boolean;
+  isAnalyzing: boolean;
+  marketStatus: 'live' | 'closed' | 'error';
+  lastUpdated: Date | null;
+  isUnlocked: boolean;
+  errored?: boolean;
+  countdown?: string; // e.g. "03:24"
+}
 ```
-┌─ 12px padding ─────────┐
-│ label (11px muted)     │
-│ VALUE  (22-26px mono   │
-│        green/red/text) │
-│ subtext (11px dim)     │
-└────────────────────────┘
+
+### 5.2 T+1 Availability Badge
+
+Three states, always rendered as a single pill or a pill + mini bar:
+
+- **bought_today**: neutral tint pill + lock SVG glyph + label `今日买入`. Tooltip on hover: `T+1 锁仓 · {tomorrow_date} 可操作`.
+- **partial**: bull tint pill `X/Y 手可用` + below it a 60×3 mini progress bar filled to `available/total` ratio.
+- **all_available**: bull tint pill with leading 4px solid dot + label `全部可用`.
+
+Rendering location: holdings table column, brief item rows, analysis card rows.
+
+### 5.3 KPI Card (Tab 1)
+
+- Padding 12, radius 8, surface bg, 1px border
+- Label (11 muted) → big value (22 mono 600, bull or text) → sub (10 dim mono)
+- **KpiBar variant** for proportions (弹性 / 白马 仓位):
+  - Adds a 4px high progress bar below the value, filled to `pct%`
+  - **1.5px white tick at the target percentage** — this is mandatory; it's the only way to read deviation at a glance
+
+### 5.4 Editable Holdings Table (Tab 1, ROW 5)
+
+10 columns, total min-width 1140px:
+
+| Col | Width | Type | Editable | Notes |
+|---|---|---|---|---|
+| 代码 | 80 | mono | no | Clickable underline → Tab 3 |
+| 名称 | 110 | text | yes | |
+| 类别 | 100 | pill dropdown | yes | 白马股 / 弹性股 / 自选 |
+| 成本价 | 84 | mono right | yes | ¥X.XX |
+| 现价 | 84 | mono right | no | Color bull/bear vs cost |
+| 数量 | 70 | int right | yes | |
+| 市值 | 100 | mono right | no | Computed = price × qty (×100 for 手) |
+| 浮盈% | 84 | mono right | no | Color bull/bear |
+| T+1 可用 | 116 | badge | no | See §5.2 |
+| 操作 | 80 | icons | — | ✎ edit + × delete |
+
+**Row states** (mutually exclusive precedence: stop_loss > selected > dirty > normal):
+
+| State | Background | Left border |
+|---|---|---|
+| normal | transparent | 2px transparent |
+| dirty (any cell modified) | `rgba(245,166,35,0.07)` | 2px neutral |
+| selected | `rgba(79,142,247,0.08)` | 2px accent |
+| stop_loss | `rgba(232,64,64,0.07)` + name in bear | 2px transparent |
+
+**Dirty cells** (individual): yellow tint background `rgba(245,166,35,0.15)`, 1px neutral 28% border top+bottom, 4px neutral dot in top-right corner of cell.
+
+**Add row**: dashed top border, `+ 添加持仓` accent text, "name lookup chip" on the right showing what would auto-resolve when 6 digits are typed.
+
+### 5.5 Allocation Donut (Tab 1, ROW 3 left)
+
+- 180×180 SVG, R=70, stroke=18
+- Outer dashed circle at R+14 = target indicator
+- 1.5px white tick at exactly 67%
+- Ring colors: accent if `|deviation| < 5%`, neutral 5-10%, bear >10%
+- Center: `总市值` 10px label + `¥XX.X` 18px mono white + `万元` 9px dim sub
+- Legend right: 2 rows × (10px color square + label + percentage on right + `目标 X%` sub)
+
+### 5.6 Treemap Heatmap (Tab 1, ROW 3 right)
+
+- 6-cell compact grid: 2 rows × 3 cols (proportions 2.2 : 1.2 : 1 for col widths to give the biggest holding the largest cell)
+- Each cell: stock name 14px white, code 9px white/60, PnL% 20px white mono bold at bottom
+- Background gradient (PnL → color): linear interpolation in alpha, capped 15-70%
+  - Positive: `rgba(0,196,122, 0.15 + |t| * 0.55)` where t = pnl/20 clamped [-1, 1]
+  - Negative: `rgba(232,64,64, 0.15 + |t| * 0.55)`
+- Border: matching bull/bear at 55% alpha
+- Click → emit `onStockSelect(code)` → Tab 3
+
+### 5.7 Score Table Row (Tab 2, ROW 4)
+
+7 columns: 股票 / 技术A / 基本面B / 情绪C / 综合 / 建议 / 操作
+
+- A/B/C cells: mini horizontal layout = `32px mono right-aligned score | 4px progress bar filled to score%`
+- Color tiers for progress + composite text:
+  - ≥75 bull · 60-75 accent · 45-60 grey · 30-45 neutral · <30 bear
+- 综合 column: 18px mono bold colored by tier
+- 操作 column: `进入分析 →` link in accent
+- `stop_loss` row: full row bear-tint 12% background
+
+### 5.8 T+1 Rebalance Summary Bar (Tab 2, ROW 5)
+
+5 cells, separated by 1px borders, all heights match:
+1. `今日可操作` (text color)
+2. `建议减仓 N 只` (bear) with sub-line stock codes
+3. `建议加仓 N 只` (bull) with sub
+4. `T+1 锁仓 N 只` (neutral) with sub
+5. CTA cell: accent tinted bg + `进入调仓分析 →` accent button
+
+Each metric cell: 32×32 colored square icon (16% tint bg + 28% border) + label / value / sub stacked.
+
+### 5.9 Analysis Cards (Tab 5, Section A — horizontal scroll)
+
+240px wide × variable height cards in a `display: flex; gap: 12; overflow-x: auto` strip.
+
+Card anatomy (top to bottom):
+1. **Header row**: Tier badge (T1/T2/T3/T4 small pill) + stock name + code + action badge (top-right, e.g. `减仓`)
+2. **Price block**: 18px mono current price + small grey `成本 ¥X.XX` right-aligned + below: bull/bear `浮盈 ±X.XX%` spanning full width
+3. **T+1 row**: T+1 badge (24px min-height even when empty for alignment)
+4. **Scores grid** (top + bottom dashed border): 4 columns: 技术 / 基本面 / 情绪 / 综合(big bold)
+5. **Recommendation**: 11px muted, 1-2 lines, `min-height: 32`
+6. **Action button**: full-width, primary accent for executable, surface-alt + greyed + lock prefix `🔒 T+1 锁仓` when disabled
+
+**Focused state**: surface bg (vs surface-alt), 1px accent 53% border + 2px accent 13% outer shadow.
+
+### 5.10 Chip Distribution (Tab 5, Section B right)
+
+This is the new visual element. **A horizontal bar histogram with price on the Y axis and % of shares on the X axis.**
+
+- Canvas 380×320, plot area `left=50, right=14, top=10, bottom=26`
+- **Y-axis** (price): ticks at min/max + key levels (current, cost), labeled `¥XXX` in mono dim (or text for current/cost)
+- **X-axis** (share %): 0 to maxPct (~7%), labeled at 0/2/4/6%
+- **Bucket bars**: ~33 horizontal bars (price step ~12), each width = `(pct / maxPct) * plotW`, height = `((plotH) / count) - 1`
+- **Fill colors by price zone** (relative to current price + cost basis):
+  - `price > current`: `var(--text-dim)` at 0.28 alpha (解套压力 — overhead supply)
+  - `cost < price ≤ current`: `var(--bull)` at 0.55 alpha (获利筹码)
+  - `price ≤ cost`: `var(--bear)` at 0.55 alpha (亏损筹码)
+- **Current price line**: bear color, 1.2px dashed `4 3`, with a labeled rounded-rect on the right edge: `现价 ¥XXX`
+- **Cost basis line**: text-muted, 1px dashed `3 3`, labeled rounded-rect: `成本 ¥XXX`
+- **Metric chips** (3 in a row below): 筹码集中度 / 获利盘 / 套牢/解套压力 — each in a `surface-alt` rounded rect, 9px dim label + 13px mono colored value
+- **Legend** (small): swatch boxes showing the 3 zones with their alpha levels
+
+### 5.11 K-Line Mini (Tab 5, Section B left)
+
+Same visual language as Tab 3 chart but compact:
+- 720 × ~290 px SVG
+- 60 candles + MA30 line (neutral orange) + cost basis dashed line (text-muted) + MACD pane below (70px)
+- Golden cross / death cross dots on MACD line
+- Date-range pills `1M / 3M / 6M` in top-right (3M active by default)
+
+### 5.12 Operation List (Tab 5, Section C)
+
+7-column table:
+
+| Col | Notes |
+|---|---|
+| 操作 | Tag pill: 买入 (bull) / 卖出 (bear) / 减仓 (bear) |
+| 股票 | Name + code |
+| 数量 | `N 手` right-align mono |
+| 参考价 | `¥X.XX` mono |
+| 预计金额 | `¥X,XXX` mono bold (= qty × price × 100) |
+| 依据 | 1-line reasoning |
+| 状态 | `可执行` bull pill or `T+1 锁定` neutral pill |
+
+- **T+1 locked rows**: opacity 0.7 + `rgba(245,166,35,0.06)` bg + status pill = T+1 锁定
+- **Footer band** (surface-alt): `预计调仓后弹性仓位: X.X% → Y.Y%` with arrow + `回归目标区间` tag + total trade amount on the right
+
+## 6. Per-Tab Streamlit Implementation Notes
+
+### 6.1 Global setup — GlobalActionBar (`global-action-bar.jsx`)
+
+Inject as an `streamlit.components.v1.html` block at the top of every page, OR build as a custom HTML strip via `st.markdown(unsafe_allow_html=True)`. State in `st.session_state`:
+
+```python
+ss = st.session_state
+ss.setdefault('active_tab', 0)
+ss.setdefault('is_refreshing', False)
+ss.setdefault('is_analyzing', False)
+ss.setdefault('market_status', detect_market_status())  # live / closed / error
+ss.setdefault('last_updated', None)
+ss.setdefault('unlocked', False)  # see §6.6 auth
+
+# After GAB is rendered, route to the active tab
+TABS = [render_tab1, render_tab2, render_tab3, render_tab4, render_tab5]
+TABS[ss.active_tab]()
 ```
-- Single border `--border`
-- When the KPI exceeds an alert threshold (e.g. `最大单只占比 > 8%`), border switches to `--bear` and a `<Tag tone="bear">超阈值</Tag>` floats top-right
-- Progress-bar variant: 4px tall track with a fill bar + **1.5px white tick** marking the target value
 
-### 5.3 Signal Badge (action_code)
-- Padding 4×8 (sm: 2×6)
-- Background `<color>22` (13% alpha), border `<color>55` (33% alpha), text in solid color
-- 5px solid dot prefix + Chinese label
-- The 5 action_codes from `engine/schemas.py` map to:
-  - `strong_add` → 强力加仓 / green
-  - `hold_add`   → 持有加仓 / blue
-  - `hold`       → 持有观望 / grey
-  - `reduce`     → 减仓     / red
-  - `stop_loss`  → 止损     / pure red
+The refresh / run buttons trigger long-running tasks. Use `st.spinner` + a background task (e.g. `asyncio.create_task` in a callback or a polling pattern):
 
-### 5.4 Tag (category / sector / status)
-- Padding 3×8, radius 4, 11px font
-- Default: blue tint (`#4F8EF733` bg, accent text)
-- `muted` variant: grey tint
-- Tone variants: bull/bear/neutral apply same alpha pattern as badges
+```python
+def on_refresh():
+    ss.is_refreshing = True
+    refresh_market_data()  # sync wrapper around tushare / akshare
+    ss.last_updated = datetime.now()
+    ss.is_refreshing = False
+    st.rerun()
+```
 
-### 5.5 Table
-- Header row: surface-alt bg, 10px uppercase JetBrains Mono labels with 0.06em letter-spacing, muted color
-- Body rows: 13px text, 11px column padding, 1px border-top between rows
-- Numeric columns right-aligned, JetBrains Mono
-- Row highlight: yellow tint `<neutral>14` (8%) for warning, red tint `<bear>1A` (10%) for severe
-- A `stop_loss` row gets `<bear>12` (7%) full-row tint AND the stock name turns red
+For animations (spinner, progress strip), embed the visual states in the HTML component — Python toggles the props.
 
-### 5.6 Heat cell (treemap)
-- Background: PnL-gradient interpolation, with 15-70% alpha
-- Border: matching bull/bear color at 55% alpha
-- Padding 12×14 (tiny variants 6×8)
-- Stock name in white, code+sector dim white, PnL% large white mono
-- Layout: name+code top, PnL% bottom, market value sub-line if cell ≥ 110×70
+### 6.2 Tab 1 持仓总览 (`tab1-holdings-v2.jsx`)
 
-### 5.7 Scarcity tier chip (Tab 4 matrix)
-- Padding 7×9, radius 4, 1px border with tier color
-- Score in top-right corner (color = `chipColor(score)` based on the 70/50 thresholds)
-- Owned marker: blue `◉` prefix
-- Bottom mini score bar (2px tall)
-
-### 5.8 Alert box (Tab 2 risk warnings)
-- Layout: 3px left border (status color) + tint background (8-10% alpha) + 1px border (40% alpha)
-- 20px icon column + title + body
-- Three variants: danger (止损, red), warn (止盈, yellow), info (观察, blue)
-
-### 5.9 Donut chart (allocation)
-- 200×200 SVG, R=80, stroke-width=22
-- Outer dashed ring at R+16 = target indicator
-- 1.5px white tick at the exact target percentage
-- Center: 总市值 label + ¥XX.X 万元 (white mono)
-- Ring color: accent if deviation < 5%, neutral if 5-10%, bear if > 10%
-
-### 5.10 Semi-circular gauge (Tab 4 position)
-- 200×140 viewBox, R=70, stroke-width=14
-- Base half-ring: 6% white
-- Tolerance band (±5% around target): green at 27% alpha
-- Deviation arc (from target to current): solid status color
-- 2px white tick at target apex with "目标 XX%" label
-- Current value: 6px filled circle pointer + white stroke
-
-### 5.11 Timeline (news + rebalance history)
-- News timeline: vertical rail at x=36 (1px border line), each item has a 10px filled circle with surface-color border
-- Each item: date + sentiment chip + headline + 3px relevance bar
-- History timeline: horizontal SVG, events alternate above/below the axis (50/50 split), each connected to the axis by a 1px dashed line and a 6px filled circle with white inner dot
-
----
-
-## 6. Per-Tab Implementation Notes
-
-### Tab 1 — 持仓总览 (`tab1-holdings.jsx`)
-
-**Source data**: `data/processed/signals_{YYYYMMDD}.json` (PortfolioSummary + StockSignal list) + `holdings_{YYYYMMDD}.csv`
+**Source data**: `data/processed/signals_{YYYYMMDD}.json` (PortfolioSummary + StockSignal list) + `data/agent_input/holdings_{YYYYMMDD}.csv` + T+1 status from `data/db/lots.sqlite` (lot-level history).
 
 **Streamlit recipe**:
-1. **Header row**: `st.columns([3, 1, 1])` with title left + 2 SummaryStat cards right
-2. **Tab nav**: custom HTML or `st.tabs(["持仓总览", "每日策略简报", "个股深度分析", "信号仪表盘"])`
-3. **Donut**: `plotly.graph_objects.Pie(hole=0.55)` with a hidden trace adding the target tick. Center annotation via `fig.add_annotation`
-4. **3 KPI cards**: `st.columns(3)` each rendering custom HTML — `st.dataframe` won't give the precise look
-5. **Heatmap**: `plotly.express.treemap(values='market_value', color='pnl_pct', color_continuous_scale=[(0, '#E84040'), (0.5, '#2a2a3a'), (1, '#00C47A')])` — Plotly's treemap will squarify automatically
-6. **Deviation table**: `st.dataframe` with `.style.apply(highlight_deviation, axis=1)` returning yellow/red CSS for the row when `abs(deviation) > 5/10%`
+1. **GlobalActionBar at top** (see §6.1)
+2. **ROW 1 page header**: `st.columns([3, 1])` — left for title strip, right for "数据时效 HIGH · 缓存 14:32" chip
+3. **ROW 2 KPI cards**: `st.columns(3)` each a custom HTML block. The progress bar with target tick is impossible via `st.metric` — use custom div with `position: relative`
+4. **ROW 3 Donut + Heatmap**: `st.columns([1.22, 1])`
+   - Donut: `plotly.graph_objects.Pie(hole=0.55)` + manually-positioned annotation for center text + a separate `Scatter` trace for the 1.5px target tick on the outer ring (computed angle → x/y)
+   - Heatmap: `plotly.express.treemap` with `color_continuous_scale=[(0, '#E84040'), (0.5, '#2a2a3a'), (1, '#00C47A')]`, click handler via `plotly_events` extension
+5. **ROW 4-5 Holdings table**:
+   - Header strip: `st.columns([...])` with `st.button` for `+ 添加`, file uploader for CSV import, primary save button (disabled when `dirty_count == 0`), filter pills
+   - Table: `st.data_editor` with `column_config.SelectboxColumn` for 类别, `column_config.NumberColumn` for prices/qty, **computed read-only 市值 column**, custom HTML for T+1 badge column via `column_config.Column(disabled=True, ...)` and pre-rendered HTML
+   - Dirty highlight: compare returned df to original; emit a `style.apply(highlight_dirty, axis=None)` per-cell
+   - Save: write to `data/agent_input/holdings_{date}.csv` + validate every row with `engine.schemas.HoldingRow` before persisting
+6. **T+1 column** rendering: pre-compute a `t1_status` dict from lot history, generate badge HTML in a hidden CSS class, render the column as a string with `unsafe_allow_html=True`
 
-### Tab 2 — 每日策略简报 (`tab2-brief.jsx`)
+### 6.3 Tab 2 每日简报 (`tab2-brief-v2.jsx`)
 
-**Source data**: `data/agent_input/daily_news_*.json` (DailyNewsItem with `is_overnight_us=true`), `data/processed/signals_*.json`, LLM-generated markdown blob from Claude/GPT-4 (3 sections joined as one string with headings)
+**Source data**: `data/agent_input/daily_news_*.json` (DailyNewsItem with `is_overnight_us=true`), `data/processed/signals_*.json`, LLM-generated markdown blob from `engine/llm/brief_generator.py`.
 
 **Streamlit recipe**:
-1. **Macro banner**: full-width custom HTML card. The CapEx state comes from `engine/macro_gate.py::get_macro_state()`. US stock chips: tile via `<div style="display:flex; gap:8px">` (Streamlit columns add too much gutter)
-2. **Collapsibles**: `st.expander("📊 市场判断")` × 3. Apply CSS to restyle the expander header to match the mockup
-3. **Score table**: `st.dataframe` with column config — `column_config.ProgressColumn` for A/B/C scores, `column_config.NumberColumn` for composite, custom HTML for badge. Or render fully as a custom HTML table for full fidelity
-4. **US chart**: `plotly.graph_objects.Bar(orientation='h')` with `marker.color` per-bar, bidirectional layout via `xaxis.range=[-max, +max]`
+1. **GAB at top**
+2. **ROW 1 header**: page title + `分析自选` ghost button (tab-specific control — refresh / run are in GAB)
+3. **Macro banner**: full-width custom HTML card with 50/50 grid. The traffic-light pills use `box-shadow: 0 0 12px <color>33` glow when active. US stock chips: tile via 5-column flex (not `st.columns` — too much gutter)
+4. **Brief sections**: 3 × `st.expander("📊 市场判断")`. Apply CSS to restyle expander headers to match (chevron color, signal badge on right). Body content is markdown rendered via `st.markdown`
+5. **Score table**: `st.dataframe` with `column_config.ProgressColumn` for A/B/C, `column_config.NumberColumn` for composite, custom HTML for badge + action column. OR render fully as a custom HTML table for full fidelity
+6. **T+1 rebalance bar**: full-width custom HTML, 5 cells via flex. The accent CTA cell uses `st.button` with custom CSS to look like the design — click navigates by setting `ss.active_tab = 4`
 
-### Tab 3 — 个股深度分析 (`tab3-stock-depth.jsx`)
+### 6.4 Tab 3 个股深度 (`tab3-stock-depth.jsx`)
 
-**Source data**: `tushare.pro_bar()` or akshare for OHLCV + `engine/schemas.py::StockSignal` for tier/scarcity + news items filtered to this ticker
+⚠️ Currently rendered with its **legacy internal tab bar** — please replace with `<GlobalActionBar activeTab={2} />` during your Tab 3 implementation pass to match Tab 1/2/5.
+
+**Source data**: `tushare.pro_bar()` or akshare for OHLCV + `engine/schemas.py::StockSignal` for tier/scarcity + news items filtered to this ticker.
 
 **Streamlit recipe**:
 1. **Stock selector**: `st.selectbox` styled into a fat card (CSS override) showing all the live stats. Quick-switch chips: 5-column row of buttons
-2. **Chart**: `plotly.subplots.make_subplots(rows=4, cols=1, shared_xaxes=True, row_heights=[0.5, 0.12, 0.19, 0.19], vertical_spacing=0.02)` with:
+2. **Chart**: `plotly.subplots.make_subplots(rows=4, cols=1, shared_xaxes=True, row_heights=[0.5, 0.12, 0.19, 0.19], vertical_spacing=0.02)`:
    - Row 1: `Candlestick` + `Scatter` for BB upper/lower (dashed) + `Scatter` for BB middle + `Scatter` for MA13W (accent blue)
    - Row 2: `Bar` for volume (color per candle direction)
-   - Row 3: `Bar` for MACD histogram + `Scatter` for MACD line + `Scatter` for signal line (dashed) + `Scatter(mode='markers')` for golden/death cross dots
-   - Row 4: `Scatter` for RSI + 2 dashed `add_hline` at 30 and 70, with `add_hrect` for overbought/oversold shading
-3. **Layout**: dark template via `fig.update_layout(template='plotly_dark', paper_bgcolor='#1C1C2E', plot_bgcolor='#161623')`
-4. **Fundamental card**: custom HTML — Streamlit `st.metric` can't match the 8-cell grid + ratings stacked bar. The ratings bar is a 3-segment flex div, no Plotly needed
-5. **News timeline**: render as a custom HTML list. Each item posts back the URL on click (use `st.link_button` or `<a target="_blank">`)
+   - Row 3: `Bar` for MACD histogram + lines + golden/death cross dot markers
+   - Row 4: `Scatter` for RSI + 2 dashed `add_hline` at 30/70 + `add_hrect` for overbought/oversold shading
+3. **Dark template**: `fig.update_layout(template='plotly_dark', paper_bgcolor='#1C1C2E', plot_bgcolor='#161623')`
+4. **Fundamental card**: custom HTML — `st.metric` can't match the 8-cell grid + ratings stacked bar
+5. **News timeline**: custom HTML list, click → open `url` in new tab via `st.link_button`
 
-### Tab 4 — 信号仪表盘 (`tab4-signals.jsx`)
+### 6.5 Tab 4 信号仪表盘 (`tab4-signals.jsx`)
 
-**Source data**: `engine/macro_gate.py::get_macro_state()`, `methodology.md` (parse the §2.1 matrix into a Python dict, or hard-code into a `SCARCITY_MATRIX` constant), `engine/portfolio.py::check_portfolio_balance()`, the 7 triggers list
+⚠️ Same legacy-bar caveat as Tab 3.
 
-**Streamlit recipe**:
-1. **Macro traffic light**: 3 columns, each a custom HTML card with a 36px circle, glow filter on the active one. Don't use `st.metric` — the visual treatment matters too much
-2. **Big-4 CapEx table**: `st.dataframe` with conditional YoY column (green text for positive)
-3. **Scarcity matrix**: `st.columns(4)` and inside each: a custom HTML block with the tier header (3px top border) + a vertical stack of chip divs. Read tier→stock list from `methodology.md` parsing or a hard-coded Python dict; map each chip's color via the score
-4. **Gauges**: `plotly.graph_objects.Indicator(mode='gauge+number', gauge.shape='angular')`. The tolerance band requires `gauge.steps=[{range:[target-5, target+5], color: '#00C47A44'}]`, and `gauge.threshold` for the target tick
-5. **Trigger table**: 4-column custom HTML — `st.dataframe` won't let you put a colored status pill in a cell cleanly; just render rows with `st.markdown(unsafe_allow_html=True)`
-6. **History timeline**: SVG embedded via `st.markdown` or render with Plotly using `Scatter(mode='markers+text')` with manually positioned y-coords for the alternating above/below layout
-
-### Section 06 — Holdings Editor sidebar (`holdings-editor.jsx`)
-
-**Purpose**: a global left-rail panel that lets the user manually edit `holdings_{YYYYMMDD}.csv` without leaving the dashboard. Always present alongside the 4 tabs.
-
-**Two states**:
-- **Collapsed**: 56px-wide rail (was 32px in v1 — upgraded to fit avatar). Contains avatar (top), vertical "持仓" label, count line, expand arrow (bottom)
-- **Expanded**: 420px-wide panel with 4 stacked regions:
-  1. Sticky top status bar — snapshot date pill, source badge (`手动编辑` / `CSV 导入` / `OCR 待校正`), save + undo buttons, target CSV path hint
-  2. Collapsible import dropzone — accepts CSV, parses → shows "已解析 N 行" with apply button
-  3. Scrollable editable table — 8 columns including class dropdown, dirty cells highlighted yellow (`rgba(245,166,35,0.18)` bg + 1px neutral border + small dot top-right)
-  4. Sticky bottom summary bar — total + 白马/弹性 progress rows with target tick; 弹性 row gets red border if any single elastic stock exceeds 8%
+**Source data**: `engine/macro_gate.py::get_macro_state()`, `methodology.md §2.1` (parse into Python dict or hard-code into `SCARCITY_MATRIX` constant), `engine/portfolio.py::check_portfolio_balance()`, the 7 triggers list.
 
 **Streamlit recipe**:
-- Streamlit's native `st.sidebar` can't be collapsed to 56px — implement as `streamlit.components.v1.html` embedded React/Svelte, OR use `st.session_state['sidebar_open']` + injected CSS overriding `[data-testid="stSidebar"] { min-width: 56px; max-width: 56px; }` when collapsed
-- For the editable table use `st.data_editor` with `column_config.SelectboxColumn` for 类别, `column_config.NumberColumn` with `min_value=0` for prices/qty, computed read-only column for 市值. Style the dirty state via CSS class injection by comparing the editor's return value to the original
-- Persist after click on 保存快照: write to `data/agent_input/holdings_{date}.csv` and validate with `engine.schemas.HoldingRow`
+1. **Macro traffic light**: 3 columns, each a custom HTML card with a 36px circle. Glow filter on active. Don't use `st.metric`
+2. **Big-4 CapEx table**: `st.dataframe` with conditional YoY column
+3. **Scarcity matrix**: `st.columns(4)` and inside each a custom HTML block with tier header (3px top border) + vertical stack of chip divs
+4. **Gauges**: `plotly.graph_objects.Indicator(mode='gauge+number', gauge.shape='angular')`. Tolerance band requires `gauge.steps=[{range:[target-5, target+5], color: '#00C47A44'}]`, `gauge.threshold` for target tick
+5. **Trigger table**: 4-column custom HTML — `st.dataframe` can't put a colored status pill in a cell cleanly
+6. **History timeline**: SVG embedded via `st.markdown`, or `Scatter(mode='markers+text')` with alternating y-coords
 
-### Section 07 — Auth layer (`holdings-editor-auth.jsx`)
+### 6.6 Tab 5 调仓分析 (`tab5-rebalance.jsx`)
 
-**Goal**: single-user local passphrase gate. Not real account/password — just a "don't show my holdings to a coworker who walks up" guard.
+**Source data**: `POST /api/analyze-selected → engine.rebalance.analyze(codes)`, `engine.lots.get_t1_status()`, `engine.chip_distribution.compute(code)`.
 
-**5 artboards mapping to the state machine**:
+**Streamlit recipe**:
+1. **Stock selector panel**: `st.columns(2)` for 当前持仓 / 自选观察. Each chip is a custom HTML `<div>` with checkbox circle + code + name + PnL + T+1 dot. Use `st.button` with empty label as a transparent overlay to capture clicks
+2. **Section A — Analysis cards**: horizontal flex scroll container via custom HTML. Streamlit's `st.columns` won't scroll horizontally — render the whole strip in one `st.markdown(unsafe_allow_html=True)` block
+3. **Section B left — K-line + MACD**: `make_subplots(rows=2, cols=1, row_heights=[0.7, 0.3])`. Add cost basis as `add_hline(y=cost, line_dash='dash', annotation_text='成本 ¥XX')`. Range pills [1M / 3M / 6M]: client-side filter via `st.session_state['t5_range']` rerunning the chart
+4. **Section B right — Chip distribution**:
+   ```python
+   import plotly.graph_objects as go
+   fig = go.Figure()
+   buckets = compute_chip_distribution(code)  # returns list of {price, pct}
+   colors = [zone_color(b.price, cost, current) for b in buckets]
+   fig.add_trace(go.Bar(
+       y=[b.price for b in buckets],
+       x=[b.pct for b in buckets],
+       orientation='h',
+       marker=dict(color=colors),
+       hovertemplate='价位 ¥%{y}<br>占比 %{x:.2f}%<extra></extra>',
+   ))
+   fig.add_hline(y=cost, line=dict(color='#9AA0AC', dash='dash'))
+   fig.add_hline(y=current, line=dict(color='#E84040', dash='dash', width=1.5))
+   fig.update_layout(
+       template='plotly_dark',
+       paper_bgcolor='#1C1C2E', plot_bgcolor='#161623',
+       height=320, width=380,
+       margin=dict(l=50, r=14, t=10, b=26),
+       xaxis_title='持仓占比 (%)',
+       yaxis_title=None,
+   )
+   ```
+   Below the chart: 3 metric chips via custom HTML grid.
+5. **Section C — Operation list**: `st.dataframe` with `column_config` per column. **T+1 locked rows** styled via `.style.apply(highlight_t1_locked)`. Footer band: custom HTML with the projected elastic % transition
+6. **Section D — History timeline**: collapsed `st.expander`. Inside: simple `st.dataframe` of past actions
 
-| Artboard | `collapsed` | `locked` | Sidebar shows | Main content |
-|---|---|---|---|---|
-| A | true  | true  | 56px rail with **grey avatar + lock icon** + LOCKED label | Blurred skeleton + centered lock card |
-| B | false | true  | 420px **login form** (default) | Blurred skeleton + centered lock card |
-| C | false | true  | 420px **login form** with red border + error text | Blurred skeleton + centered lock card |
-| D | false | false | 420px **holdings editor** | Full dashboard + green "已解锁" badge + 锁定 button |
-| E | true  | false | 56px rail with **blue avatar + green dot** | Full dashboard + green "已解锁" badge + 锁定 button |
+#### T+1 Business Rules (critical)
 
-**Avatar component (collapsed rail, both states)**:
-- 36px circle, accent blue `#4F8EF7` (or `#3A4258` desaturated when locked)
-- White initial letter (`W` in mockup), Noto Sans SC 500, ~45% of size
-- Status dot at bottom-right, 11px, `2px solid #161623` border:
-  - **Unlocked**: solid green `--bull`, glowing
-  - **Locked**: dark grey `#2A2E3A` with a tiny SVG lock glyph inside
-- Avatar is the primary expand trigger (cursor: pointer) — the bottom ⟩ arrow is the secondary
-
-**Login form** (420px):
-- Top — app identity: 36px rounded-square icon with lock SVG (accent blue tint bg), product name "my-invest-global" in JetBrains Mono 15px/600, subtitle in Noto Sans SC 12px muted
-- Center — form:
-  - Label: lock icon + "访问密语" (11px muted, 0.04em letter-spacing)
-  - Input: `width: 100%`, `background: #0E1117`, `border: 1.5px solid var(--border)` → switches to `var(--bear)` on error, `padding: 12px 14px`, `font-family: JetBrains Mono`, `letter-spacing: 0.1em`, `type="password"` (renders as •)
-  - Error message (below input, only when error): "⨯ 密语错误，请重试" in `var(--bear)`
-  - Button: full-width accent blue with unlock SVG + "解锁", 12px padding, 6px radius
-  - Forgot link: 10px JetBrains Mono `var(--text-dim)`, dotted underline — "忘记密语？查看 .env 文件"
-- Bottom (separated by border-top, slight darker bg): label "本地安全" + 3 lines of textDim copy:
-  - 数据仅存储在本机 data/ 目录
-  - 无网络同步，无云备份
-  - session 关闭后自动锁定
-
-**Unlocked badge** (top-right of main content, both unlocked artboards):
-- 6px green dot with `box-shadow: 0 0 6px var(--bull)88` + Mono "已解锁"
-- + ghost "锁定" button (1px border, transparent bg, lock SVG + text) that immediately re-locks
-
-**Locked-content treatment**:
-- Main area renders a `filter: blur(2px); opacity: 0.35` skeleton (rectangles where cards would be, never real numbers)
-- Overlay: `position: absolute; inset: 0; background: rgba(14, 17, 23, 0.78); backdrop-filter: blur(6px)`
-- Centered modal card: 56px circle with lock icon, "持仓数据已锁定", contextual hint ("点击左侧 ⟩ 或头像解锁" when collapsed, "在左侧输入密语解锁" when expanded), bottom mono label "MY-INVEST-GLOBAL · LOCAL ONLY"
-
-**Streamlit auth recipe**:
+The `engine/lots` module must track per-lot history:
 
 ```python
-# .env (user generates this once)
-PASSPHRASE_HASH=<sha256 hex of their passphrase>
+# data/db/lots.sqlite
+CREATE TABLE lots (
+  id INTEGER PRIMARY KEY,
+  code TEXT NOT NULL,
+  qty INTEGER NOT NULL,
+  buy_date DATE NOT NULL,
+  cost_price REAL NOT NULL
+);
 
-# app/auth.py
-import hashlib, os
-from typing import Literal
-
-def verify(passphrase: str) -> bool:
-    expected = os.environ.get("PASSPHRASE_HASH", "")
-    actual = hashlib.sha256(passphrase.encode("utf-8")).hexdigest()
-    return bool(expected) and actual == expected
-
-# app/dashboard.py — at the very top, before ANY data loading
-import streamlit as st
-from app.auth import verify
-
-if "unlocked" not in st.session_state:
-    st.session_state["unlocked"] = False
-
-if not st.session_state["unlocked"]:
-    render_login_screen()      # blurred skeleton + sidebar login form
-    st.stop()                  # critical: don't load holdings, don't call engine.*
-
-# from here down everything assumes unlocked == True
-render_dashboard()
+def get_t1_status(code: str, today: date) -> dict:
+    lots = query("SELECT qty, buy_date FROM lots WHERE code = ?", code)
+    total = sum(l['qty'] for l in lots)
+    locked = sum(l['qty'] for l in lots if l['buy_date'] == today)
+    available = total - locked
+    if total == locked:
+        return {'status': 'bought_today', 'available': 0, 'total': total}
+    if locked > 0:
+        return {'status': 'partial', 'available': available, 'total': total}
+    return {'status': 'all_available', 'available': total, 'total': total}
 ```
 
-Key constraints:
-- **Never read holdings data before `unlocked == True`** — the goal is that someone snooping the running process can't see real numbers even in memory
-- `st.session_state` is cleared on browser refresh, which naturally satisfies "session 关闭后自动锁定"
-- The "锁定" button does `st.session_state["unlocked"] = False; st.rerun()`
-- Bad passphrase counter is optional — for a single-user local tool, just show the error and let them retry; no rate limit needed
+Sell actions must subtract from `available` only — never from `locked`. The rebalance engine excludes locked lots from sell suggestions and grays out their action buttons in the UI.
 
----
+### 6.7 Auth — full-screen modal (replaces sidebar)
+
+The auth artboards in section 08 still drive the visual spec for the **login form contents** (lock icon header, monospace input, dotted-underline forgot link, 3-line security note). But the **hosting surface changes**: instead of a sidebar, render as a **full-screen centered modal on a blurred backdrop** before any tab content is shown.
+
+```python
+# app/auth.py
+import hashlib, os, streamlit as st
+
+def verify(passphrase: str) -> bool:
+    expected = os.environ.get('PASSPHRASE_HASH', '')
+    return bool(expected) and hashlib.sha256(passphrase.encode('utf-8')).hexdigest() == expected
+
+# app/dashboard.py — at the very top, before ANY data loading
+def render_lock_screen():
+    # Full-page dark blurred backdrop + centered 420px card with:
+    #   - 36×36 accent-tint icon + 'my-invest-global' title + 'v0.1 · personal advisor' sub
+    #   - 12px '持仓数据受本地密语保护' copy
+    #   - Lock icon + '访问密语' label
+    #   - Password input (dark bg, mono font, type=password)
+    #   - Error row when applicable
+    #   - Accent 'Unlock' button (full width, lock icon)
+    #   - Forgot link (dotted underline)
+    #   - Bottom security notes (3 lines)
+    pass
+
+if not st.session_state.get('unlocked'):
+    render_lock_screen()
+    st.stop()
+
+# from here down everything assumes unlocked == True
+render_global_action_bar()
+render_active_tab()
+```
+
+GlobalActionBar's auth indicator + 锁定 button toggles `ss.unlocked` and triggers `st.rerun()`. Browser refresh naturally clears `st.session_state`, so "session 关闭后自动锁定" is implicit.
+
+The `.env` file holds `PASSPHRASE_HASH=<sha256 hex>`. The user generates it once via:
+
+```bash
+python -c "import hashlib; print(hashlib.sha256(input('passphrase: ').encode()).hexdigest())"
+```
 
 ## 7. State & data flow
 
 ```
-data/agent_input/*.json (DailyNewsFile, KolDigestFile)  ─┐
-data/agent_input/holdings_*.csv                          ├─→ engine/analysis_engine.py
-data/agent_input/macro_state.json                        ─┘                │
-                                                                            ↓
-                                            data/processed/signals_*.json (SignalsFile)
-                                                                            ↓
-                                                              app/dashboard.py (Streamlit)
-                                                                            ↓
-                                                                 4 tabs render from signals
+data/agent_input/*.json (DailyNewsFile, KolDigestFile)
+data/agent_input/holdings_*.csv        ─┐
+data/agent_input/macro_state.json       ├─→ engine/analysis_engine.py
+data/db/lots.sqlite (T+1 lot history)   ─┘             │
+                                                       ↓
+                              data/processed/signals_*.json (SignalsFile)
+                                                       ↓
+                                            app/dashboard.py (Streamlit)
+                                                       ↓
+                                    GlobalActionBar + 5 tabs render from signals
 ```
 
-- All schemas live in `engine/schemas.py` (Pydantic v2)
-- Auto-refresh: `streamlit_autorefresh.st_autorefresh(interval=60_000)` per ADR-005
-- The sidebar (per ADR-005) carries date selector + macro state + refresh button — **not in these mockups** since each artboard is one tab in isolation. Add it as the global chrome around `st.tabs`
+## 8. API contracts (real endpoints to implement)
 
----
+| Method | Path | Body | Returns |
+|---|---|---|---|
+| GET  | `/api/holdings` | — | `{ holdings: HoldingRow[], snapshot_date }` |
+| POST | `/api/holdings` | `HoldingRow[]` | 204 |
+| POST | `/api/holdings/import` | `FormData(file: CSV)` | `{ parsed, rows }` |
+| GET  | `/api/t1-status` | — | `{ [code]: { bought_today, available_qty, total_qty, buy_date } }` |
+| POST | `/api/refresh-market-data` | `{}` | `{ status, last_updated }` |
+| POST | `/api/run-analysis` | `{}` | `{ session_id, signals, status }` |
+| POST | `/api/analyze-watchlist` | `{}` | `{ session_id, signals }` |
+| POST | `/api/analyze-selected` | `{ codes: string[] }` | `{ signals, chip_data, t1_status }` |
+| GET  | `/api/chip-distribution/{code}` | — | `{ price_buckets, avg_cost, current_price, profit_pct, concentration }` |
+| POST | `/api/execute-order` | `{ code, action, qty, price }` | `{ order_id, status }` ⚠ simulation only |
+| GET  | `/api/brief` | — | `{ captured_at, signals, markdown }` |
+| POST | `/api/lock` | `{}` | 204 (clears session) |
 
-## 8. Interactions
-
-| Element | Behavior |
-|---|---|
-| Tab bar item | Click → switch tab, update URL `?tab=N` via `st.query_params` |
-| Stock chip (Tab 3 quick-switch) | Click → re-render chart pane with selected ticker |
-| Date range picker (Tab 3 1M/3M/6M/1Y/全部) | Click → re-slice OHLCV |
-| Expander headers (Tab 2 brief) | Click → toggle open. All 3 open by default |
-| Strategy brief "↻ 立即重生成" button | Click → re-call LLM with current signals payload |
-| Manual macro override (Tab 4) | Click → opens form to call `engine/macro_gate.py::set_macro_state_override()` |
-| News timeline item | Click → open `url` from DailyNewsItem in new tab |
-| Treemap cell (Tab 1) | Click → navigate to Tab 3 with that stock selected |
-| Score table row (Tab 2) | Click → navigate to Tab 3 |
-
----
+For a Streamlit-only deployment these can stay as Python function calls in `app/api.py` — the contract just makes the interaction surface explicit. If you later split frontend out, this list becomes the FastAPI router.
 
 ## 9. Critical constraints (do not regress)
 
-1. **No emoji-only KPIs.** Where the mockup uses 🟢🟡🔴 next to a label, it's a state pill — always paired with a colored badge or solid dot. Never rely on the emoji alone for color encoding (Windows/Linux render them as outlines).
-2. **Tabular-nums everywhere a number lives.** Without it, the 18.59% in row N+1 misaligns with the 5.20% in row N.
-3. **Never use Streamlit's default red (#FF4B4B)**. We use `#E84040` for "bear" and `#FF0000` only for hard stop_loss.
-4. **Status colors are reserved.** Don't tint a card green to mean "active" — green = bullish. Use accent blue for "active/selected".
-5. **Card padding is 12px**, not the Streamlit default. Override globally:
-   ```python
-   st.markdown("""<style>
-     [data-testid="stVerticalBlock"] > [data-testid="stHorizontalBlock"] > [data-testid="column"] { gap: 12px; }
-     /* etc */
-   </style>""", unsafe_allow_html=True)
-   ```
-
----
+1. **GlobalActionBar is the single source of truth** for refresh / run / auth state. Don't duplicate these controls inside individual tabs.
+2. **Tabular-nums everywhere a number lives.** Without it, the `18.59%` in row N+1 misaligns with the `5.20%` in row N.
+3. **No Streamlit-red `#FF4B4B`.** We use `#E84040` for bear, `#FF0000` only for hard stop_loss.
+4. **Status colors are reserved.** Don't tint green to mean "active" — green = bullish. Use accent blue for "active/selected".
+5. **T+1 rules enforced at engine layer**, not UI. Sell suggestions for `bought_today` lots are computed-out by `engine.rebalance`, not just hidden in the UI.
+6. **Never read holdings before `ss.unlocked == True`** — auth gate sits before any `engine.*` import that touches user data.
+7. **Card padding 12px**, not Streamlit's default 1rem. Override globally via injected CSS.
 
 ## 10. Files in this folder
 
-| File | Contents |
-|---|---|
-| `index.html` | Entry point — load this in a browser to see all 7 sections / 12 artboards |
-| `design-canvas.jsx` | Pan/zoom canvas wrapper (do not port — design tool only) |
-| `design-system.jsx` | **Spec sheet** — every token + component shown as a swatch. Reference this first |
-| `tab1-holdings.jsx` | Tab 1 layout, sample HOLDINGS array, donut + heatmap + deviation table |
-| `tab2-brief.jsx` | Tab 2 layout, US_STOCKS, CAPEX_STATE, SCORE_ROWS, brief sections, alerts |
-| `tab3-stock-depth.jsx` | Tab 3 layout, synthetic OHLCV gen, TA indicators (BB, MACD, RSI), FUND, NEWS |
-| `tab4-signals.jsx` | Tab 4 layout, MACRO_STATES, CLOUD_CAPEX, SCARCITY_MATRIX, TRIGGERS, HISTORY |
-| `holdings-editor.jsx` | Section 06 — collapsible sidebar holdings editor (no auth) |
-| `holdings-editor-auth.jsx` | Section 07 — auth layer (passphrase login, lock states, masked main content) |
-
-The `.jsx` files contain hard-coded sample data that **mirrors `engine/schemas.py` shapes** — use the data structures as a template for Pydantic-validated payloads, but don't ship the sample values to prod.
-
----
+| File | Phase | Contents |
+|---|---|---|
+| `index.html` | P5 | Entry point — 8 sections / artboards. Load in browser |
+| `design-canvas.jsx` | foundation | Pan/zoom canvas wrapper (design-tool, do not port) |
+| `design-system.jsx` | P0 | Token + component spec sheet — start here |
+| `global-action-bar.jsx` | **P1** | GlobalActionBar with 6 documented states |
+| `tab1-holdings-v2.jsx` | **P2** | Tab 1 v3 — inline editable table + T+1 column |
+| `tab2-brief-v2.jsx` | **P3** | Tab 2 v3 — T+1 rebalance summary bar |
+| `tab3-stock-depth.jsx` | carry-over | Tab 3 — legacy internal tab bar (TODO: GAB) |
+| `tab4-signals.jsx` | carry-over | Tab 4 — legacy internal tab bar (TODO: GAB) |
+| `tab5-rebalance.jsx` | **P4** | Tab 5 — analysis cards + K-line + chip distribution + operation list |
+| `holdings-editor.jsx` | retired | sidebar holdings editor — superseded by Tab 1 inline table |
+| `holdings-editor-auth.jsx` | partial | login form spec — re-host as full-screen modal (§6.6) |
+| `tab1-holdings.jsx` | retired | original Tab 1 — kept as reference, not rendered in v3 |
+| `tab2-brief.jsx` | retired | original Tab 2 — kept as reference, not rendered in v3 |
 
 ## 11. Suggested phase plan for Claude Code
 
-1. **P1 — Scaffold + tokens + auth gate** (2-3 hours): inject Google Fonts, write `app/styles.py::inject_dark_theme()`, set page config to dark, build `app/auth.py` (sha256 verify + `.env` PASSPHRASE_HASH). Wire the lock screen + login form (artboards A/B/C). Verify `st.stop()` keeps holdings data unreachable when locked
-2. **P2 — Sidebar editor shell** (3-4 hours): build the 56px ↔ 420px sidebar toggle via embedded React component or CSS-override approach. Wire `st.data_editor` for the holdings table; persist to `data/agent_input/holdings_{date}.csv` with `HoldingRow` validation
-3. **P3 — Tab 1** (4-6 hours): wire `engine/portfolio.py::check_portfolio_balance()` to donut + KPI cards. Build heatmap via Plotly treemap. Style deviation table
-4. **P4 — Tab 4** (4-6 hours): static-ish data, mostly layout. Get the macro traffic-light + scarcity matrix CSS right since they're the most custom
-5. **P5 — Tab 2** (3-5 hours): wire LLM brief markdown into expanders, build the score table with progress bars, US chart via Plotly
-6. **P6 — Tab 3** (6-8 hours): the chart is the heavy lift. Make `make_subplots` work, then layer the indicators one at a time
-7. **P7 — Polish**: cross-tab navigation, sidebar (per ADR-005), auto-refresh, URL state, lock button in every tab header
+| Phase | Scope | Effort |
+|---|---|---|
+| **P1** | Scaffold + tokens + auth gate · GlobalActionBar (HTML component) | 3-4 h |
+| **P2** | Tab 1 持仓总览 — KPIs, donut, treemap, inline editable table with T+1 column. Wire `engine/portfolio.py::check_portfolio_balance()` | 5-7 h |
+| **P3** | T+1 lot tracker (`engine/lots.py` + SQLite schema + status helpers) | 2-3 h |
+| **P4** | Tab 2 每日简报 — macro banner, brief expanders, score table, T+1 rebalance summary bar | 4-5 h |
+| **P5** | Tab 5 调仓分析 — selector, analysis cards, K-line, **chip distribution**, operation list. Wire `engine/rebalance.py` (T+1-aware) | 6-8 h |
+| **P6** | Tab 4 信号仪表盘 — macro traffic light, scarcity matrix, gauges, history. Replace internal tab bar with GAB | 4-5 h |
+| **P7** | Tab 3 个股深度 — 4-pane chart, fundamental card, news timeline. Replace internal tab bar with GAB | 5-7 h |
+| **P8** | Polish · URL `?tab=N` state · auto-refresh · cross-tab nav · responsive padding | 2-3 h |
+
+Total ≈ 31-42 hours.
 
 ---
 
-*This handoff was generated from a hi-fi React prototype. The visual spec is authoritative; the Streamlit recipes in §6 are suggestions — choose Streamlit primitives where they fit, custom HTML/CSS where they don't.*
+*This handoff was generated from a hi-fi React prototype. The visual spec is authoritative; the Streamlit recipes are suggestions — choose Streamlit primitives where they fit, custom HTML/CSS where they don't.*
