@@ -46,6 +46,8 @@ def _render_editor() -> None:
 
     if "holdings_editor" not in st.session_state:
         saved = load_latest_holdings()
+        if saved is not None:
+            saved = saved.reindex(columns=_COLS)
         st.session_state["holdings_editor"] = (
             saved if saved is not None else pd.DataFrame(columns=_COLS)
         )

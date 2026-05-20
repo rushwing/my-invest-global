@@ -292,7 +292,10 @@ class TestMissingFileDegradation:
         assert result["state"] == "yellow"
 
     def test_load_latest_holdings_returns_none_when_no_files(self):
-        with patch("pathlib.Path.glob", return_value=iter([])):
+        with (
+            patch("pathlib.Path.glob", return_value=iter([])),
+            patch("pathlib.Path.exists", return_value=False),
+        ):
             result = load_latest_holdings()
         assert result is None
 

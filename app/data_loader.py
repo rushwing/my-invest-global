@@ -18,10 +18,18 @@ DB_PATH = "data/db/aidc.duckdb"
 
 @st.cache_data(ttl=300)
 def load_latest_holdings() -> pd.DataFrame | None:
+    # CSV snapshots take priority (saved by sidebar editor)
     files = sorted(Path("data/agent_input/cn").glob("holdings_*.csv"), reverse=True)
-    if not files:
-        return None
-    return pd.read_csv(files[0])
+    if files:
+        return pd.read_csv(files[0])
+    # Fall back to holdings.yaml (source-of-truth maintained by hand)
+    yaml_path = Path("data/agent_input/cn/holdings.yaml")
+    if yaml_path.exists():
+        import yaml  # type: ignore
+        data = yaml.safe_load(yaml_path.read_text(encoding="utf-8"))
+        rows = data.get("holdings", [])
+        return pd.DataFrame(rows) if rows else None
+    return None
 
 
 @st.cache_data(ttl=300)

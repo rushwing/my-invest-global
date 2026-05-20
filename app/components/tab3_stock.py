@@ -34,9 +34,10 @@ def render_fundamental_card(
     ticker: str,
     ohlcv_df: pd.DataFrame,
     scarcity_row: pd.Series | None,
+    name_fallback: str | None = None,
 ) -> None:
     rank_val = None
-    name = ticker
+    name = name_fallback or ticker
     if scarcity_row is not None:
         r = scarcity_row.get("rank")
         if r is not None and pd.notna(r):
@@ -79,7 +80,10 @@ def render_fundamental_card(
                 metrics.append(fmt.format(val))
     if not ohlcv_df.empty and len(ohlcv_df) >= 5:
         avg_vol = ohlcv_df["volume"].tail(20).mean()
-        metrics.append(f"日均量 {avg_vol / 1e6:.0f}M")
+        if avg_vol >= 1e4:
+            metrics.append(f"日均量 {avg_vol / 1e4:.1f}万手")
+        else:
+            metrics.append(f"日均量 {avg_vol:.0f}手")
     metrics_html = (
         '<div style="font-size:11px;color:#9AA0AC;margin-top:6px;">'
         + "&nbsp;·&nbsp;".join(metrics)
@@ -246,6 +250,7 @@ def render_news_timeline(news_df: pd.DataFrame) -> None:
 def render_tab3() -> None:
     from app.data_loader import (
         compute_indicators,
+        load_latest_holdings,
         load_news_for_ticker,
         load_ohlcv,
         load_scarcity_matrix,
@@ -254,7 +259,23 @@ def render_tab3() -> None:
     preselect = st.session_state.pop("tab3_code", None)
 
     scarcity_df = load_scarcity_matrix()
-    available = list(scarcity_df["code"].unique()) if not scarcity_df.empty else _DEFAULT_CODES
+    holdings_df = load_latest_holdings()
+
+    # Build code→name map from holdings YAML as fallback for scarcity_matrix
+    name_map: dict[str, str] = {}
+    if holdings_df is not None and not holdings_df.empty:
+        for _, row in holdings_df.iterrows():
+            c = str(row.get("code", ""))
+            n = str(row.get("name", ""))
+            if c and n and n != "nan":
+                name_map[c] = n
+
+    if not scarcity_df.empty:
+        available = list(scarcity_df["code"].unique())
+    elif name_map:
+        available = list(name_map.keys())
+    else:
+        available = _DEFAULT_CODES
 
     default_idx = 0
     if preselect and preselect in available:
@@ -275,7 +296,9 @@ def render_tab3() -> None:
         st.info(f"暂无 {ticker} 行情数据")
         return
 
-    render_fundamental_card(ticker, ohlcv_df, scarcity_row)
+    # Pass holdings name as fallback when scarcity_matrix has no entry
+    name_fallback = name_map.get(ticker)
+    render_fundamental_card(ticker, ohlcv_df, scarcity_row, name_fallback=name_fallback)
 
     df = compute_indicators(ohlcv_df)
     df_view = filter_by_date_range(df, date_range)
